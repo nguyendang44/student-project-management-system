@@ -1,85 +1,65 @@
-\# 3. Scope
+# 3. Scope
 
-
-
-\## 3.1. Phạm vi chức năng
-
-
+## 3.1. Phạm vi chức năng
 
 Hệ thống bao gồm các nhóm chức năng chính:
 
+- Xác thực và phân quyền người dùng.
 
+- Quản lý sinh viên.
 
-\- Xác thực và phân quyền người dùng.
+- Quản lý giảng viên.
 
-\- Quản lý sinh viên.
+- Quản lý đề tài.
 
-\- Quản lý giảng viên.
+- Đăng ký đề tài.
 
-\- Quản lý đề tài.
+- Đề xuất đề tài mới.
 
-\- Đăng ký đề tài.
+- Đăng ký và quản lý giảng viên hướng dẫn.
 
-\- Đề xuất đề tài mới.
+- Quản lý số lượng sinh viên tối đa của giảng viên.
 
-\- Đăng ký và quản lý giảng viên hướng dẫn.
+- Quản lý dự án.
 
-\- Quản lý số lượng sinh viên tối đa của giảng viên.
+- Quản lý milestone.
 
-\- Quản lý dự án.
+- Theo dõi tiến độ.
 
-\- Quản lý milestone.
+- Đánh giá milestone.
 
-\- Theo dõi tiến độ.
+- Gửi thông báo.
 
-\- Đánh giá milestone.
+- Tự động kiểm tra deadline.
 
-\- Gửi thông báo.
+- Dashboard và báo cáo.
 
-\- Tự động kiểm tra deadline.
+- Tích hợp GitHub.
 
-\- Dashboard và báo cáo.
+- Phân tích source code bằng AI.
 
-\- Tích hợp GitHub.
-
-\- Phân tích source code bằng AI.
-
-
-
-\## 3.2. Đối tượng sử dụng
-
-
+## 3.2. Đối tượng sử dụng
 
 Hệ thống có ba nhóm người dùng chính:
 
+- Student: sinh viên thực hiện dự án.
 
+- Lecturer: giảng viên hướng dẫn và đánh giá dự án.
 
-\- Student: sinh viên thực hiện dự án.
+- Admin: quản trị hệ thống và quản lý dữ liệu chung.
 
-\- Lecturer: giảng viên hướng dẫn và đánh giá dự án.
-
-\- Admin: quản trị hệ thống và quản lý dữ liệu chung.
-
-
-
-\## 3.3. Ngoài phạm vi
-
-
+## 3.3. Ngoài phạm vi
 
 Trong phiên bản đầu tiên, hệ thống chưa tập trung vào:
 
+- Tích hợp trực tiếp với hệ thống quản lý đào tạo của trường.
 
+- Thanh toán trực tuyến.
 
-\- Tích hợp trực tiếp với hệ thống quản lý đào tạo của trường.
+- Ứng dụng mobile native.
 
-\- Thanh toán trực tuyến.
+- Tự động chấm điểm hoàn toàn bằng AI.
 
-\- Ứng dụng mobile native.
-
-\- Tự động chấm điểm hoàn toàn bằng AI.
-
-\- Thay thế quyết định đánh giá của giảng viên bằng AI.
-
-
+- Thay thế quyết định đánh giá của giảng viên bằng AI.
 
 Các chức năng trên có thể được xem xét trong các phiên bản mở rộng.
