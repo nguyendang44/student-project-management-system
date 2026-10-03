@@ -1,696 +1,457 @@
-\# 8. Automation Requirements
+# 8. Automation Requirements
 
+## 8.1. Mục tiêu
 
+Hệ thống cần tự động hóa các công việc có tính lặp lại trong quá trình quản lý Project, đặc biệt là kiểm tra Deadline, cập nhật trạng thái và gửi Notification.
 
-\## 8.1. Mục tiêu
+Việc tự động hóa giúp:
 
+- Giảm công việc thủ công cho Admin và Lecturer.
+- Giúp Student nhận được thông tin kịp thời.
+- Theo dõi Deadline và trạng thái Milestone.
+- Hạn chế bỏ sót các Milestone quá hạn.
+- Hỗ trợ kiểm tra điều kiện hoàn thành Project.
 
+Các chức năng Automation chính:
 
-Hệ thống cần tự động hóa các công việc có tính lặp lại trong quá trình quản lý project, đặc biệt là kiểm tra deadline, cập nhật trạng thái và gửi notification.
+- Kiểm tra Deadline của Milestone.
+- Cập nhật trạng thái Milestone khi quá hạn.
+- Kiểm tra điều kiện hoàn thành Project.
+- Tạo Notification liên quan đến Deadline.
+- Thực hiện các tác vụ định kỳ.
+- Ghi log và xử lý lỗi Automation.
 
+---
 
-
-Việc tự động hóa giúp giảm công việc thủ công cho Admin và Lecturer, đồng thời giúp Student nhận được thông tin kịp thời.
-
-
-
-Các chức năng automation chính:
-
-
-
-\- Kiểm tra deadline của milestone.
-
-\- Cập nhật trạng thái milestone khi quá hạn.
-
-\- Kiểm tra điều kiện hoàn thành project.
-
-\- Tạo và gửi notification liên quan đến deadline.
-
-\- Hỗ trợ xử lý các tác vụ định kỳ.
-
-
-
-\## 8.2. Scheduled Job
-
-
+## 8.2. Scheduled Job
 
 Hệ thống sử dụng Scheduled Job để thực hiện các tác vụ tự động theo một khoảng thời gian định trước.
 
+Scheduled Job có thể được chạy theo chu kỳ:
 
-
-Scheduled Job có thể được chạy theo chu kỳ, ví dụ:
-
-
-
-\- Mỗi ngày.
-
-\- Mỗi giờ.
-
-\- Hoặc theo khoảng thời gian được cấu hình bởi hệ thống.
-
-
+- Mỗi giờ.
+- Mỗi ngày.
+- Hoặc theo khoảng thời gian được cấu hình bởi hệ thống.
 
 Các tác vụ chính:
 
-
-
-\- Kiểm tra deadline của milestone.
-
-\- Kiểm tra milestone quá hạn.
-
-\- Tạo notification liên quan đến deadline.
-
-\- Cập nhật trạng thái milestone.
-
-\- Kiểm tra điều kiện hoàn thành project.
-
-
+- Kiểm tra Deadline của Milestone.
+- Kiểm tra Milestone quá hạn.
+- Tạo Notification liên quan đến Deadline.
+- Cập nhật trạng thái Milestone.
+- Kiểm tra điều kiện hoàn thành Project.
 
 Quy trình tổng quát:
 
-
-
 ```text
-
 Scheduled Job
-
-&#x20;     |
-
-&#x20;     v
-
+      |
+      v
 Kiểm tra dữ liệu
-
-&#x20;     |
-
-&#x20;     +------------------+
-
-&#x20;     |                  |
-
-&#x20;     v                  v
-
-Milestone           Project
-
-&#x20;     |                  |
-
-&#x20;     v                  v
-
-Deadline Check     Status Check
-
+      |
+      +------------------+
+      |                  |
+      v                  v
+Milestone            Project
+      |                  |
+      v                  v
+Deadline Check      Status Check
 ```
 
+---
 
+## 8.3. Kiểm tra Deadline
 
-\## 8.3. Kiểm tra Deadline
-
-
-
-Hệ thống tự động kiểm tra deadline của các milestone chưa được hoàn thành.
-
-
+Hệ thống tự động kiểm tra Deadline của các Milestone chưa hoàn thành.
 
 | Thời điểm | Hành động |
-
 |---|---|
-
-| Còn 7 ngày | Gửi reminder |
-
-| Còn 3 ngày | Gửi warning |
-
-| Đến deadline | Kiểm tra trạng thái |
-
-| Quá deadline | Chuyển sang `OVERDUE` nếu chưa submit |
-
-
+| Còn 7 ngày | Gửi Reminder |
+| Còn 3 ngày | Gửi Warning |
+| Đến Deadline | Kiểm tra trạng thái |
+| Quá Deadline | Chuyển sang `OVERDUE` nếu chưa Submit |
 
 Quy trình:
 
-
-
 ```text
-
 Milestone
-
-&#x20;   |
-
-&#x20;   v
-
-Kiểm tra deadline
-
-&#x20;   |
-
-&#x20;   +---- Còn 7 ngày ----> Reminder
-
-&#x20;   |
-
-&#x20;   +---- Còn 3 ngày ----> Warning
-
-&#x20;   |
-
-&#x20;   +---- Đến deadline --> Kiểm tra trạng thái
-
-&#x20;   |
-
-&#x20;   +---- Quá deadline --> OVERDUE + Notification
-
+    |
+    v
+Kiểm tra Deadline
+    |
+    +---- Còn 7 ngày ----> Reminder
+    |
+    +---- Còn 3 ngày ----> Warning
+    |
+    +---- Đến Deadline --> Kiểm tra trạng thái
+    |
+    +---- Quá Deadline --> OVERDUE + Notification
 ```
 
+Milestone đã ở trạng thái sau không được tự động chuyển sang `OVERDUE`:
 
+- `SUBMITTED`
+- `REVISION_REQUIRED`
+- `APPROVED`
 
-Milestone đã ở trạng thái `SUBMITTED`, `APPROVED` hoặc `REVISION\_REQUIRED` không được tự động chuyển sang `OVERDUE`.
+Lý do:
 
+- `SUBMITTED`: Student đã Submit và đang chờ Lecturer đánh giá.
+- `REVISION_REQUIRED`: Student cần chỉnh sửa theo yêu cầu của Lecturer.
+- `APPROVED`: Milestone đã được hoàn thành.
 
+---
 
-\## 8.4. Tự động cập nhật trạng thái Milestone
+## 8.4. Tự động cập nhật trạng thái Milestone
 
-
-
-Scheduled Job định kỳ kiểm tra trạng thái và deadline của milestone.
-
-
+Scheduled Job định kỳ kiểm tra trạng thái và Deadline của Milestone.
 
 Các quy tắc xử lý:
 
-
-
-\- `PENDING`: giữ nguyên trạng thái.
-
-\- `IN\_PROGRESS` và chưa quá deadline: giữ nguyên `IN\_PROGRESS`.
-
-\- `IN\_PROGRESS` và đã quá deadline: chuyển sang `OVERDUE`.
-
-\- `SUBMITTED`: giữ nguyên `SUBMITTED` và chờ Lecturer đánh giá.
-
-\- `REVISION\_REQUIRED`: giữ nguyên trạng thái để Student chỉnh sửa và submit lại.
-
-\- `APPROVED`: giữ nguyên `APPROVED`.
-
-\- `OVERDUE`: giữ nguyên `OVERDUE` cho đến khi Student submit kết quả.
-
-
+| Trạng thái hiện tại | Điều kiện | Trạng thái sau Automation |
+|---|---|---|
+| `PENDING` | Bất kỳ | `PENDING` |
+| `IN_PROGRESS` | Chưa quá Deadline | `IN_PROGRESS` |
+| `IN_PROGRESS` | Đã quá Deadline | `OVERDUE` |
+| `SUBMITTED` | Bất kỳ | `SUBMITTED` |
+| `REVISION_REQUIRED` | Bất kỳ | `REVISION_REQUIRED` |
+| `APPROVED` | Bất kỳ | `APPROVED` |
+| `OVERDUE` | Chưa Submit | `OVERDUE` |
 
 Luồng xử lý:
 
-
-
 ```text
-
-&#x20;                IN\_PROGRESS
-
-&#x20;                     |
-
-&#x20;                     v
-
-&#x20;             Kiểm tra deadline
-
-&#x20;                /          \\
-
-&#x20;               /            \\
-
-&#x20;      Chưa quá hạn        Quá deadline
-
-&#x20;           |                   |
-
-&#x20;           v                   v
-
-&#x20;     IN\_PROGRESS            OVERDUE
-
+              IN_PROGRESS
+                   |
+                   v
+           Kiểm tra Deadline
+              /          \
+             /            \
+    Chưa quá hạn        Quá Deadline
+         |                   |
+         v                   v
+   IN_PROGRESS            OVERDUE
 ```
 
-
-
-Khi Student submit milestone:
-
-
+Khi Student Submit Milestone:
 
 ```text
-
-IN\_PROGRESS
-
-&#x20;    |
-
-&#x20;    | Student submit
-
-&#x20;    v
-
+IN_PROGRESS
+     |
+     | Student Submit
+     v
 SUBMITTED
-
-&#x20;    |
-
-&#x20;    | Lecturer review
-
-&#x20;    |
-
-&#x20;    +-------------------+
-
-&#x20;    |                   |
-
-&#x20;    v                   v
-
-&#x20;APPROVED       REVISION\_REQUIRED
-
-&#x20;                       |
-
-&#x20;                       v
-
-&#x20;                  Student sửa
-
-&#x20;                       |
-
-&#x20;                       v
-
-&#x20;                   SUBMITTED
-
+     |
+     | Lecturer Review
+     |
+     +-------------------+
+     |                   |
+     v                   v
+ APPROVED        REVISION_REQUIRED
+                         |
+                         v
+                    Student sửa
+                         |
+                         v
+                     IN_PROGRESS
+                         |
+                         v
+                      SUBMITTED
 ```
 
+Scheduled Job không tự động chuyển `SUBMITTED` sang `OVERDUE` vì Student đã hoàn thành bước Submit và đang chờ Lecturer đánh giá.
 
+---
 
-Scheduled Job không tự động chuyển `SUBMITTED` sang `OVERDUE` vì Student đã hoàn thành bước submit và đang chờ Lecturer đánh giá.
+## 8.5. Kiểm tra trạng thái Project
 
-
-
-\## 8.5. Kiểm tra trạng thái Project
-
-
-
-Scheduled Job có thể kiểm tra trạng thái các milestone thuộc từng project để xác định project đã đủ điều kiện hoàn thành hay chưa.
-
-
+Scheduled Job có thể kiểm tra trạng thái các Milestone thuộc từng Project để xác định Project đã đủ điều kiện hoàn thành hay chưa.
 
 Các trường hợp:
 
-
-
-\- Nếu project đang `IN\_PROGRESS` và vẫn còn milestone chưa hoàn thành, project tiếp tục ở `IN\_PROGRESS`.
-
-\- Nếu tất cả milestone bắt buộc đã ở `APPROVED`, project đủ điều kiện để Lecturer xác nhận hoàn thành.
-
-\- Scheduled Job không tự động thay thế bước xác nhận cuối cùng của Lecturer.
-
-\- Nếu project bị hủy, project chuyển sang `CANCELLED`.
-
-
+- Nếu Project đang `IN_PROGRESS` và vẫn còn Milestone chưa `APPROVED`, Project tiếp tục ở `IN_PROGRESS`.
+- Nếu tất cả Milestone bắt buộc đã ở `APPROVED`, Project đủ điều kiện để Lecturer xác nhận hoàn thành.
+- Scheduled Job không tự động thay thế bước xác nhận cuối cùng của Lecturer.
+- Nếu Project bị hủy, Project chuyển sang `CANCELLED`.
 
 Quy trình:
 
-
-
 ```text
-
-Project IN\_PROGRESS
-
-&#x20;       |
-
-&#x20;       v
-
+Project IN_PROGRESS
+        |
+        v
 Kiểm tra Milestones
-
-&#x20;       |
-
-&#x20;       +-----------------------------+
-
-&#x20;       |                             |
-
-&#x20;       v                             v
-
-Còn milestone chưa APPROVED      Tất cả APPROVED
-
-&#x20;       |                             |
-
-&#x20;       v                             v
-
-&#x20;  IN\_PROGRESS              Đủ điều kiện hoàn thành
-
-&#x20;                                     |
-
-&#x20;                                     v
-
-&#x20;                             Lecturer xác nhận
-
-&#x20;                                     |
-
-&#x20;                                     v
-
-&#x20;                                 COMPLETED
-
+        |
+        +-----------------------------+
+        |                             |
+        v                             v
+Còn Milestone chưa APPROVED      Tất cả APPROVED
+        |                             |
+        v                             v
+   IN_PROGRESS              Đủ điều kiện hoàn thành
+                                      |
+                                      v
+                              Lecturer xác nhận
+                                      |
+                                      v
+                                  COMPLETED
 ```
 
+---
 
-
-\## 8.6. Tạo Notification tự động
-
-
+## 8.6. Tạo Notification tự động
 
 Notification được tạo khi hệ thống phát hiện một sự kiện cần thông báo cho Student hoặc Lecturer.
 
-
-
-Các notification liên quan đến automation:
-
-
+### Notification do Automation tạo
 
 | Sự kiện | Người nhận | Notification |
-
 |---|---|---|
-
 | Milestone còn 7 ngày | Student | Reminder |
-
 | Milestone còn 3 ngày | Student | Warning |
-
-| Milestone quá deadline | Student và Lecturer | Overdue |
-
+| Milestone quá Deadline | Student và Lecturer | Overdue |
 | Project đủ điều kiện hoàn thành | Lecturer | Yêu cầu xác nhận hoàn thành |
 
+### Notification do sự kiện nghiệp vụ tạo
 
-
-Các notification khác có thể được tạo trực tiếp khi xảy ra sự kiện trong hệ thống, ví dụ:
-
-
+Các Notification khác có thể được tạo trực tiếp khi xảy ra sự kiện trong hệ thống:
 
 | Sự kiện | Người nhận |
-
 |---|---|
-
-| Student gửi yêu cầu Lecturer | Lecturer |
-
-| Lecturer chấp nhận yêu cầu | Student |
-
-| Lecturer từ chối yêu cầu | Student |
-
-| Topic proposal được duyệt | Student |
-
-| Topic proposal bị từ chối | Student |
-
+| Student gửi Lecturer Request | Lecturer |
+| Lecturer chấp nhận Request | Student |
+| Lecturer từ chối Request | Student |
+| Topic Proposal được duyệt | Student |
+| Topic Proposal bị từ chối | Student |
 | Milestone được tạo | Student |
-
 | Lecturer yêu cầu chỉnh sửa | Student |
-
 | AI Analysis hoàn thành | Student và Lecturer |
 
+Do đó, không phải tất cả Notification đều được tạo bởi Scheduled Job.
+
+Có hai cơ chế chính:
+
+```text
+Scheduled Event
+      |
+      v
+Scheduled Job
+      |
+      v
+Notification
 
 
-Do đó, không phải tất cả notification đều được tạo bởi Scheduled Job.
+Business Event
+      |
+      v
+Event Handler
+      |
+      v
+Notification
+```
 
+---
 
+## 8.7. Chống tạo Notification trùng lặp
 
-\## 8.7. Chống tạo Notification trùng lặp
-
-
-
-Scheduled Job có thể chạy nhiều lần nên hệ thống phải kiểm tra notification trước khi tạo mới.
-
-
+Scheduled Job có thể chạy nhiều lần nên hệ thống phải kiểm tra Notification trước khi tạo mới.
 
 Quy trình:
 
-
-
 ```text
-
 Scheduled Job
-
-&#x20;     |
-
-&#x20;     v
-
+      |
+      v
 Kiểm tra điều kiện
-
-&#x20;     |
-
-&#x20;     v
-
+      |
+      v
 Notification đã tồn tại?
-
-&#x20;     |
-
-&#x20;  +--+--+
-
-&#x20;  |     |
-
-&#x20; Có    Không
-
-&#x20;  |     |
-
-&#x20;  v     v
-
+      |
+   +--+--+
+   |     |
+  Có    Không
+   |     |
+   v     v
 Không   Tạo
-
 tạo     mới
-
 ```
-
-
 
 Ví dụ:
 
+- Một Milestone còn 3 ngày chỉ tạo một Notification `WARNING`.
+- Các lần Scheduled Job tiếp theo không tạo lại Notification `WARNING` cho cùng Milestone.
+- Khi Milestone quá hạn, hệ thống có thể tạo một Notification `OVERDUE` riêng.
 
-
-\- Một milestone còn 3 ngày chỉ tạo một notification `WARNING`.
-
-\- Các lần Scheduled Job tiếp theo không tạo lại notification `WARNING` cho cùng milestone.
-
-\- Khi milestone quá hạn, hệ thống có thể tạo một notification `OVERDUE` riêng.
-
-
-
-Có thể sử dụng event type kết hợp với milestone ID để xác định notification đã được tạo hay chưa.
-
-
+Có thể sử dụng Event Type kết hợp với Milestone ID để xác định Notification đã được tạo hay chưa.
 
 Ví dụ:
 
-
-
 ```text
+MILESTONE_WARNING:{milestone_id}
 
-MILESTONE\_WARNING:{milestone\_id}
-
-MILESTONE\_OVERDUE:{milestone\_id}
-
+MILESTONE_OVERDUE:{milestone_id}
 ```
 
+Có thể áp dụng Unique Constraint hoặc cơ chế tương đương để hạn chế việc tạo Notification trùng lặp.
 
+---
 
-\## 8.8. AI Analysis Workflow
+## 8.8. AI Analysis Workflow
 
+AI Analysis là một Workflow riêng và không phải tác vụ kiểm tra Deadline của Scheduled Job.
 
-
-AI Analysis là một workflow riêng, không phải tác vụ kiểm tra deadline của Scheduled Job.
-
-
-
-Khi Student liên kết GitHub repository, hệ thống có thể thực hiện quy trình:
-
-
+Khi Student liên kết GitHub Repository, hệ thống có thể thực hiện quy trình:
 
 ```text
-
 Student
-
-&#x20;  |
-
-&#x20;  v
-
+   |
+   v
 GitHub Repository
-
-&#x20;  |
-
-&#x20;  v
-
+   |
+   v
 Lấy Source Code
-
-&#x20;  |
-
-&#x20;  v
-
+   |
+   v
 AI Analysis
-
-&#x20;  |
-
-&#x20;  v
-
+   |
+   v
 Analysis Report
-
-&#x20;  |
-
-&#x20;  +----------+
-
-&#x20;  |          |
-
-&#x20;  v          v
-
+   |
+   +----------+
+   |          |
+   v          v
 Student    Lecturer
-
 ```
-
-
 
 AI có thể hỗ trợ phân tích:
 
-
-
-\- Code quality.
-
-\- Code complexity.
-
-\- Maintainability.
-
-\- Potential bugs.
-
-\- Security issues.
-
-\- Cấu trúc source code.
-
-
+- Code Quality.
+- Code Complexity.
+- Maintainability.
+- Potential Bugs.
+- Security Issues.
+- Cấu trúc Source Code.
 
 Kết quả phân tích được lưu lại để Student và Lecturer có thể xem.
 
+AI chỉ đóng vai trò hỗ trợ phân tích Source Code và không thay thế quyết định đánh giá cuối cùng của Lecturer.
 
+---
 
-AI chỉ đóng vai trò hỗ trợ phân tích source code và không thay thế quyết định đánh giá cuối cùng của Lecturer.
-
-
-
-\## 8.9. Xử lý lỗi Automation
-
-
+## 8.9. Xử lý lỗi Automation
 
 Nếu Scheduled Job gặp lỗi, hệ thống cần:
 
-
-
-\- Ghi lại thông tin lỗi vào log.
-
-\- Không làm ảnh hưởng đến các chức năng chính của hệ thống.
-
-\- Cho phép tác vụ được thực hiện lại khi cần.
-
-\- Không tạo lại notification đã xử lý thành công.
-
-\- Có thể retry đối với các tác vụ thất bại.
-
-
+- Ghi lại thông tin lỗi vào Log.
+- Không làm ảnh hưởng đến các chức năng chính của hệ thống.
+- Cho phép tác vụ được thực hiện lại khi cần.
+- Không tạo lại Notification đã xử lý thành công.
+- Có thể Retry đối với các tác vụ thất bại.
+- Theo dõi số lần Retry để tránh vòng lặp vô hạn.
 
 Quy trình:
 
-
-
 ```text
-
 Scheduled Job
-
-&#x20;     |
-
-&#x20;     v
-
+      |
+      v
 Thực hiện Task
-
-&#x20;     |
-
-&#x20;  +--+--+
-
-&#x20;  |     |
-
+      |
+   +--+--+
+   |     |
 Thành   Lỗi
-
 công     |
-
-&#x20;  |     v
-
-&#x20;  |   Ghi Log
-
-&#x20;  |     |
-
-&#x20;  |     v
-
-&#x20;  |    Retry
-
-&#x20;  |
-
-&#x20;  v
-
+   |     v
+   |   Ghi Log
+   |     |
+   |     v
+   |    Retry
+   |
+   v
 Hoàn thành
-
 ```
 
+Nếu Retry vượt quá số lần cho phép, hệ thống cần ghi nhận lỗi để Admin có thể kiểm tra.
 
+---
 
-\## 8.10. Tổng quan Automation
-
-
+## 8.10. Tổng quan Automation
 
 Automation của hệ thống bao gồm các nhóm chức năng chính:
 
-
-
 ```text
-
-&#x20;                   Automation
-
-&#x20;                        |
-
-&#x20;         +--------------+--------------+
-
-&#x20;         |              |              |
-
-&#x20;         v              v              v
-
-&#x20;  Deadline Check   Project Check   Notification
-
-&#x20;         |              |              |
-
-&#x20;         v              v              v
-
-&#x20; Milestone Status  Completion     Reminder / Warning
-
-&#x20;      Update          Check          / Overdue
-
+                     Automation
+                          |
+          +---------------+---------------+
+          |               |               |
+          v               v               v
+   Deadline Check   Project Check   Notification
+          |               |               |
+          v               v               v
+ Milestone Status    Completion      Reminder /
+      Update            Check        Warning /
+                                      Overdue
 ```
-
-
 
 Luồng tổng quát:
 
-
-
 ```text
-
 Scheduled Job
-
-&#x20;     |
-
-&#x20;     +--------------------+
-
-&#x20;     |                    |
-
-&#x20;     v                    v
-
+      |
+      +--------------------+
+      |                    |
+      v                    v
 Milestone Check       Project Check
-
-&#x20;     |                    |
-
-&#x20;     v                    v
-
+      |                    |
+      v                    v
 Deadline / Status     Check Completion
-
-&#x20;     |                    |
-
-&#x20;     v                    v
-
+      |                    |
+      v                    v
 Notification        Lecturer Confirmation
-
-&#x20;     |                    |
-
-&#x20;     v                    v
-
-&#x20;   Student             COMPLETED
-
+      |                    |
+      v                    v
+   Student             COMPLETED
 ```
 
+---
 
+## 8.11. Nguyên tắc Automation
 
-Automation giúp hệ thống chủ động theo dõi deadline và tiến độ project, giảm các công việc kiểm tra thủ công và hỗ trợ Student, Lecturer trong quá trình thực hiện project.
+Automation cần tuân thủ các nguyên tắc:
 
+1. Scheduled Job không được làm thay đổi dữ liệu nghiệp vụ ngoài các quy tắc đã định nghĩa.
 
+2. Scheduled Job không thay thế quyết định của Lecturer.
 
-AI Analysis được triển khai như một workflow riêng và không thay thế cơ chế Scheduled Job.
+3. Không tự động chuyển `SUBMITTED` thành `OVERDUE`.
 
+4. Không tự động chuyển `REVISION_REQUIRED` thành `OVERDUE`.
+
+5. Không tự động chuyển `APPROVED` thành `OVERDUE`.
+
+6. Notification phải có cơ chế chống trùng lặp.
+
+7. Các tác vụ Automation cần được ghi Log.
+
+8. Các tác vụ thất bại có thể được Retry.
+
+9. Automation phải có khả năng chạy độc lập với các Request chính của người dùng.
+
+10. AI Analysis là Workflow riêng và không phụ thuộc vào Scheduled Job kiểm tra Deadline.
+
+---
+
+## 8.12. Kết luận
+
+Automation giúp hệ thống chủ động theo dõi Deadline và trạng thái Project, giảm các công việc kiểm tra thủ công và hỗ trợ Student, Lecturer trong quá trình thực hiện Project.
+
+Các thành phần Automation chính gồm:
+
+- Scheduled Job.
+- Deadline Checking.
+- Milestone Status Update.
+- Project Completion Checking.
+- Notification.
+- Error Handling và Retry.
+
+AI Analysis được triển khai như một Workflow riêng và không thay thế cơ chế Scheduled Job hoặc quyết định đánh giá cuối cùng của Lecturer.
