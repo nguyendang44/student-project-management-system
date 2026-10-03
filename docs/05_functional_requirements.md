@@ -1,6 +1,4 @@
-\# 5. Functional Requirements
-
-
+# 5. Functional Requirements
 
 | ID | Requirement | Description |
 
@@ -47,4 +45,3 @@
 | FR-20 | Dashboard | Hiển thị thông tin tổng quan về dự án và tiến độ. |
 
 | FR-21 | Reporting | Cung cấp thống kê và báo cáo. |
-
