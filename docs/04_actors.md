@@ -1,130 +1,97 @@
-\# 4. Actors
+# 4. Actors
 
-
-
-\## 4.1. Student
-
-
+## 4.1. Student
 
 Sinh viên là người trực tiếp thực hiện dự án.
 
-
-
 Các chức năng chính:
 
+- Đăng nhập hệ thống.
 
+- Xem danh sách đề tài.
 
-\- Đăng nhập hệ thống.
+- Đăng ký đề tài.
 
-\- Xem danh sách đề tài.
+- Đề xuất đề tài mới.
 
-\- Đăng ký đề tài.
+- Gửi yêu cầu giảng viên hướng dẫn.
 
-\- Đề xuất đề tài mới.
+- Theo dõi trạng thái yêu cầu.
 
-\- Gửi yêu cầu giảng viên hướng dẫn.
+- Xem thông tin dự án.
 
-\- Theo dõi trạng thái yêu cầu.
+- Xem milestone và deadline.
 
-\- Xem thông tin dự án.
+- Cập nhật tiến độ.
 
-\- Xem milestone và deadline.
+- Nộp kết quả milestone.
 
-\- Cập nhật tiến độ.
+- Liên kết repository GitHub.
 
-\- Nộp kết quả milestone.
+- Xem kết quả phân tích source code.
 
-\- Liên kết repository GitHub.
+- Xem thông báo.
 
-\- Xem kết quả phân tích source code.
-
-\- Xem thông báo.
-
-
-
-\## 4.2. Lecturer
-
-
+## 4.2. Lecturer
 
 Giảng viên là người hướng dẫn và đánh giá dự án.
 
-
-
 Các chức năng chính:
 
+- Đăng nhập hệ thống.
 
+- Quản lý thông tin cá nhân.
 
-\- Đăng nhập hệ thống.
+- Thiết lập số lượng sinh viên tối đa có thể hướng dẫn.
 
-\- Quản lý thông tin cá nhân.
+- Xem các yêu cầu hướng dẫn.
 
-\- Thiết lập số lượng sinh viên tối đa có thể hướng dẫn.
+- Chấp nhận yêu cầu.
 
-\- Xem các yêu cầu hướng dẫn.
+- Từ chối yêu cầu và nhập lý do.
 
-\- Chấp nhận yêu cầu.
+- Quản lý dự án.
 
-\- Từ chối yêu cầu và nhập lý do.
+- Tạo và quản lý milestone.
 
-\- Quản lý dự án.
+- Theo dõi tiến độ sinh viên.
 
-\- Tạo và quản lý milestone.
+- Đánh giá kết quả.
 
-\- Theo dõi tiến độ sinh viên.
+- Yêu cầu sinh viên chỉnh sửa.
 
-\- Đánh giá kết quả.
+- Xem kết quả phân tích source code.
 
-\- Yêu cầu sinh viên chỉnh sửa.
+- Nhận thông báo.
 
-\- Xem kết quả phân tích source code.
-
-\- Nhận thông báo.
-
-
-
-\## 4.3. Admin
-
-
+## 4.3. Admin
 
 Admin chịu trách nhiệm quản trị hệ thống.
 
-
-
 Các chức năng chính:
 
+- Quản lý tài khoản người dùng.
 
+- Quản lý sinh viên.
 
-\- Quản lý tài khoản người dùng.
+- Quản lý giảng viên.
 
-\- Quản lý sinh viên.
+- Quản lý đề tài.
 
-\- Quản lý giảng viên.
+- Theo dõi các dự án.
 
-\- Quản lý đề tài.
+- Theo dõi trạng thái hệ thống.
 
-\- Theo dõi các dự án.
+- Xem báo cáo và thống kê.
 
-\- Theo dõi trạng thái hệ thống.
+- Quản lý các dữ liệu cấu hình cần thiết.
 
-\- Xem báo cáo và thống kê.
-
-\- Quản lý các dữ liệu cấu hình cần thiết.
-
-
-
-\## 4.4. External Services
-
-
+## 4.4. External Services
 
 Hệ thống có thể tương tác với các dịch vụ bên ngoài:
 
+- GitHub: cung cấp repository và source code của dự án.
 
+- AI Service: phân tích source code và tạo báo cáo hỗ trợ.
 
-\- GitHub: cung cấp repository và source code của dự án.
-
-\- AI Service: phân tích source code và tạo báo cáo hỗ trợ.
-
-\- Email/Notification Service: gửi thông báo cho người dùng.
-
-
-
+- Email/Notification Service: gửi thông báo cho người dùng.
