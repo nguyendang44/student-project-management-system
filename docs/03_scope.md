@@ -83,4 +83,3 @@ Trong phiên bản đầu tiên, hệ thống chưa tập trung vào:
 
 
 Các chức năng trên có thể được xem xét trong các phiên bản mở rộng.
-
