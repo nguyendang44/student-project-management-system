@@ -1,160 +1,121 @@
-\# 6. Non-functional Requirements
+# 6. Non-functional Requirements
 
+## NFR-01. Security
 
+- Mật khẩu phải được lưu dưới dạng hash, không lưu plaintext.
 
-\## NFR-01. Security
+- Người dùng phải được xác thực trước khi sử dụng hệ thống.
 
+- Hệ thống phải kiểm tra quyền truy cập ở phía server.
 
+- Student không được truy cập chức năng dành cho Lecturer hoặc Admin.
 
-\- Mật khẩu phải được lưu dưới dạng hash, không lưu plaintext.
+- Dữ liệu nhạy cảm phải được bảo vệ.
 
-\- Người dùng phải được xác thực trước khi sử dụng hệ thống.
+## NFR-02. Performance
 
-\- Hệ thống phải kiểm tra quyền truy cập ở phía server.
+- Các thao tác thông thường phải có thời gian phản hồi phù hợp.
 
-\- Student không được truy cập chức năng dành cho Lecturer hoặc Admin.
+- Việc phân tích source code bằng AI không được làm hệ thống chính bị treo.
 
-\- Dữ liệu nhạy cảm phải được bảo vệ.
+- Các tác vụ tự động phải chạy ở background hoặc scheduled job khi cần thiết.
 
+- Hệ thống phải tránh thực hiện các truy vấn dư thừa.
 
-
-\## NFR-02. Performance
-
-
-
-\- Các thao tác thông thường phải có thời gian phản hồi phù hợp.
-
-\- Việc phân tích source code bằng AI không được làm hệ thống chính bị treo.
-
-\- Các tác vụ tự động phải chạy ở background hoặc scheduled job khi cần thiết.
-
-\- Hệ thống phải tránh thực hiện các truy vấn dư thừa.
-
-
-
-\## NFR-03. Scalability
-
-
+## NFR-03. Scalability
 
 Hệ thống cần có khả năng mở rộng để hỗ trợ:
 
+- Số lượng sinh viên và giảng viên lớn hơn.
 
+- Email và notification service.
 
-\- Số lượng sinh viên và giảng viên lớn hơn.
+- Ứng dụng mobile trong tương lai.
 
-\- Email và notification service.
+- Các dịch vụ AI mở rộng.
 
-\- Ứng dụng mobile trong tương lai.
+- Phân tích tiến độ dự án.
 
-\- Các dịch vụ AI mở rộng.
+- Các nền tảng source control khác ngoài GitHub.
 
-\- Phân tích tiến độ dự án.
+- Tích hợp với hệ thống quản lý đào tạo của trường.
 
-\- Các nền tảng source control khác ngoài GitHub.
-
-\- Tích hợp với hệ thống quản lý đào tạo của trường.
-
-
-
-\## NFR-04. Maintainability
-
-
+## NFR-04. Maintainability
 
 Hệ thống cần được thiết kế theo các module rõ ràng:
 
+- Authentication & Authorization
 
+- User Management
 
-\- Authentication \& Authorization
+- Topic Management
 
-\- User Management
+- Registration Management
 
-\- Topic Management
+- Lecturer Capacity
 
-\- Registration Management
+- Project Management
 
-\- Lecturer Capacity
+- Milestone Management
 
-\- Project Management
+- Progress Management
 
-\- Milestone Management
+- Evaluation
 
-\- Progress Management
+- GitHub Integration
 
-\- Evaluation
+- AI Analysis
 
-\- GitHub Integration
+- Notification
 
-\- AI Analysis
+- Automation
 
-\- Notification
-
-\- Automation
-
-\- Dashboard \& Reporting
-
-
+- Dashboard & Reporting
 
 Mỗi module cần có trách nhiệm rõ ràng và hạn chế phụ thuộc trực tiếp vào các module khác.
 
+## NFR-05. Usability
 
+- Giao diện dễ sử dụng.
 
-\## NFR-05. Usability
+- Trạng thái đề tài và dự án phải rõ ràng.
 
+- Số lượng sinh viên hiện tại và số chỗ còn lại của giảng viên phải dễ nhận biết.
 
+- Deadline phải được hiển thị rõ ràng.
 
-\- Giao diện dễ sử dụng.
+- Thông báo lỗi phải dễ hiểu.
 
-\- Trạng thái đề tài và dự án phải rõ ràng.
+- Người dùng phải biết được kết quả của các thao tác quan trọng.
 
-\- Số lượng sinh viên hiện tại và số chỗ còn lại của giảng viên phải dễ nhận biết.
+## NFR-06. Reliability and Consistency
 
-\- Deadline phải được hiển thị rõ ràng.
+- Hệ thống phải đảm bảo dữ liệu nhất quán.
 
-\- Thông báo lỗi phải dễ hiểu.
+- Không được để số lượng sinh viên vượt quá giới hạn của giảng viên.
 
-\- Người dùng phải biết được kết quả của các thao tác quan trọng.
+- Các thao tác liên quan đến đăng ký và giới hạn giảng viên cần sử dụng transaction hoặc cơ chế tương đương.
 
+- Trạng thái project, milestone và evaluation phải được cập nhật nhất quán.
 
-
-\## NFR-06. Reliability and Consistency
-
-
-
-\- Hệ thống phải đảm bảo dữ liệu nhất quán.
-
-\- Không được để số lượng sinh viên vượt quá giới hạn của giảng viên.
-
-\- Các thao tác liên quan đến đăng ký và giới hạn giảng viên cần sử dụng transaction hoặc cơ chế tương đương.
-
-\- Trạng thái project, milestone và evaluation phải được cập nhật nhất quán.
-
-
-
-\## NFR-07. Auditability
-
-
+## NFR-07. Auditability
 
 Hệ thống cần lưu lại lịch sử của các thao tác quan trọng như:
 
+- Đăng ký đề tài.
 
+- Gửi yêu cầu giảng viên.
 
-\- Đăng ký đề tài.
+- Chấp nhận hoặc từ chối yêu cầu.
 
-\- Gửi yêu cầu giảng viên.
+- Phê duyệt hoặc từ chối đề xuất đề tài.
 
-\- Chấp nhận hoặc từ chối yêu cầu.
+- Cập nhật milestone.
 
-\- Phê duyệt hoặc từ chối đề xuất đề tài.
+- Đánh giá milestone.
 
-\- Cập nhật milestone.
+- Yêu cầu chỉnh sửa.
 
-\- Đánh giá milestone.
-
-\- Yêu cầu chỉnh sửa.
-
-\- Kết quả phân tích AI.
-
-
+- Kết quả phân tích AI.
 
 AI chỉ đóng vai trò hỗ trợ phân tích và không thay thế quyết định đánh giá cuối cùng của giảng viên.
-
