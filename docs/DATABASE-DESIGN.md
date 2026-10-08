@@ -6,18 +6,18 @@
 - *Tuan_2_Phan_tich_yeu_cau_Use_Case.docx*: UC-01..UC-43; các luồng UC-ST-03, UC-ST-06, UC-LC-08, UC-ST-10, UC-LC-17. Trạng thái Project/Request/Milestone tuân theo bảng mục 10.
 - **Phần thiết kế thêm** (không phải quy định có sẵn trong tài liệu): danh sách cột, SQL Server types, PK/FK, độ dài varchar, index, unique và delete behaviors. Chúng phải được duyệt trước migration.
 
-## Phân cụm 21 bảng
+## Phân cụm 22 bảng (v0.3)
 
 | Phạm vi | Các bảng | Quy tắc thiết kế |
 |---|---|---|
-| Tài khoản | `User`, `StudentProfile`, `LecturerProfile` | User chứa role, profile tách thuộc tính; password hash, không plaintext |
+| Tài khoản | `Role`, `User`, `StudentProfile`, `LecturerProfile` | User.RoleId FK -> Roles (Student, Lecturer, Admin); password hash, không plaintext |
 | Đợt đăng ký và capacity | `RegistrationPeriod`, `LecturerCapacity` | Mỗi lecturer có một capacity trong một đợt, unique lecturer+period và rowversion |
 | Đề tài và đăng ký | `Topic`, `TopicStateHistory`, `TopicRegistration`, `LecturerRequest` | Proposal thể hiện bằng Topic.Status, lịch sử riêng; request lưu trạng thái |
 | Dự án và tiến độ | `Project`, `Milestone`, `ProgressUpdate`, `MilestoneSubmission`, `ProjectEvaluation` | Từ Project ra nhiều milestone, nhiều lần cập nhật/nộp/đánh giá |
 | Tích hợp GitHub/AI | `RepositoryLink`, `CodeAnalysisReport` | Dữ liệu phân tích gắn repo và project, AI chỉ hỗ trợ |
 | Thông báo/vận hành | `Notification`, `AutomationRun`, `SystemError`, `AuditEntry`, `SystemSetting` | Lưu theo dòng sự kiện/bản ghi, chưa chạy scheduler |
 
-`DbContext` đã khai báo đầy đủ 21 `DbSet` và model mapping, nhưng **chưa sinh migration** và chưa được thử nghiệm trực tiếp với SQL Server.
+`DbContext` đã khai báo 22 `DbSet` và model mapping; 20 bảng nghiệp vụ dùng `ExcludeFromMigrations` để migration đầu tiên chỉ tạo Users/Roles, **chưa sinh migration** và chưa được thử nghiệm trực tiếp với SQL Server.
 
 ## Chọn ràng buộc dữ liệu
 
@@ -25,7 +25,7 @@
 2. FK tương ứng user, topic, period, project, milestone, repository và request được khai báo rõ trong EF Fluent API, `DeleteBehavior.NoAction` để hạn chế cascade/multiple-cascade-path với SQL Server.
 3. Unique: `User.Email`, `StudentProfile.StudentCode`, profile `UserId`, cặp (`LecturerCapacity.LecturerUserId`, `RegistrationPeriodId`), `SystemSetting.Key`, và (không null) `Project.AcceptedLecturerRequestId`.
 4. Check constraint: `RegistrationPeriod.EndsAt > StartsAt`, `Milestone.DeadlineAt >= StartAt`, `0 ≤ PercentComplete ≤ 100` (Milestone & ProgressUpdate), `0 ≤ CurrentStudents ≤ MaxStudents` (LecturerCapacity).
-5. `RequestStatus`, `ProjectStatus`, `TopicStatus`, `MilestoneStatus`, `AnalysisStatus`, `AutomationRunStatus`, `UserRole` lưu dạng string. Không gán `REJECTED` cho Project.
+5. `RequestStatus`, `ProjectStatus`, `TopicStatus`, `MilestoneStatus`, `AnalysisStatus`, `AutomationRunStatus`, Role được lưu bằng FK tới bảng `Roles`. Không gán `REJECTED` cho Project.
 6. `DocumentReference` là đường dẫn hoặc mã tham chiếu file, không phải dữ liệu file nhị phân. Cơ chế upload, ACL và object storage chưa xác định.
 
 ## Bắt buộc xử lý ở Application/Transaction (CHƯA code)
@@ -50,3 +50,10 @@
 ## Triển khai DB sau khi duyệt (chưa chạy)
 
 Trong bản v0.2, `DependencyInjection` chỉ đăng ký DbContext **khi có** `ConnectionStrings:Default`. Không cấu hình database thì API `/health` và 501 stubs vẫn hoạt động. Để sang tuần 4, chốt ERD, cung cấp SQL Server và connection string bảo mật, sau đó mới tạo EF Core migration và kiểm tra constraints/quan hệ qua integration tests.
+
+## v0.3 | Auth implementation update
+
+- `Role` (3 seed values Student/Lecturer/Admin), `User.RoleId` FK, `User.TokenVersion` account-wide JWT revocation.
+- Core Roles/Users relations are implemented. Existing other tables are still schema draft.
+- `scripts/setup-auth.ps1` generates and applies the auth-only initial migration (Roles and Users) **on Windows in a fresh SQL Server LocalDB database**, after dependency restore/build. Migration is not committed with this deliverable.
+- For authentication and integration tests see [`AUTH-IMPLEMENTATION.md`](AUTH-IMPLEMENTATION.md).

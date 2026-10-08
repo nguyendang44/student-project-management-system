@@ -1,6 +1,4 @@
 namespace StudentProjects.Application.Contracts;
-public record LoginRequest(string Email, string Password);
-public record LoginResponse(string AccessToken, string RefreshToken, Guid UserId, string Role);
 public record TopicCreateRequest(string Title, string Description, string? Objective, string? ProposedTechnology);
 public record LecturerRequestCreate(Guid TopicId, Guid LecturerUserId, Guid RegistrationPeriodId);
 public record CapacityUpdateRequest(int MaximumStudents);

@@ -1,3 +1,4 @@
-# Backend API skeleton
+# StudentProjects API: authentication v0.3
 
-ASP.NET Core 10 layered solution with 501 endpoint placeholders. .NET SDK required for `dotnet restore`/`dotnet build`; no SQL connection required to start scaffold. `/health` is implemented. JWT parameters are configured; no login token issuance exists. Schema draft for 21 entity types with FK/index/check constraints in `StudentProjects.Infrastructure/Persistence/StudentProjectsDbContext.cs`, without migrations. See docs/ERD.md and docs/DATABASE-DESIGN.md. Compile/build with .NET 10 SDK before running schema migrations. Full implementation requires the Week 3 ERD and Week 4 API contracts.
+Functional: SQL Server DbContext, relational Users/Roles, JWT login, role authorization, current user and token-version-based logout.
+All other business API endpoints remain 501 stubs. See `../docs/AUTH-IMPLEMENTATION.md` for Windows setup, migration commands, LocalDB and tests.

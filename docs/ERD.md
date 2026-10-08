@@ -1,17 +1,22 @@
 # Week 3 | ERD đề xuất (SQL Server / EF Core)
 
-**Trạng thái:** bản thiết kế v0.2 để rà soát. Chưa tạo database, migration hoặc dữ liệu giả. Sơ đồ được chia làm hai phần để dễ đọc; cùng một `USER` / `PROJECT` là cùng bảng.
+**Trạng thái:** v0.3 implement quan hệ Roles/Users; migration vẫn phải được tạo trên máy có .NET SDK. Các bảng nghiệp vụ còn lại vẫn chưa triển khai xử lý. Sơ đồ được chia làm hai phần để dễ đọc; cùng một `USER` / `PROJECT` là cùng bảng.
 
 ## A. Tài khoản, đăng ký, phân công và dự án
 
 ```mermaid
 erDiagram
+  ROLE {
+    uniqueidentifier Id PK
+    nvarchar Name UK
+  }
   USER {
     uniqueidentifier Id PK
+    uniqueidentifier RoleId FK
     nvarchar Email UK
     nvarchar PasswordHash
-    nvarchar Role
     bit IsActive
+    int TokenVersion
   }
   STUDENT_PROFILE {
     uniqueidentifier Id PK
@@ -77,6 +82,7 @@ erDiagram
     nvarchar Status
   }
 
+  ROLE ||--o{ USER : assigned_to
   USER ||--o| STUDENT_PROFILE : has
   USER ||--o| LECTURER_PROFILE : has
   USER ||--o{ LECTURER_CAPACITY : is_lecturer

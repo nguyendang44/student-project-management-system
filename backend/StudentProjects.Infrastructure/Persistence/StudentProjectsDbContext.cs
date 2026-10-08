@@ -4,11 +4,13 @@ using StudentProjects.Domain.Entities;
 namespace StudentProjects.Infrastructure.Persistence;
 
 /// <summary>
-/// Week 3 relational model proposal. No migrations or database operations run on startup.
+/// Week 3 relational model plus functional Users/Roles authentication schema.
+/// No automatic migrations run on startup; apply using dotnet ef database update.
 /// Business invariants spanning multiple rows still require transactional application logic.
 /// </summary>
 public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbContext> options) : DbContext(options)
 {
+    public DbSet<Role> Roles => Set<Role>();
     public DbSet<User> Users => Set<User>();
     public DbSet<StudentProfile> Students => Set<StudentProfile>();
     public DbSet<LecturerProfile> Lecturers => Set<LecturerProfile>();
@@ -39,13 +41,26 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
         // Deletion semantics and sensitive-data retention will be decided before production.
         const DeleteBehavior onDelete = DeleteBehavior.NoAction;
 
+        modelBuilder.Entity<Role>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(32).IsRequired();
+            e.HasIndex(x => x.Name).IsUnique();
+            var at = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            e.HasData(
+                new { Id = RoleIds.Student, Name = "Student", CreatedAt = at, UpdatedAt = at },
+                new { Id = RoleIds.Lecturer, Name = "Lecturer", CreatedAt = at, UpdatedAt = at },
+                new { Id = RoleIds.Admin, Name = "Admin", CreatedAt = at, UpdatedAt = at });
+        });
+
         modelBuilder.Entity<User>(e =>
         {
             e.Property(x => x.FullName).HasMaxLength(200).IsRequired();
             e.Property(x => x.Email).HasMaxLength(256).IsRequired();
             e.Property(x => x.PasswordHash).HasMaxLength(512).IsRequired();
-            e.Property(x => x.Role).HasConversion<string>().HasMaxLength(32).IsRequired();
+            e.HasOne(x => x.Role).WithMany().HasForeignKey(x => x.RoleId).OnDelete(onDelete);
             e.HasIndex(x => x.Email).IsUnique();
+            e.HasIndex(x => x.RoleId);
+            e.ToTable(t => t.HasCheckConstraint("CK_Users_TokenVersion", "[TokenVersion] >= 0"));
         });
 
         modelBuilder.Entity<StudentProfile>(e =>
@@ -234,5 +249,30 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
             e.Property(x => x.Value).HasMaxLength(4000).IsRequired();
             e.HasIndex(x => x.Key).IsUnique();
         });
+
+        // InitialAuth migration must create only Users and Roles. Other modules are
+        // drafted in the model but their schema is deliberately NOT migrated yet.
+        // Remove an exclusion in a later feature-specific migration after its rules are approved.
+        modelBuilder.Entity<StudentProfile>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<LecturerProfile>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<RegistrationPeriod>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<LecturerCapacity>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<Topic>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<TopicStateHistory>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<TopicRegistration>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<LecturerRequest>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<Project>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<Milestone>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<ProgressUpdate>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<MilestoneSubmission>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<ProjectEvaluation>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<RepositoryLink>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<CodeAnalysisReport>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<Notification>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<AutomationRun>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<SystemError>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<AuditEntry>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<SystemSetting>().ToTable(t => t.ExcludeFromMigrations());
+
     }
 }

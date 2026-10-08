@@ -7,10 +7,16 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureSkeleton(this IServiceCollection services, IConfiguration configuration)
     {
-        // Optional: the scaffold starts without a database. Set connection string after schema approval.
-        var connection = configuration.GetConnectionString("Default");
-        if (!string.IsNullOrWhiteSpace(connection))
-            services.AddDbContext<StudentProjectsDbContext>(options => options.UseSqlServer(connection));
+        // WebApplicationFactory may apply test configuration after Program's service-registration phase.
+        // Resolve the real connection only when the DbContext options are constructed; this
+        // also lets integration tests replace the SQL Server provider with EF Core InMemory.
+        services.AddDbContext<StudentProjectsDbContext>(options =>
+        {
+            var connection = configuration.GetConnectionString("Default");
+            if (string.IsNullOrWhiteSpace(connection))
+                throw new InvalidOperationException("Configure ConnectionStrings:Default for SQL Server.");
+            options.UseSqlServer(connection);
+        });
         return services;
     }
 }

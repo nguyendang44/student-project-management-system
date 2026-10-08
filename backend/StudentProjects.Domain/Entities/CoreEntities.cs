@@ -3,15 +3,29 @@ using StudentProjects.Domain.Enums;
 
 namespace StudentProjects.Domain.Entities;
 
-// Week 3 conceptual model. No business behavior or database migration is active.
-// UserId references are role-validated by future application services.
+// Authentication stores roles relationally and hashes passwords, never plaintext.
+public static class RoleIds
+{
+    public static readonly Guid Student = Guid.Parse("11111111-1111-4111-8111-111111111111");
+    public static readonly Guid Lecturer = Guid.Parse("22222222-2222-4222-8222-222222222222");
+    public static readonly Guid Admin = Guid.Parse("33333333-3333-4333-8333-333333333333");
+}
+
+public sealed class Role : Entity
+{
+    public string Name { get; set; } = string.Empty;
+}
+
 public sealed class User : Entity
 {
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
-    public UserRole Role { get; set; }
+    public Guid RoleId { get; set; }
+    public Role Role { get; set; } = null!;
     public bool IsActive { get; set; } = true;
+    // Logout increments this value to invalidate all previously issued access tokens.
+    public int TokenVersion { get; set; }
 }
 
 public sealed class StudentProfile : Entity

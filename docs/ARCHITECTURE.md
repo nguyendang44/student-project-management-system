@@ -30,3 +30,8 @@ API endpoints declare their future method/path and access-role boundary. Each on
 ## Week 3 update (provisional)
 
 Database mappings for 21 tables have been added to `StudentProjectsDbContext` (foreign keys, lengths, indexes, check constraints and per-period lecturer capacity). See [`ERD.md`](ERD.md) and [`CLASS-DIAGRAM.md`](CLASS-DIAGRAM.md). The API startup/health endpoint and 501 placeholders **do not change**. No DB is instantiated or migrated at startup. Full compilation with the .NET 10 SDK and SQL Server integration tests remain required before treating the schema as verified.
+
+
+## Auth v0.3 implementation delta
+
+Auth is now functional (Users -> Roles, PasswordHasher, JWT, GET /auth/me, POST /auth/logout revokes account tokens). Backend role policies continue to protect the other 501 stubs; frontend no longer uses preview-role switching. SQL Server LocalDB migration needs to be generated/applied on the Windows host. See `AUTH-IMPLEMENTATION.md`. Earlier references to 501-only auth apply to v0.2 and earlier.

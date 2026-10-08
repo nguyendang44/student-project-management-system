@@ -9,12 +9,17 @@ classDiagram
     +DateTimeOffset CreatedAt
     +DateTimeOffset UpdatedAt
   }
+  class Role {
+    +string Name
+  }
   class User {
     +string FullName
     +string Email
     +string PasswordHash
-    +UserRole Role
+    +Guid RoleId
+    +Role Role
     +bool IsActive
+    +int TokenVersion
   }
   class StudentProfile {
     +Guid UserId
@@ -90,6 +95,8 @@ classDiagram
     +AnalysisStatus Status
   }
 
+  Entity <|-- Role
+  Role "1" --> "0..*" User : assigned_to
   Entity <|-- User
   Entity <|-- StudentProfile
   Entity <|-- LecturerProfile

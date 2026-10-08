@@ -1,25 +1,27 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import AppLayout from '../components/AppLayout.vue'
 import { modules } from './modules'
-import { usePreviewStore } from '../stores/preview'
+import { useAuthStore } from '../stores/auth'
 const moduleRoutes: RouteRecordRaw[] = modules.map((mod) => ({
   path: mod.path.slice(1), name: mod.id,
   component: () => import('../views/ModuleView.vue'),
   props: { moduleId: mod.id },
-  meta: { title: mod.title, previewRoles: mod.roles },
+  meta: { title: mod.title, allowedRoles: mod.roles },
 }))
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/login', component: () => import('../views/LoginView.vue'), meta: { title: 'Đăng nhập' } },
-    { path: '/', component: AppLayout, children: [ { path: '', redirect: '/dashboard' }, ...moduleRoutes ] },
+    { path: '/', component: AppLayout, children: [{ path: '', redirect: '/dashboard' }, ...moduleRoutes] },
     { path: '/:pathMatch(.*)*', component: () => import('../views/NotFoundView.vue') },
   ],
 })
 router.beforeEach((to) => {
-  // Client-side preview navigation only. Security is always enforced by the future server handlers.
-  const roles = to.meta.previewRoles as string[] | undefined
-  if (roles && !roles.includes(usePreviewStore().role)) return '/dashboard'
+  const auth = useAuthStore()
+  if (to.path === '/login') return auth.isAuthenticated ? '/dashboard' : true
+  if (!auth.isAuthenticated) return { path: '/login', query: { next: to.fullPath } }
+  const roles = to.meta.allowedRoles as string[] | undefined
+  if (roles && (!auth.role || !roles.includes(auth.role))) return '/dashboard'
   return true
 })
 export default router

@@ -1,4 +1,4 @@
-import type { Role } from '../stores/preview'
+import type { Role } from '../features/auth/auth.types'
 export type ModuleId =
   | 'dashboard'
   | 'topics'

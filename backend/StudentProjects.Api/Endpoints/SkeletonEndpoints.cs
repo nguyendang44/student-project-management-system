@@ -16,9 +16,7 @@ public static class SkeletonEndpoints
     public static void MapSkeletonEndpoints(this IEndpointRouteBuilder app)
     {
         var api = app.MapGroup("/api/v1");
-        // Authentication endpoints are PUBLIC but NOT functional.
-        api.MapPost("/auth/login", () => Pending("auth", "UC-01"));
-        api.MapPost("/auth/logout", () => Pending("auth", "UC-02")).RequireAuthorization();
+        // Auth endpoints are implemented separately in AuthEndpoints.
 
         api.MapGet("/dashboard", () => Pending("dashboard", "UC-35")).RequireAuthorization(policy => policy.RequireRole("Student","Lecturer","Admin"));
         api.MapGet("/topics", () => Pending("topics", "UC-05,UC-06")).RequireAuthorization(policy => policy.RequireRole("Student","Lecturer","Admin"));
