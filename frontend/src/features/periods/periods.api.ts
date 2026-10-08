@@ -1,5 +1,7 @@
 import { request } from '../../api/client'
-/** Planned endpoint only. Backend deliberately responds 501 until this feature is implemented. */
+import type { RegistrationPeriod } from '../topics/topics.types'
 export const periodsApi = {
-  list: (token?: string) => request<unknown>('/registration-periods', { method: 'GET' }, token),
+  list: () => request<RegistrationPeriod[]>('/registration-periods'),
+  create: (body:{name:string;startsAt:string;endsAt:string;isOpen:boolean}) => request<RegistrationPeriod>('/registration-periods',{method:'POST',body:JSON.stringify(body)}),
+  setState: (id:string,isOpen:boolean) => request<RegistrationPeriod>(`/registration-periods/${id}/status`,{method:'PATCH',body:JSON.stringify({isOpen})}),
 }

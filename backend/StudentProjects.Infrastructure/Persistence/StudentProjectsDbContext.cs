@@ -123,6 +123,10 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
             e.HasOne<User>().WithMany().HasForeignKey(x => x.StudentUserId).OnDelete(onDelete);
             e.HasOne<RegistrationPeriod>().WithMany().HasForeignKey(x => x.RegistrationPeriodId).OnDelete(onDelete);
             e.HasIndex(x => new { x.StudentUserId, x.RegistrationPeriodId, x.Status });
+            // Multiple active topic choices are allowed in the same registration period.
+            // Uniqueness is per (student, topic), regardless of registration period.
+            e.HasIndex(x => new { x.StudentUserId, x.TopicId }).IsUnique()
+                .HasFilter("[Status] IN ('PENDING','ACCEPTED')");
         });
 
         modelBuilder.Entity<LecturerRequest>(e =>
@@ -250,15 +254,12 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
             e.HasIndex(x => x.Key).IsUnique();
         });
 
-        // v0.4: Students, Lecturers and AuditEntries are now included in migrations.
-        // Other draft modules remain excluded until their respective feature migrations.
+        // InitialAuth migration must create only Users and Roles. Other modules are
+        // drafted in the model but their schema is deliberately NOT migrated yet.
+        // Remove an exclusion in a later feature-specific migration after its rules are approved.
         modelBuilder.Entity<StudentProfile>().ToTable("Students");
         modelBuilder.Entity<LecturerProfile>().ToTable("Lecturers");
-        modelBuilder.Entity<RegistrationPeriod>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<LecturerCapacity>().ToTable(t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<Topic>().ToTable(t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<TopicStateHistory>().ToTable(t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<TopicRegistration>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<LecturerRequest>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<Project>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<Milestone>().ToTable(t => t.ExcludeFromMigrations());

@@ -85,10 +85,11 @@ app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "StudentProjects API + Auth and User Management v0.4" }));
+app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "StudentProjects API skeleton + Auth v0.3" }));
 app.MapAuthEndpoints();
 app.MapUserManagementEndpoints();
 app.MapSkeletonEndpoints();
+app.MapTopicEndpoints();
 await DevAdminSeeder.SeedAsync(app);
 app.Run();
 

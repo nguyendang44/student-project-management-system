@@ -29,3 +29,8 @@
 .user-alert{margin:18px 0;padding:12px 16px;border-radius:9px;font-size:13px}.user-alert.error{background:#fff1ef;color:#a21f13;border:1px solid #ffd0c8}.user-alert.success{background:#eaf8f2;color:#13734b;border:1px solid #bce7d3}
 .profile-link{font-size:12px;font-weight:700;color:#244fb9;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
 @media(max-width:700px){.user-form{grid-template-columns:1fr}.user-filters input{min-width:170px}.users-panel td{min-width:110px}.profile-link{display:none}}
+
+/* Topic Management v0.5 */
+.user-form textarea{min-height:100px;resize:vertical;padding:10px 12px;border:1px solid #d9e1ec;background:#fff;border-radius:8px;color:#253b5b;font:inherit}
+.users-panel td{font-size:13px;padding:12px;border-bottom:1px solid #eef1f5;vertical-align:top}
+.users-panel h3{margin:0 0 14px}

@@ -6,6 +6,7 @@ const moduleRoutes: RouteRecordRaw[] = modules.map((mod) => ({
   path: mod.path.slice(1), name: mod.id,
   component: mod.id === 'users' ? () => import('../views/UsersView.vue')
     : mod.id === 'lecturers' ? () => import('../views/LecturerDirectoryView.vue')
+    : ['topics', 'proposals', 'topicregistrations', 'periods'].includes(mod.id) ? () => import('../views/TopicsManagementView.vue')
     : () => import('../views/ModuleView.vue'),
   props: { moduleId: mod.id },
   meta: { title: mod.title, allowedRoles: mod.roles },

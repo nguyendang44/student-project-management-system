@@ -24,13 +24,13 @@ async function signOut() {
         <p class="nav-title">{{ group.name }}</p>
         <RouterLink v-for="item in group.items" :key="item.id" :to="item.path" class="nav-link">{{ item.title }}</RouterLink>
       </nav></div>
-      <div class="sidebar-footer"><span class="version-tag">USER MANAGEMENT v0.4</span><p>Auth, quản lý tài khoản và hồ sơ thật · Các module khác vẫn là skeleton</p></div>
+      <div class="sidebar-footer"><span class="version-tag">TOPIC MANAGEMENT v0.5</span><p>Auth, User Management, Topic Management dùng API thật; module còn lại là skeleton</p></div>
     </aside>
     <div class="main-column">
       <header class="topbar"><div><div class="eyebrow">HỆ THỐNG QUẢN LÝ DỰ ÁN SINH VIÊN</div><h1>{{ route.meta.title || 'Dashboard' }}</h1></div>
         <div class="account-summary"><RouterLink v-if="auth.role !== 'Admin'" class="profile-link" to="/profile">Hồ sơ của tôi</RouterLink><div><strong>{{ auth.currentUser?.fullName }}</strong><small>{{ auth.currentUser?.role }} · {{ auth.currentUser?.email }}</small></div><button type="button" @click="signOut">Đăng xuất</button></div>
       </header>
-      <main class="main-content"><div class="notice"><strong>Authentication & User Management đã hoạt động.</strong> Quản lý người dùng, hồ sơ và danh bạ giảng viên có API thật; các module nghiệp vụ khác vẫn ở dạng skeleton.</div><RouterView /></main>
+      <main class="main-content"><div class="notice"><strong>Authentication, User Management và Topic Management đã triển khai API.</strong> Một số module nghiệp vụ khác vẫn ở dạng skeleton.</div><RouterView /></main>
     </div>
   </div>
 </template>
