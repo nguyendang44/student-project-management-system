@@ -11,3 +11,12 @@
 ## Security and implementation notes
 
 The frontend `Student`/`Lecturer`/`Admin` selector controls only visible preview menus. It is not an authenticated account or a security test. All API business routes are explicit 501 handlers, protected by the declared JWT/role boundary where appropriate; the login route itself returns 501, and no tokens are issued. Real authentication, ownership checks, capacity transactions, migrations and jobs must be implemented before deployment.
+
+## Week 3 (v0.2) QA supplement
+
+- **Scope:** only domain entity model, proposed EF Core mapping, architecture/ERD/class-diagram docs, upgrade instructions and a static verifier. Frontend source and API endpoint implementation remain unchanged from v0.1.
+- **Structural check:** `python scripts/verify_database_design.py` passed. 21 domain entity classes = 21 DbSets = 21 distinct tables in diagrams; 33 foreign-key fields have Fluent API `HasForeignKey` mappings; five named SQL check constraints present.
+- **Invariant separation:** per-registration-period lecturer capacity plus rowversion/check constraint added at data-model level, without claiming concurrency-safe acceptance has been implemented. Workflow invariants remain TODOs for Application-level transaction tests.
+- **Not verified in authoring environment:** no `dotnet` executable; .NET 10 compilation, EF Core migration generation, SQL Server integration, SQL check constraint behavior, and real concurrent requests have NOT been tested. User should execute `dotnet build backend/StudentProjects.sln` locally before treating model mapping as build-verified.
+- **No API/database behavior change:** `/health` and 501 endpoints remain as they were. No SQL connection required to start the skeleton without a configured connection string. No new migrations created.
+- **Open design decisions:** see `docs/DATABASE-DESIGN.md`, especially team-project membership, one-to-many vs one-to-one GitHub links, registration uniqueness under rejection/withdrawal, and per-period lecturer capacity policy.

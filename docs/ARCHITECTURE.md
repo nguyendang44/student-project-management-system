@@ -25,3 +25,8 @@ API endpoints declare their future method/path and access-role boundary. Each on
 4. Implement projects, milestones, submissions and lecturer approvals.
 5. Add scheduled jobs, notification delivery, GitHub API and async AI analysis pipeline.
 6. Add role-wise API/UI integration tests and monitoring.
+
+
+## Week 3 update (provisional)
+
+Database mappings for 21 tables have been added to `StudentProjectsDbContext` (foreign keys, lengths, indexes, check constraints and per-period lecturer capacity). See [`ERD.md`](ERD.md) and [`CLASS-DIAGRAM.md`](CLASS-DIAGRAM.md). The API startup/health endpoint and 501 placeholders **do not change**. No DB is instantiated or migrated at startup. Full compilation with the .NET 10 SDK and SQL Server integration tests remain required before treating the schema as verified.
