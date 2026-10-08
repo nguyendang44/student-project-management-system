@@ -1,0 +1,17 @@
+node_modules/
+**/node_modules/
+dist/
+.vite/
+**/bin/
+**/obj/
+.vs/
+.idea/
+.env
+.env.*
+!.env.example
+!.env.development.example
+*.user
+*.db
+*.sqlite
+coverage/
+.DS_Store
