@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { HttpError } from '../api/client'
 import { periodsApi } from '../features/periods/periods.api'
@@ -10,6 +11,7 @@ import type { LecturerCapacityV06, LecturerRequestV06, ProjectV06, JointTopicDra
 import type { ModuleId } from '../app/modules'
 const props = defineProps<{moduleId: ModuleId}>()
 const auth = useAuthStore()
+const route = useRoute()
 const role = computed(() => auth.role)
 const periods = ref<RegistrationPeriod[]>([])
 const periodId = ref('')
@@ -21,7 +23,8 @@ const topicId = ref('')
 const jointTopicId = ref('new')
 const jointLecturerId = ref('')
 const allTopics = ref<Topic[]>([])
-const jointDraft = ref<JointTopicDraft>({ title: '', description: '', objective: '', expectedContent: '', proposedTechnology: '' })
+const blankDraft = (): JointTopicDraft => ({ title: '', description: '', objective: '', expectedContent: '', proposedTechnology: '' })
+const jointDraft = ref<JointTopicDraft>(blankDraft())
 const revisingId = ref('')
 const revisingDraft = ref<JointTopicDraft>({ title: '', description: '', objective: '', expectedContent: '', proposedTechnology: '' })
 const maxStudents = ref(1)
@@ -33,6 +36,7 @@ const activePeriod = computed(() => selectedPeriod.value?.isOpen &&
   new Date(selectedPeriod.value.endsAt).getTime() > Date.now())
 const publicTopics = computed(() => allTopics.value.filter(t => t.isRegistrationOpen &&
   (t.status === 'APPROVED' || t.status === 'PUBLISHED') && !t.reservedForStudentUserId))
+const originalTopic = computed(() => publicTopics.value.find(t => t.id === jointTopicId.value))
 const ownPendingProposals = computed(() => {
   const ids = new Set<string>()
   return requests.value.filter(r => r.isCombined && ['PENDING', 'OFFERED', 'REVISION_REQUIRED'].includes(r.status) &&
@@ -43,6 +47,49 @@ const ownPendingProposals = computed(() => {
     }).filter(r => !publicTopics.value.some(t => t.id === r.topicId) &&
       !topics.value.some(t => t.id === r.topicId))
 })
+// Copy the public topic into an application draft. Never mutate the source Topic object.
+function selectTopicDraft(id: string) {
+  if (id === 'new') { jointDraft.value = blankDraft(); return }
+  const source = publicTopics.value.find(t => t.id === id)
+  if (source) {
+    jointDraft.value = {
+      title: source.title, description: source.description,
+      objective: source.objective ?? 'Chưa xác định',
+      expectedContent: source.expectedContent ?? 'Chưa xác định',
+      proposedTechnology: source.proposedTechnology ?? 'Chưa xác định'
+    }
+    return
+  }
+  const pending = ownPendingProposals.value.find(r => r.topicId === id)
+  jointDraft.value = pending ? {
+    title: pending.draftTitle || pending.topicTitle,
+    description: pending.draftDescription || '',
+    objective: pending.draftObjective || '',
+    expectedContent: pending.draftExpectedContent || '',
+    proposedTechnology: pending.draftProposedTechnology || ''
+  } : blankDraft()
+}
+watch(jointTopicId, id => selectTopicDraft(id))
+async function applyTopicFromLink() {
+  if (props.moduleId !== 'lecturerrequests' || role.value !== 'Student') return
+  const id = route.query.topicId
+  if (typeof id !== 'string' || !id) return
+  if (!publicTopics.value.some(t => t.id === id)) {
+    // The catalogue is paged (100 rows); fetch a selected topic directly if it is off-page.
+    try {
+      const chosen = await topicsApi.get(id)
+      if (chosen.isRegistrationOpen && !chosen.reservedForStudentUserId &&
+          ['APPROVED', 'PUBLISHED'].includes(chosen.status)) {
+        allTopics.value = [...allTopics.value.filter(t => t.id !== id), chosen]
+      } else {
+        error.value = 'Đề tài được chọn đã đóng đăng ký hoặc đã có sinh viên.'
+        return
+      }
+    } catch (e) { error.value = message(e); return }
+  }
+  jointTopicId.value = id
+}
+watch(() => route.query.topicId, () => { void applyTopicFromLink() })
 const offeredRequests = computed(() => requests.value.filter(r => r.status === 'OFFERED'))
 const existingRequest = (lId: string) => requests.value.some(r => r.lecturerUserId === lId &&
   r.topicId === topicId.value && r.registrationPeriodId === periodId.value && r.status === 'PENDING')
@@ -70,6 +117,7 @@ async function load() {
         topics.value = await topicsApi.mine()
         if (!topics.value.some(t => t.id === topicId.value)) topicId.value = topics.value[0]?.id || ''
         allTopics.value = (await topicsApi.list('', 1, 100)).items
+        await applyTopicFromLink()
         capacities.value = periodId.value ? await supervisionApi.capacities(periodId.value) : []
       }
     }
@@ -115,8 +163,8 @@ async function submitJoint() {
   }
   const chosen = capacities.value.find(c => c.lecturerUserId === jointLecturerId.value)
   if (!chosen || chosen.remaining <= 0) { error.value = 'Giảng viên đã đủ số lượng hướng dẫn.'; return }
-  if (jointTopicId.value === 'new' && Object.values(jointDraft.value).some(s => !s.trim())) {
-    error.value = 'Nhập đầy đủ năm trường của đề tài tự đề xuất.'; return
+  if (Object.values(jointDraft.value).some(s => !s.trim())) {
+    error.value = 'Nhập đầy đủ năm trường nội dung đề tài.'; return
   }
   if (jointTopicId.value !== 'new' && !publicTopics.value.some(t => t.id === jointTopicId.value) &&
       !ownPendingProposals.value.some(r => r.topicId === jointTopicId.value)) {
@@ -127,7 +175,8 @@ async function submitJoint() {
   try {
     await supervisionApi.combined({ topicId: jointTopicId.value === 'new' ? null : jointTopicId.value,
       lecturerUserId: jointLecturerId.value, registrationPeriodId: periodId.value,
-      draft: jointTopicId.value === 'new' ? jointDraft.value : null })
+      // Backend stores this draft on the lecturer request and never edits the public topic.
+      draft: { ...jointDraft.value } })
     await load(); success.value = 'Đã gửi yêu cầu. Khi giảng viên đồng ý, bạn sẽ được chọn giảng viên cuối cùng.'
   } catch (e) { error.value = message(e) } finally { loading.value = false }
 }
@@ -224,19 +273,28 @@ onMounted(() => void load())
           <option v-for="t in publicTopics" :key="t.id" :value="t.id">{{t.title}}</option>
         </select>
       </label>
-      <template v-if="jointTopicId === 'new'">
-        <label>Tên đề tài<input v-model="jointDraft.title" required maxlength="300" /></label>
-        <label>Mô tả<textarea v-model="jointDraft.description" required maxlength="4000" /></label>
-        <label>Mục tiêu<textarea v-model="jointDraft.objective" required maxlength="2000" /></label>
-        <label>Nội dung dự kiến<textarea v-model="jointDraft.expectedContent" required maxlength="2000" /></label>
-        <label>Công nghệ dự kiến<textarea v-model="jointDraft.proposedTechnology" required maxlength="1000" /></label>
-      </template>
-      <label>Giảng viên
+      <label>Giảng viên hướng dẫn
         <select v-model="jointLecturerId" required>
           <option value="" disabled>Chọn giảng viên</option>
           <option v-for="c in capacities.filter(c => c.remaining > 0)" :key="c.lecturerUserId" :value="c.lecturerUserId">{{c.lecturerName}} · Còn {{c.remaining}} chỗ</option>
         </select>
       </label>
+      <p v-if="originalTopic" class="secondary-cell">Bản đề xuất riêng của bạn từ “{{originalTopic.title}}”. Bạn có thể sửa các ý bên dưới; đề tài gốc không thay đổi. Giảng viên sẽ nhận xét hoặc yêu cầu sửa trước khi đồng ý.</p>
+      <details v-if="originalTopic"><summary>Xem nội dung đề tài gốc (chỉ xem)</summary>
+        <p><strong>Tên:</strong> {{originalTopic.title}}</p>
+        <p><strong>Mô tả:</strong> {{originalTopic.description}}</p>
+        <p><strong>Mục tiêu:</strong> {{originalTopic.objective}}</p>
+        <p><strong>Nội dung:</strong> {{originalTopic.expectedContent}}</p>
+        <p><strong>Công nghệ:</strong> {{originalTopic.proposedTechnology}}</p>
+      </details>
+      <p v-if="jointTopicId !== 'new' && !originalTopic" class="secondary-cell">Bạn có thể điều chỉnh bản đề xuất này để gửi thêm cho giảng viên khác.</p>
+      <template v-if="jointTopicId">
+        <label>{{jointTopicId === 'new' ? 'Tên đề tài' : 'Tên đề tài đề xuất'}}<input v-model="jointDraft.title" required maxlength="300" /></label>
+        <label>Mô tả<textarea v-model="jointDraft.description" required maxlength="4000" /></label>
+        <label>Mục tiêu<textarea v-model="jointDraft.objective" required maxlength="2000" /></label>
+        <label>Nội dung dự kiến<textarea v-model="jointDraft.expectedContent" required maxlength="2000" /></label>
+        <label>Công nghệ dự kiến<textarea v-model="jointDraft.proposedTechnology" required maxlength="1000" /></label>
+      </template>
       <button class="action-primary" type="submit" :disabled="loading || !activePeriod">Gửi yêu cầu đến giảng viên</button>
     </form>
   </article>
@@ -272,7 +330,9 @@ onMounted(() => void load())
     <div class="table-scroller"><table><thead><tr><th>Đề tài</th><th>Sinh viên</th><th>Giảng viên</th><th>Đợt</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>
       <tr v-if="!requests.length"><td colspan="6" class="empty-cell">Chưa có yêu cầu đăng ký hướng dẫn.</td></tr>
       <tr v-for="r in requests" :key="r.id"><td>{{r.isCombined ? (r.draftTitle || r.topicTitle) : r.topicTitle}}
-          <details v-if="r.isCombined"><summary>Xem nội dung đề tài</summary>
+          <details v-if="r.isCombined"><summary>Xem bản đề xuất sinh viên</summary>
+            <p><strong>Đề tài gốc:</strong> {{r.topicTitle}}</p>
+            <p><strong>Tên đề tài đề xuất:</strong> {{r.draftTitle}}</p>
             <p><strong>Mô tả:</strong> {{r.draftDescription}}</p>
             <p><strong>Mục tiêu:</strong> {{r.draftObjective}}</p>
             <p><strong>Nội dung:</strong> {{r.draftExpectedContent}}</p>

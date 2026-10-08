@@ -22,7 +22,6 @@ const rejectionNotes = reactive<Record<string,string>>({})
 const total = ref(0), page = ref(1), search = ref('')
 const editor = ref<'none'|'create'|'edit'|'propose'>('none'), editedId = ref('')
 const values = reactive<TopicPayload>({title:'',description:'',objective:'',expectedContent:'',proposedTechnology:''})
-const topicToRegister = ref<Topic|null>(null), selectedPeriodId = ref('')
 const periodForm = reactive({ name:'', startsAt:'', endsAt:'', isOpen:true })
 const canManage = (t:Topic) => role.value === 'Admin' ||
  (role.value === 'Lecturer' && (t.proposedByUserId === auth.currentUser?.userId || ['CANCELLED','PUBLISHED'].includes(t.status))) ||
@@ -34,7 +33,6 @@ const canToggleRegistration = (t:Topic) => !t.reservedForStudentUserId &&
  (t.proposedByUserId === auth.currentUser?.userId || ['CANCELLED','PUBLISHED'].includes(t.status))) &&
  (t.status === 'CANCELLED' || t.status === 'PUBLISHED' ||
   t.status === 'APPROVED')
-const availablePeriods = computed(() => periods.value.filter(p => p.isOpen && new Date(p.startsAt).getTime() <= Date.now() && new Date(p.endsAt).getTime() > Date.now()))
 const isReservedForMe = (t:Topic) => !!t.reservedForStudentUserId && t.reservedForStudentUserId === auth.currentUser?.userId
 const hasPendingRequest = (t:Topic) => registrations.value.some(r => r.topicId === t.id && r.status === 'PENDING')
 function errMessage(err:unknown){return err instanceof HttpError ? (err.payload?.message || `API error (${err.status})`) : err instanceof Error ? err.message : 'Lỗi khi truy cập dữ liệu.'}
@@ -42,7 +40,7 @@ function clearAlert(){error.value='';success.value=''}
 async function reload(){
   busy.value=true; error.value=''
   try {
-    if (props.moduleId === 'topics') { const data=await topicsApi.list(search.value,page.value);topics.value=data.items;total.value=data.total;periods.value=await periodsApi.list();if(role.value==='Student'){registrations.value=await topicregistrationsApi.list();mineTopics.value=await topicsApi.mine()} }
+    if (props.moduleId === 'topics') { const data=await topicsApi.list(search.value,page.value);topics.value=data.items;total.value=data.total;if(role.value==='Student'){registrations.value=await topicregistrationsApi.list();mineTopics.value=await topicsApi.mine()} }
     if (props.moduleId === 'proposals') proposals.value=await proposalsApi.list()
     if (props.moduleId === 'topicregistrations') { registrations.value=await topicregistrationsApi.list(); mineTopics.value=role.value==='Student'?await topicsApi.mine():[] }
     if (props.moduleId === 'periods') periods.value=await periodsApi.list()
@@ -72,15 +70,15 @@ async function deleteTopic(t:Topic){
   if(!canDeleteTopic(t))return
   if(!window.confirm(`Xóa vĩnh viễn đề tài “${t.title}”? Các lịch sử đăng ký của đề tài cũng sẽ bị xóa vĩnh viễn. Không thể xóa đề tài đang có người sở hữu hoặc Project.`))return
   busy.value=true;clearAlert()
-  try{await topicsApi.remove(t.id);editor.value='none';topicToRegister.value=null;
+  try{await topicsApi.remove(t.id);editor.value='none';
     if(topics.value.length===1&&page.value>1)page.value--;
     await reload();success.value='Đã xóa đề tài.'}
   catch(e){error.value=errMessage(e)}finally{busy.value=false}
 }
-function startRegister(t:Topic){clearAlert();topicToRegister.value=t;selectedPeriodId.value=availablePeriods.value[0]?.id || ''}
-async function register(){if(!topicToRegister.value || !selectedPeriodId.value) return
-  busy.value=true;clearAlert();try{await topicregistrationsApi.create(topicToRegister.value.id,selectedPeriodId.value);success.value='Đã gửi yêu cầu đăng ký đề tài.';topicToRegister.value=null;await reload()}
-  catch(e){error.value=errMessage(e)}finally{busy.value=false}
+function startRegister(t:Topic){
+  clearAlert()
+  // Direct students to the joint application form; do not create a standalone topic registration.
+  void router.push({ path:'/lecturer-requests', query:{ topicId:t.id } })
 }
 async function decideRegistration(r:TopicRegistration,accept:boolean){
   if(!window.confirm(accept?`Chấp nhận sinh viên ${r.studentName} và khóa đề tài ${r.topicTitle}? Toàn bộ đăng ký khác (kể cả lịch sử đã hủy hoặc từ chối) của sinh viên sẽ bị xóa vĩnh viễn.`:`Từ chối yêu cầu của ${r.studentName}?`))return
@@ -108,7 +106,7 @@ async function createPeriod(){busy.value=true;clearAlert();try{
 }catch(e){error.value=errMessage(e)}finally{busy.value=false}}
 async function togglePeriod(p:RegistrationPeriod){busy.value=true;clearAlert();try{await periodsApi.setState(p.id,!p.isOpen);success.value='Đã cập nhật đợt đăng ký.';await reload()}catch(e){error.value=errMessage(e)}finally{busy.value=false}}
 function formatDate(iso:string){return new Date(iso).toLocaleString('vi-VN')}
-watch(()=>props.moduleId,()=>{editor.value='none';topicToRegister.value=null;void reload()})
+watch(()=>props.moduleId,()=>{editor.value='none';void reload()})
 onMounted(()=>void reload())
 </script>
 <template>
@@ -146,7 +144,5 @@ onMounted(()=>void reload())
   <article v-if="editor!=='none'" class="panel user-editor"><div class="panel-heading"><h3>{{editor==='edit'?'Chỉnh sửa đề tài':editor==='propose'?'Đề xuất đề tài':'Tạo đề tài'}}</h3><button class="action-secondary" type="button" @click="editor='none'">Đóng</button></div>
     <form class="user-form" @submit.prevent="saveTopic"><label>Tên đề tài<input v-model.trim="values.title" maxlength="300" required /></label><label>Mô tả<textarea v-model.trim="values.description" maxlength="4000" required /></label><label>Mục tiêu<textarea v-model.trim="values.objective" maxlength="2000" :required="editor==='propose'" /></label><label>Nội dung dự kiến<textarea v-model.trim="values.expectedContent" maxlength="2000" :required="editor==='propose'" /></label><label>Công nghệ dự kiến<input v-model.trim="values.proposedTechnology" maxlength="1000" :required="editor==='propose'" /></label><button class="action-primary" type="submit" :disabled="busy">{{busy?'Đang lưu...':'Lưu đề tài'}}</button></form>
   </article>
-  <article v-if="topicToRegister&&moduleId==='topics'" class="panel user-editor"><div class="panel-heading"><h3>Đăng ký đề tài: {{topicToRegister.title}}</h3><button class="action-secondary" type="button" @click="topicToRegister=null">Đóng</button></div>
-    <form class="user-form" @submit.prevent="register"><label>Đợt đăng ký<select v-model="selectedPeriodId" required><option value="" disabled>Chọn đợt</option><option v-for="p in availablePeriods" :key="p.id" :value="p.id">{{p.name}}</option></select></label><p v-if="!availablePeriods.length">Hiện chưa có đợt đăng ký hợp lệ. Vui lòng liên hệ Admin.</p><button class="action-primary" type="submit" :disabled="busy||!selectedPeriodId">Gửi đăng ký</button></form>
-  </article>
+
 </template>
