@@ -1,7 +1,7 @@
 import { request } from '../../api/client'
 import type { Topic, TopicPage, TopicPayload } from './topics.types'
 export const topicsApi = {
-  list: (search = '', page = 1) => request<TopicPage>(`/topics?search=${encodeURIComponent(search)}&page=${page}&pageSize=20`),
+  list: (search = '', page = 1, pageSize = 20) => request<TopicPage>(`/topics?search=${encodeURIComponent(search)}&page=${page}&pageSize=${pageSize}`),
   get: (id:string) => request<Topic>(`/topics/${id}`),
   mine: () => request<Topic[]>('/topics/mine'),
   withdraw: (id:string) => request<{topicId:string;status:string;reservedForStudentUserId:null}>(`/topics/${id}/withdraw`,{method:'POST'}),

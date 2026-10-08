@@ -94,7 +94,12 @@ public static class TopicEndpoints
         else if (role == "Lecturer") baseQuery = baseQuery.Where(t =>
             t.Status == TopicStatus.APPROVED || t.Status == TopicStatus.PUBLISHED ||
             t.Status == TopicStatus.CANCELLED || t.ProposedByUserId == id ||
-            t.Status == TopicStatus.PENDING_APPROVAL);
+            (t.Status == TopicStatus.PENDING_APPROVAL &&
+                (!db.LecturerRequests.Any(r => r.TopicId == t.Id && r.IsCombined &&
+                    (r.Status == RequestStatus.PENDING || r.Status == RequestStatus.REVISION_REQUIRED)) ||
+                 db.LecturerRequests.Any(r => r.TopicId == t.Id && r.IsCombined &&
+                    r.LecturerUserId == id &&
+                    (r.Status == RequestStatus.PENDING || r.Status == RequestStatus.REVISION_REQUIRED)))));
         else if (role != "Admin") baseQuery = baseQuery.Where(t => false);
         return baseQuery;
     }
@@ -176,8 +181,9 @@ public static class TopicEndpoints
             await db.Database.SqlQueryRaw<int>(
                 "SELECT CASE WHEN OBJECT_ID(N'dbo.LecturerRequests', N'U') IS NULL THEN 0 ELSE 1 END AS [Value]")
                 .SingleAsync(ct) == 1;
-        if (lecturerRequestTableExists && await db.LecturerRequests.AnyAsync(r => r.TopicId == id, ct))
-            return Conflict("Topic has lecturer requests and cannot be deleted.");
+        if (lecturerRequestTableExists && await db.LecturerRequests.AnyAsync(r => r.TopicId == id &&
+            r.Status == RequestStatus.ACCEPTED, ct))
+            return Conflict("Topic has an accepted lecturer request and cannot be deleted.");
         if (topic.Status is TopicStatus.IN_PROGRESS or TopicStatus.COMPLETED)
             return Conflict("Active or completed topic cannot be deleted.");
         if (topic.Status == TopicStatus.APPROVED &&
@@ -188,6 +194,13 @@ public static class TopicEndpoints
         // Keep these deletes and the topic delete atomic to avoid orphaned rows.
         var registrations = await db.TopicRegistrations.Where(r => r.TopicId == id).ToListAsync(ct);
         var histories = await db.TopicStateHistories.Where(h => h.TopicId == id).ToListAsync(ct);
+        // v0.6: unassigned topic may have old, pending or rejected supervisor requests.
+        // Remove their rows before deleting the topic (foreign key is NoAction).
+        if (lecturerRequestTableExists)
+        {
+            var oldRequests = await db.LecturerRequests.Where(r => r.TopicId == id).ToListAsync(ct);
+            db.LecturerRequests.RemoveRange(oldRequests);
+        }
         db.TopicRegistrations.RemoveRange(registrations);
         db.TopicStateHistories.RemoveRange(histories);
         db.Topics.Remove(topic);
@@ -349,6 +362,9 @@ public static class TopicEndpoints
         var topic = await LockedTopic(db, id, ct);
         if (topic is null) return Results.NotFound();
         if (topic.Status != TopicStatus.PENDING_APPROVAL) return Conflict("Proposal is not pending review.");
+        if (await db.LecturerRequests.AnyAsync(r => r.TopicId == id && r.IsCombined &&
+            (r.Status == RequestStatus.PENDING || r.Status == RequestStatus.REVISION_REQUIRED), ct))
+            return Conflict("This proposal must be reviewed by its selected lecturer in the joint application.");
         if (topic.ProposedByUserId == Actor(principal)) return Results.Forbid();
         var proposerRole = await db.Users.Where(u => u.Id == topic.ProposedByUserId).Select(u => u.Role.Name).SingleOrDefaultAsync(ct);
         if (proposerRole != "Student") return Conflict("Only student proposals can be reviewed.");
@@ -572,6 +588,14 @@ public static class TopicEndpoints
             accepted.Status = RequestStatus.CANCELLED;
             accepted.UpdatedAt = DateTimeOffset.UtcNow;
         }
+
+        // v0.6: a topic assigned to an active Project cannot be relinquished.
+        if (await db.Projects.AnyAsync(p => p.TopicId == id && p.Status != ProjectStatus.CANCELLED, ct))
+            return Conflict("Topic has an active project. Contact Admin to resolve the assignment.");
+        // Requests to supervise a relinquished topic must not remain actionable.
+        var pendingSupervision = await db.LecturerRequests.Where(r => r.TopicId == id &&
+            r.StudentUserId == actor && r.Status == RequestStatus.PENDING).ToListAsync(ct);
+        foreach (var req in pendingSupervision) { req.Status = RequestStatus.CANCELLED; req.UpdatedAt = DateTimeOffset.UtcNow; }
 
         // Release and reopen atomically: the topic is immediately available for NEW requests,
         // but a student can register only when there is an active registration period.

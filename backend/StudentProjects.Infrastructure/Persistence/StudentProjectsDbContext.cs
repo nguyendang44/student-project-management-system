@@ -133,12 +133,22 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
         {
             e.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
             e.Property(x => x.RejectionReason).HasMaxLength(2000);
+            e.Property(x => x.DraftTitle).HasMaxLength(300);
+            e.Property(x => x.DraftDescription).HasMaxLength(4000);
+            e.Property(x => x.DraftObjective).HasMaxLength(2000);
+            e.Property(x => x.DraftExpectedContent).HasMaxLength(2000);
+            e.Property(x => x.DraftProposedTechnology).HasMaxLength(1000);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.StudentUserId).OnDelete(onDelete);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.LecturerUserId).OnDelete(onDelete);
             e.HasOne<Topic>().WithMany().HasForeignKey(x => x.TopicId).OnDelete(onDelete);
             e.HasOne<RegistrationPeriod>().WithMany().HasForeignKey(x => x.RegistrationPeriodId).OnDelete(onDelete);
             e.HasIndex(x => new { x.LecturerUserId, x.RegistrationPeriodId, x.Status });
             e.HasIndex(x => new { x.StudentUserId, x.RegistrationPeriodId, x.Status });
+            e.HasIndex(x => x.StudentUserId).IsUnique().HasDatabaseName("UX_LecturerRequests_OneAcceptedPerStudent")
+                .HasFilter("[Status] = 'ACCEPTED'");
+            e.HasIndex(x => new { x.StudentUserId, x.LecturerUserId, x.TopicId, x.RegistrationPeriodId }).IsUnique()
+                .HasDatabaseName("UX_LecturerRequests_OnePendingPerStudentLecturerTopicPeriod")
+                .HasFilter("[Status] = 'PENDING'");
         });
 
         modelBuilder.Entity<Project>(e =>
@@ -152,6 +162,10 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
             e.HasOne<LecturerRequest>().WithMany().HasForeignKey(x => x.AcceptedLecturerRequestId).OnDelete(onDelete);
             e.HasIndex(x => x.AcceptedLecturerRequestId).IsUnique(); // SQL Server filters nullable unique indexes
             e.HasIndex(x => new { x.StudentUserId, x.RegistrationPeriodId });
+            e.HasIndex(x => x.StudentUserId).IsUnique().HasDatabaseName("UX_Projects_OneActiveProjectPerStudent")
+                .HasFilter("[Status] <> 'CANCELLED'");
+            e.HasIndex(x => x.TopicId).IsUnique().HasDatabaseName("UX_Projects_OneActiveProjectPerTopic")
+                .HasFilter("[Status] <> 'CANCELLED'");
         });
 
         modelBuilder.Entity<Milestone>(e =>

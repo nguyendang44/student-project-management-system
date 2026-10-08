@@ -31,7 +31,7 @@ const canToggleRegistration = (t:Topic) => !t.reservedForStudentUserId &&
  (role.value === 'Admin' || role.value === 'Lecturer' &&
  (t.proposedByUserId === auth.currentUser?.userId || ['CANCELLED','PUBLISHED'].includes(t.status))) &&
  (t.status === 'CANCELLED' || t.status === 'PUBLISHED' ||
-  (t.status === 'APPROVED' && role.value !== 'Student'))
+  t.status === 'APPROVED')
 const availablePeriods = computed(() => periods.value.filter(p => p.isOpen && new Date(p.startsAt).getTime() <= Date.now() && new Date(p.endsAt).getTime() > Date.now()))
 const isReservedForMe = (t:Topic) => !!t.reservedForStudentUserId && t.reservedForStudentUserId === auth.currentUser?.userId
 const hasPendingRequest = (t:Topic) => registrations.value.some(r => r.topicId === t.id && r.status === 'PENDING')

@@ -97,6 +97,14 @@ public sealed class LecturerRequest : Entity
     public Guid RegistrationPeriodId { get; set; }
     public RequestStatus Status { get; set; } = RequestStatus.PENDING;
     public string? RejectionReason { get; set; }
+    // v0.6.1: joint topic + lecturer application. Draft belongs to the application,
+    // never mutates a shared topic until the lecturer accepts it.
+    public bool IsCombined { get; set; }
+    public string? DraftTitle { get; set; }
+    public string? DraftDescription { get; set; }
+    public string? DraftObjective { get; set; }
+    public string? DraftExpectedContent { get; set; }
+    public string? DraftProposedTechnology { get; set; }
 }
 
 // Single-student project is an explicit assumption pending group-project confirmation.
