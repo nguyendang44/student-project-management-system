@@ -27,7 +27,6 @@ public static class SkeletonEndpoints
         api.MapPost("/topic-proposals/{id:guid}/approve", () => Pending("proposals", "UC-08,UC-09,UC-10")).RequireAuthorization(policy => policy.RequireRole("Lecturer"));
         api.MapGet("/topic-registrations", () => Pending("topicregistrations", "UC-07,UC-41")).RequireAuthorization(policy => policy.RequireRole("Student","Lecturer","Admin"));
         api.MapPost("/topic-registrations", () => Pending("topicregistrations", "UC-07,UC-41")).RequireAuthorization(policy => policy.RequireRole("Student"));
-        api.MapGet("/lecturers", () => Pending("lecturers", "UC-04,UC-16")).RequireAuthorization(policy => policy.RequireRole("Student","Lecturer","Admin"));
         api.MapGet("/lecturer-capacity", () => Pending("capacity", "UC-15,UC-16,UC-17")).RequireAuthorization(policy => policy.RequireRole("Student","Lecturer","Admin"));
         api.MapPut("/lecturer-capacity/me", () => Pending("capacity", "UC-15,UC-16,UC-17")).RequireAuthorization(policy => policy.RequireRole("Lecturer"));
         api.MapGet("/lecturer-requests", () => Pending("lecturerrequests", "UC-11,UC-12,UC-13,UC-14")).RequireAuthorization(policy => policy.RequireRole("Student","Lecturer","Admin"));
@@ -50,9 +49,6 @@ public static class SkeletonEndpoints
         api.MapGet("/notifications", () => Pending("notifications", "UC-31,UC-32")).RequireAuthorization(policy => policy.RequireRole("Student","Lecturer","Admin"));
         api.MapGet("/statistics", () => Pending("statistics", "UC-36")).RequireAuthorization(policy => policy.RequireRole("Lecturer","Admin"));
         api.MapGet("/reports", () => Pending("reports", "UC-37")).RequireAuthorization(policy => policy.RequireRole("Admin"));
-        api.MapGet("/users", () => Pending("users", "UC-03,UC-04")).RequireAuthorization(policy => policy.RequireRole("Admin"));
-        api.MapPost("/users", () => Pending("users", "UC-03,UC-04")).RequireAuthorization(policy => policy.RequireRole("Admin"));
-        api.MapPatch("/users/{id:guid}", () => Pending("users", "UC-03,UC-04")).RequireAuthorization(policy => policy.RequireRole("Admin"));
         api.MapGet("/registration-periods", () => Pending("periods", "UC-41")).RequireAuthorization(policy => policy.RequireRole("Admin"));
         api.MapPost("/registration-periods", () => Pending("periods", "UC-41")).RequireAuthorization(policy => policy.RequireRole("Admin"));
         api.MapGet("/automation/runs", () => Pending("automation", "UC-33,UC-34,UC-38")).RequireAuthorization(policy => policy.RequireRole("Admin"));

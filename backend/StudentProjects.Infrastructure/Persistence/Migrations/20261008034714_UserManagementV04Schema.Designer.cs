@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StudentProjects.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using StudentProjects.Infrastructure.Persistence;
 namespace StudentProjects.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(StudentProjectsDbContext))]
-    partial class StudentProjectsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261008034714_UserManagementV04Schema")]
+    partial class UserManagementV04Schema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

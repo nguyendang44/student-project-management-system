@@ -250,11 +250,10 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
             e.HasIndex(x => x.Key).IsUnique();
         });
 
-        // InitialAuth migration must create only Users and Roles. Other modules are
-        // drafted in the model but their schema is deliberately NOT migrated yet.
-        // Remove an exclusion in a later feature-specific migration after its rules are approved.
-        modelBuilder.Entity<StudentProfile>().ToTable(t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<LecturerProfile>().ToTable(t => t.ExcludeFromMigrations());
+        // v0.4: Students, Lecturers and AuditEntries are now included in migrations.
+        // Other draft modules remain excluded until their respective feature migrations.
+        modelBuilder.Entity<StudentProfile>().ToTable("Students");
+        modelBuilder.Entity<LecturerProfile>().ToTable("Lecturers");
         modelBuilder.Entity<RegistrationPeriod>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<LecturerCapacity>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<Topic>().ToTable(t => t.ExcludeFromMigrations());
@@ -271,7 +270,7 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
         modelBuilder.Entity<Notification>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<AutomationRun>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<SystemError>().ToTable(t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<AuditEntry>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<AuditEntry>().ToTable("AuditEntries");
         modelBuilder.Entity<SystemSetting>().ToTable(t => t.ExcludeFromMigrations());
 
     }

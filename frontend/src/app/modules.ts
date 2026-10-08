@@ -514,7 +514,9 @@ export const modules: ModuleSpec[] = [
     "endpoints": [
       "GET /users",
       "POST /users",
-      "PATCH /users/{id}"
+      "GET /users/{id}",
+      "PUT /users/{id}",
+      "PATCH /users/{id}/status"
     ]
   },
   {

@@ -12,3 +12,20 @@
 .account-summary button{border:1px solid #ced9e8;border-radius:8px;background:#fff;color:#3157ac;padding:9px 11px;cursor:pointer;font-size:12px;font-weight:700}
 .account-summary button:hover{background:#f3f7ff}
 @media(max-width:600px){.account-summary{gap:6px}.account-summary small{max-width:125px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+
+/* User Management v0.4 */
+.users-panel{margin-top:20px}.user-filters{display:flex;gap:14px;align-items:end;flex-wrap:wrap;margin:18px 0 20px}
+.user-filters label,.user-form label{display:flex;flex-direction:column;gap:7px;font-weight:650;font-size:12px;color:#495c77}
+.user-filters input,.user-filters select,.user-form input,.user-form select{padding:10px 12px;border:1px solid #d9e1ec;background:white;border-radius:8px;color:#253b5b;min-width:175px}
+.user-filters input{min-width:270px}.users-panel td{font-size:13px;padding:13px;border-bottom:1px solid #eef1f5;color:#3e506a}
+.secondary-cell{font-size:11px;color:#7f8b9e;margin-top:4px}.actions{white-space:nowrap}
+.actions button,.user-pagination button,.action-secondary{border:1px solid #d4deed;background:white;color:#3157ac;border-radius:7px;padding:8px 11px;cursor:pointer;font-size:12px;font-weight:650;margin-right:6px}
+.actions button:hover,.action-secondary:hover{background:#eef4ff}.action-primary{background:#244fb9;border:0;color:#fff;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:750}
+.action-primary:disabled,.user-pagination button:disabled{opacity:.5;cursor:not-allowed}
+.status-label{padding:5px 8px;border-radius:6px;font-size:11px;font-weight:750}.status-label.active{background:#eaf8f2;color:#13734b}.status-label.inactive{background:#fff0ed;color:#ab3427}
+.user-pagination{display:flex;justify-content:flex-end;gap:8px;align-items:center;font-size:12px;color:#8793a3;margin-top:17px}
+.user-editor{max-width:760px;margin-top:22px}.user-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px;margin-top:18px}
+.user-form button{justify-self:start;align-self:end}.user-form input:disabled{background:#f0f2f6;color:#8a96a7}
+.user-alert{margin:18px 0;padding:12px 16px;border-radius:9px;font-size:13px}.user-alert.error{background:#fff1ef;color:#a21f13;border:1px solid #ffd0c8}.user-alert.success{background:#eaf8f2;color:#13734b;border:1px solid #bce7d3}
+.profile-link{font-size:12px;font-weight:700;color:#244fb9;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+@media(max-width:700px){.user-form{grid-template-columns:1fr}.user-filters input{min-width:170px}.users-panel td{min-width:110px}.profile-link{display:none}}

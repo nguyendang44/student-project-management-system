@@ -4,7 +4,9 @@ import { modules } from './modules'
 import { useAuthStore } from '../stores/auth'
 const moduleRoutes: RouteRecordRaw[] = modules.map((mod) => ({
   path: mod.path.slice(1), name: mod.id,
-  component: () => import('../views/ModuleView.vue'),
+  component: mod.id === 'users' ? () => import('../views/UsersView.vue')
+    : mod.id === 'lecturers' ? () => import('../views/LecturerDirectoryView.vue')
+    : () => import('../views/ModuleView.vue'),
   props: { moduleId: mod.id },
   meta: { title: mod.title, allowedRoles: mod.roles },
 }))
@@ -12,7 +14,9 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/login', component: () => import('../views/LoginView.vue'), meta: { title: 'Đăng nhập' } },
-    { path: '/', component: AppLayout, children: [{ path: '', redirect: '/dashboard' }, ...moduleRoutes] },
+    { path: '/', component: AppLayout, children: [{ path: '', redirect: '/dashboard' },
+      { path: 'profile', component: () => import('../views/OwnProfileView.vue'),
+        meta: { title: 'Hồ sơ của tôi', allowedRoles: ['Student', 'Lecturer'] } }, ...moduleRoutes] },
     { path: '/:pathMatch(.*)*', component: () => import('../views/NotFoundView.vue') },
   ],
 })
