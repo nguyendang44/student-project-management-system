@@ -102,7 +102,7 @@ public sealed class LecturerSupervisionIntegrationTests
     }
 
     [Fact]
-    public async Task CapacityIsGlobalAcrossPeriodsAndCannotDropBelowAssigned()
+    public async Task CapacityIsPeriodSpecificAndCannotDropBelowAssigned()
     {
         using var app = new TestServer(); await app.Seed();
         using var admin = await Login(app, "v06-admin@test.local");
@@ -114,19 +114,12 @@ public sealed class LecturerSupervisionIntegrationTests
         var topicId = await Proposal(student, lecturer);
         var requestId = await Submit(student, topicId, lecturerId, periodId);
         Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/lecturer-requests/{requestId}/accept", null)).StatusCode);
-        await Choose(student, requestId);
         Assert.Equal(HttpStatusCode.Conflict, (await lecturer.PutAsJsonAsync("/api/v1/lecturer-capacity/me", new {
             registrationPeriodId = periodId, maxStudents = 0 })).StatusCode);
         using var capacities = (await student.GetFromJsonAsync<JsonDocument>($"/api/v1/lecturer-capacity?periodId={periodId}"))!;
         var mine = capacities.RootElement.EnumerateArray().First(x => x.GetProperty("lecturerUserId").GetGuid() == lecturerId);
         Assert.Equal(0, mine.GetProperty("remaining").GetInt32());
         Assert.Equal("FULL", mine.GetProperty("status").GetString());
-        var period2 = await Period(admin);
-        using var carried = (await student.GetFromJsonAsync<JsonDocument>($"/api/v1/lecturer-capacity?periodId={period2}"))!;
-        var global = carried.RootElement.EnumerateArray().Single(x => x.GetProperty("lecturerUserId").GetGuid() == lecturerId);
-        Assert.Equal(1, global.GetProperty("maxStudents").GetInt32());
-        Assert.Equal(1, global.GetProperty("currentStudents").GetInt32());
-        Assert.Equal(0, global.GetProperty("remaining").GetInt32());
     }
 
     [Fact]
@@ -144,25 +137,24 @@ public sealed class LecturerSupervisionIntegrationTests
         var topicId = await Proposal(student, lecturer);
         var first = await Submit(student, topicId, firstLecturerId, periodId);
         var second = await Submit(student, topicId, secondLecturerId, periodId);
-        Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/lecturer-requests/{first}/accept", null)).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await lecturer2.PostAsync($"/api/v1/lecturer-requests/{second}/accept", null)).StatusCode);
-        using (var noProject = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/projects"))!)
-            Assert.Empty(noProject.RootElement.EnumerateArray());
-        using (var waiting = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/lecturer-requests"))!)
-            Assert.All(waiting.RootElement.EnumerateArray(), r => Assert.Equal("OFFERED", r.GetProperty("status").GetString()));
-        var projectId = await Choose(student, second);
+        using var result = (await lecturer.PostAsync($"/api/v1/lecturer-requests/{first}/accept", null));
+        Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+        using var accepted = (await result.Content.ReadFromJsonAsync<JsonDocument>())!;
+        var projectId = accepted.RootElement.GetProperty("projectId").GetGuid();
+        Assert.Equal(1, accepted.RootElement.GetProperty("cancelledOtherRequests").GetInt32());
         using var list = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/lecturer-requests"))!;
         var rows = list.RootElement.EnumerateArray().ToArray();
-        Assert.Equal("CANCELLED", rows.Single(r => r.GetProperty("id").GetGuid() == first).GetProperty("status").GetString());
-        Assert.Equal("ACCEPTED", rows.Single(r => r.GetProperty("id").GetGuid() == second).GetProperty("status").GetString());
+        Assert.Equal("ACCEPTED", rows.Single(r => r.GetProperty("id").GetGuid() == first).GetProperty("status").GetString());
+        Assert.Equal("CANCELLED", rows.Single(r => r.GetProperty("id").GetGuid() == second).GetProperty("status").GetString());
         using var projects = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/projects"))!;
         Assert.Equal(projectId, projects.RootElement.EnumerateArray().Single().GetProperty("id").GetGuid());
-        Assert.Equal(secondLecturerId, projects.RootElement.EnumerateArray().Single().GetProperty("lecturerUserId").GetGuid());
-        Assert.Equal(HttpStatusCode.Conflict, (await student.PostAsync($"/api/v1/lecturer-requests/{first}/select", null)).StatusCode);
+        Assert.Equal("REGISTERED", projects.RootElement.EnumerateArray().Single().GetProperty("status").GetString());
+        Assert.Equal(HttpStatusCode.Conflict, (await lecturer2.PostAsync($"/api/v1/lecturer-requests/{second}/accept", null)).StatusCode);
+        // A fresh REGISTERED self-created project may be cancelled and deleted.
         Assert.Equal(HttpStatusCode.OK, (await student.PostAsync($"/api/v1/topics/{topicId}/withdraw", null)).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await student.GetAsync($"/api/v1/topics/{topicId}")).StatusCode);
         using var remaining = (await student.GetFromJsonAsync<JsonDocument>($"/api/v1/lecturer-capacity?periodId={periodId}"))!;
-        Assert.Equal(1, remaining.RootElement.EnumerateArray().Single(x => x.GetProperty("lecturerUserId").GetGuid() == secondLecturerId)
+        Assert.Equal(2, remaining.RootElement.EnumerateArray().Single(x => x.GetProperty("lecturerUserId").GetGuid() == firstLecturerId)
             .GetProperty("remaining").GetInt32());
     }
 
@@ -221,7 +213,6 @@ public sealed class LecturerSupervisionIntegrationTests
         var first = await Submit(student, topic1, lecturerId, periodId);
         var second = await Submit(student2, topic2, lecturerId, periodId);
         Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/lecturer-requests/{first}/accept", null)).StatusCode);
-        await Choose(student, first);
         Assert.Equal(HttpStatusCode.Conflict, (await lecturer.PostAsync($"/api/v1/lecturer-requests/{second}/accept", null)).StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, (await student2.PostAsJsonAsync("/api/v1/lecturer-requests", new {
             topicId = topic2, lecturerUserId = lecturerId, registrationPeriodId = periodId })).StatusCode);
@@ -246,7 +237,6 @@ public sealed class LecturerSupervisionIntegrationTests
         using var unseenStudent = (await student2.GetFromJsonAsync<JsonDocument>("/api/v1/lecturer-requests"))!;
         Assert.Empty(unseenStudent.RootElement.EnumerateArray());
         Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/lecturer-requests/{requestId}/accept", null)).StatusCode);
-        await Choose(student, requestId);
         using var projectList = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/projects"))!;
         var projectId = projectList.RootElement.EnumerateArray().Single().GetProperty("id").GetGuid();
         Assert.Equal(HttpStatusCode.NotFound, (await student2.GetAsync($"/api/v1/projects/{projectId}")).StatusCode);
@@ -276,7 +266,6 @@ public sealed class LecturerSupervisionIntegrationTests
         using var before = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/topics/mine"))!;
         Assert.Empty(before.RootElement.EnumerateArray());
         Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/lecturer-requests/{requestId}/accept", null)).StatusCode);
-        await Choose(student, requestId);
         using var after = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/topics/mine"))!;
         Assert.Single(after.RootElement.EnumerateArray());
         Assert.Equal("APPROVED", after.RootElement.EnumerateArray().Single().GetProperty("status").GetString());
@@ -314,7 +303,6 @@ public sealed class LecturerSupervisionIntegrationTests
         Assert.Equal("PENDING", application.GetProperty("status").GetString());
         Assert.Equal("Revised student topic", application.GetProperty("draftTitle").GetString());
         Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/lecturer-requests/{requestId}/accept", null)).StatusCode);
-        await Choose(student, requestId);
         using var projects = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/projects"))!;
         Assert.Equal("Revised student topic", projects.RootElement.EnumerateArray().Single().GetProperty("topicTitle").GetString());
     }
@@ -340,7 +328,6 @@ public sealed class LecturerSupervisionIntegrationTests
         Assert.Equal(HttpStatusCode.OK, (await student.PostAsJsonAsync(
             $"/api/v1/lecturer-requests/{requestId}/resubmit", new { draft = JointDraft("Customized topic") })).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/lecturer-requests/{requestId}/accept", null)).StatusCode);
-        await Choose(student, requestId);
         using var original = (await student2.GetFromJsonAsync<JsonDocument>($"/api/v1/topics/{topicId}"))!;
         Assert.Equal("Common topic", original.RootElement.GetProperty("title").GetString());
         Assert.True(original.RootElement.GetProperty("isRegistrationOpen").GetBoolean());
@@ -389,7 +376,6 @@ public sealed class LecturerSupervisionIntegrationTests
         var first = await Combined(student, topicId, lecturerId, periodId);
         var second = await Combined(student2, topicId, lecturerId, periodId);
         Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/lecturer-requests/{first}/accept", null)).StatusCode);
-        await Choose(student, first);
         // The second applicant must not receive the topic when it is already assigned.
         var outcome = await lecturer.PostAsync($"/api/v1/lecturer-requests/{second}/accept", null);
         Assert.True(outcome.StatusCode == HttpStatusCode.Conflict || outcome.StatusCode == HttpStatusCode.NotFound);
@@ -485,7 +471,6 @@ public sealed class LecturerSupervisionIntegrationTests
         var requestId = await Combined(student, null, lecturerId, periodId);
         Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync(
             $"/api/v1/lecturer-requests/{requestId}/accept", null)).StatusCode);
-        await Choose(student, requestId);
         using var mine = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/topics/mine"))!;
         var topicId = mine.RootElement.EnumerateArray().Single().GetProperty("id").GetGuid();
         Assert.Equal(HttpStatusCode.Conflict, (await student.PostAsync(
@@ -497,89 +482,6 @@ public sealed class LecturerSupervisionIntegrationTests
         Assert.Empty(empty.RootElement.EnumerateArray());
         using var available = (await student.GetFromJsonAsync<JsonDocument>($"/api/v1/lecturer-capacity?periodId={periodId}"))!;
         Assert.Equal(2, available.RootElement.EnumerateArray().Single(x => x.GetProperty("lecturerUserId").GetGuid() == lecturerId)
-            .GetProperty("remaining").GetInt32());
-    }
-
-    private static async Task<Guid> Choose(HttpClient student, Guid requestId)
-    {
-        using var response = await student.PostAsync($"/api/v1/lecturer-requests/{requestId}/select", null);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        using var json = (await response.Content.ReadFromJsonAsync<JsonDocument>())!;
-        Assert.Equal("ACCEPTED", json.RootElement.GetProperty("status").GetString());
-        return json.RootElement.GetProperty("projectId").GetGuid();
-    }
-
-    [Fact]
-    public async Task StudentCannotSelectAnotherStudentsOfferOrUnapprovedRequest()
-    {
-        using var app = new TestServer(); await app.Seed();
-        using var admin = await Login(app, "v06-admin@test.local");
-        using var lecturer = await Login(app, "v06-lecturer@test.local");
-        using var student = await Login(app, "v06-student@test.local");
-        using var stranger = await Login(app, "v06-student2@test.local");
-        var period = await Period(admin);
-        var lecturerId = await UserId(app, "v06-lecturer@test.local");
-        await SetMax(lecturer, period, 2);
-        var request = await Combined(student, null, lecturerId, period);
-        Assert.Equal(HttpStatusCode.Conflict, (await student.PostAsync($"/api/v1/lecturer-requests/{request}/select", null)).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await stranger.PostAsync($"/api/v1/lecturer-requests/{request}/select", null)).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/lecturer-requests/{request}/accept", null)).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await stranger.PostAsync($"/api/v1/lecturer-requests/{request}/select", null)).StatusCode);
-        await Choose(student, request);
-        Assert.Equal(HttpStatusCode.Conflict, (await student.PostAsync($"/api/v1/lecturer-requests/{request}/select", null)).StatusCode);
-    }
-
-    [Fact]
-    public async Task SelfProposedTopicCanReceiveTwoOffersBeforeStudentChooses()
-    {
-        using var app = new TestServer(); await app.Seed();
-        using var admin = await Login(app, "v06-admin@test.local");
-        using var lecturer = await Login(app, "v06-lecturer@test.local");
-        using var lecturer2 = await Login(app, "v06-lecturer2@test.local");
-        using var student = await Login(app, "v06-student@test.local");
-        var period = await Period(admin);
-        var l1 = await UserId(app, "v06-lecturer@test.local");
-        var l2 = await UserId(app, "v06-lecturer2@test.local");
-        await SetMax(lecturer, period, 10); await SetMax(lecturer2, period, 10);
-        var first = await Combined(student, null, l1, period);
-        using var rows = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/lecturer-requests"))!;
-        var topicId = rows.RootElement.EnumerateArray().Single().GetProperty("topicId").GetGuid();
-        var second = await Combined(student, topicId, l2, period);
-        Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/lecturer-requests/{first}/accept", null)).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await lecturer2.PostAsync($"/api/v1/lecturer-requests/{second}/accept", null)).StatusCode);
-        using (var before = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/topics/mine"))!)
-            Assert.Empty(before.RootElement.EnumerateArray());
-        await Choose(student, second);
-        using var after = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/lecturer-requests"))!;
-        Assert.Equal("CANCELLED", after.RootElement.EnumerateArray().Single(r => r.GetProperty("id").GetGuid() == first).GetProperty("status").GetString());
-        using var projects = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/projects"))!;
-        Assert.Equal(l2, projects.RootElement.EnumerateArray().Single().GetProperty("lecturerUserId").GetGuid());
-        Assert.Equal(topicId, projects.RootElement.EnumerateArray().Single().GetProperty("topicId").GetGuid());
-    }
-
-    [Fact]
-    public async Task PeriodTwoInheritsCapacityAndCountsPeriodOneProjects()
-    {
-        using var app = new TestServer(); await app.Seed();
-        using var admin = await Login(app, "v06-admin@test.local");
-        using var lecturer = await Login(app, "v06-lecturer@test.local");
-        using var student = await Login(app, "v06-student@test.local");
-        var firstPeriod = await Period(admin);
-        var lecturerId = await UserId(app, "v06-lecturer@test.local");
-        await SetMax(lecturer, firstPeriod, 10);
-        var topicId = await Proposal(student, lecturer);
-        var request = await Submit(student, topicId, lecturerId, firstPeriod);
-        Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/lecturer-requests/{request}/accept", null)).StatusCode);
-        await Choose(student, request);
-        var secondPeriod = await Period(admin);
-        using var capacities = (await lecturer.GetFromJsonAsync<JsonDocument>($"/api/v1/lecturer-capacity?periodId={secondPeriod}"))!;
-        var value = capacities.RootElement.EnumerateArray().Single(c => c.GetProperty("lecturerUserId").GetGuid() == lecturerId);
-        Assert.Equal(10, value.GetProperty("maxStudents").GetInt32());
-        Assert.Equal(1, value.GetProperty("currentStudents").GetInt32());
-        Assert.Equal(9, value.GetProperty("remaining").GetInt32());
-        await SetMax(lecturer, secondPeriod, 10);
-        using var repeated = (await lecturer.GetFromJsonAsync<JsonDocument>($"/api/v1/lecturer-capacity?periodId={firstPeriod}"))!;
-        Assert.Equal(9, repeated.RootElement.EnumerateArray().Single(c => c.GetProperty("lecturerUserId").GetGuid() == lecturerId)
             .GetProperty("remaining").GetInt32());
     }
 }

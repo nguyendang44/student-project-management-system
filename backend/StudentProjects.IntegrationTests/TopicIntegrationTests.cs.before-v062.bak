@@ -336,20 +336,16 @@ public sealed class TopicIntegrationTests
         Assert.Equal(HttpStatusCode.OK, (await lecturer.PatchAsJsonAsync($"/api/v1/topics/{publishedId}/registration", new { isOpen = true })).StatusCode);
         var periodId = await Id(await admin.PostAsJsonAsync("/api/v1/registration-periods", new
         { name = "Open period", startsAt = DateTimeOffset.UtcNow.AddDays(-1), endsAt = DateTimeOffset.UtcNow.AddDays(1), isOpen = true }));
-
-        // Student cannot register elsewhere while they own a self-proposed topic.
         Assert.Equal(HttpStatusCode.Conflict, (await student.PostAsJsonAsync("/api/v1/topic-registrations", new { topicId = publishedId, registrationPeriodId = periodId })).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await other.PostAsync($"/api/v1/topics/{selfId}/withdraw", null)).StatusCode);
-
-        // New v0.6.2 rule: withdrawing permanently deletes the self-proposed topic.
         Assert.Equal(HttpStatusCode.OK, (await student.PostAsync($"/api/v1/topics/{selfId}/withdraw", null)).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await student.PostAsync($"/api/v1/topics/{selfId}/withdraw", null)).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await student.GetAsync($"/api/v1/topics/{selfId}")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await admin.GetAsync($"/api/v1/topics/{selfId}")).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await student.PostAsync($"/api/v1/topics/{selfId}/withdraw", null)).StatusCode);
+        using var formerTopic = (await student.GetFromJsonAsync<JsonDocument>($"/api/v1/topics/{selfId}"))!;
+        Assert.Equal("PUBLISHED", formerTopic.RootElement.GetProperty("status").GetString());
+        Assert.True(formerTopic.RootElement.GetProperty("isRegistrationOpen").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, formerTopic.RootElement.GetProperty("reservedForStudentUserId").ValueKind);
         using var mine = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/topics/mine"))!;
         Assert.DoesNotContain(mine.RootElement.EnumerateArray(), item => item.GetProperty("id").GetGuid() == selfId);
-
-        // Ownership has been released: the student can register for a staff topic.
         Assert.Equal(HttpStatusCode.Created, (await student.PostAsJsonAsync("/api/v1/topic-registrations", new { topicId = publishedId, registrationPeriodId = periodId })).StatusCode);
     }
 
@@ -451,64 +447,118 @@ public sealed class TopicIntegrationTests
     }
 
     [Fact]
-    public async Task RelinquishedStudentProposal_IsDeletedAndCannotBeRepublished()
-    {
-        using var app = new TopicTestApp(); await app.SeedAsync();
-        using var student = await Login(app, "student@tests.local");
-        using var lecturer = await Login(app, "lecturer@tests.local");
-        using var admin = await Login(app, "admin@tests.local");
-        var id = await Id(await student.PostAsJsonAsync("/api/v1/topic-proposals", Draft("Private student topic")));
-        Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/topic-proposals/{id}/approve", null)).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await student.PostAsync($"/api/v1/topics/{id}/withdraw", null)).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await admin.GetAsync($"/api/v1/topics/{id}")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await admin.PatchAsJsonAsync($"/api/v1/topics/{id}",
-            Draft("Should not be republished"))).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await admin.PatchAsJsonAsync($"/api/v1/topics/{id}/registration",
-            new { isOpen = true })).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await admin.GetAsync($"/api/v1/topics/{id}/history")).StatusCode);
-    }
-
-    [Fact]
-    public async Task DeletedSelfProposal_CannotBeSelectedByAnotherStudent()
+    public async Task RelinquishedStudentProposal_LecturerEditsAndPublishes_OtherStudentCanOwnIt()
     {
         using var app = new TopicTestApp(); await app.SeedAsync();
         using var student = await Login(app, "student@tests.local");
         using var other = await Login(app, "other@tests.local");
         using var lecturer = await Login(app, "lecturer@tests.local");
         using var admin = await Login(app, "admin@tests.local");
-        var id = await Id(await student.PostAsJsonAsync("/api/v1/topic-proposals", Draft("Never published")));
-        Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/topic-proposals/{id}/approve", null)).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await student.PostAsync($"/api/v1/topics/{id}/withdraw", null)).StatusCode);
+        var topicId = await Id(await student.PostAsJsonAsync("/api/v1/topic-proposals", Draft("Student original topic")));
+        Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/topic-proposals/{topicId}/approve", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict,
+            (await admin.PatchAsJsonAsync($"/api/v1/topics/{topicId}/registration", new { isOpen = true })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await student.PostAsync($"/api/v1/topics/{topicId}/withdraw", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden,
+            (await student.PatchAsJsonAsync($"/api/v1/topics/{topicId}", Draft("Student cannot edit relinquished"))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK,
+            (await lecturer.PatchAsJsonAsync($"/api/v1/topics/{topicId}", Draft("Edited by lecturer"))).StatusCode);
+        // Withdrawal already reopened registration. Staff can still edit without reopening manually.
+        using (var published = (await other.GetFromJsonAsync<JsonDocument>($"/api/v1/topics/{topicId}"))!)
+        {
+            Assert.Equal("PUBLISHED", published.RootElement.GetProperty("status").GetString());
+            Assert.Equal("Edited by lecturer", published.RootElement.GetProperty("title").GetString());
+            Assert.True(published.RootElement.GetProperty("isRegistrationOpen").GetBoolean());
+            Assert.Equal(JsonValueKind.Null, published.RootElement.GetProperty("reservedForStudentUserId").ValueKind);
+        }
+        using (var history = (await lecturer.GetFromJsonAsync<JsonDocument>($"/api/v1/topics/{topicId}/history"))!)
+            Assert.Contains(history.RootElement.EnumerateArray(), x =>
+                x.GetProperty("fromStatus").GetString() == "APPROVED" && x.GetProperty("toStatus").GetString() == "PUBLISHED");
         var periodId = await Id(await admin.PostAsJsonAsync("/api/v1/registration-periods", new
-        { name = "Valid period", startsAt = DateTimeOffset.UtcNow.AddDays(-1), endsAt = DateTimeOffset.UtcNow.AddDays(1), isOpen = true }));
-        Assert.Equal(HttpStatusCode.NotFound,
-            (await other.PostAsJsonAsync("/api/v1/topic-registrations", new { topicId = id, registrationPeriodId = periodId })).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await other.GetAsync($"/api/v1/topics/{id}")).StatusCode);
+        { name = "Current", startsAt = DateTimeOffset.UtcNow.AddDays(-1), endsAt = DateTimeOffset.UtcNow.AddDays(1), isOpen = true }));
+        var regId = await Id(await other.PostAsJsonAsync("/api/v1/topic-registrations", new { topicId, registrationPeriodId = periodId }));
+        using (var lecturerQueue = (await lecturer.GetFromJsonAsync<JsonDocument>("/api/v1/topic-registrations"))!)
+            Assert.Contains(lecturerQueue.RootElement.EnumerateArray(), x => x.GetProperty("id").GetGuid() == regId);
+        Assert.Equal(HttpStatusCode.OK,
+            (await lecturer.PostAsync($"/api/v1/topic-registrations/{regId}/accept", null)).StatusCode);
+        using var owned = (await other.GetFromJsonAsync<JsonDocument>("/api/v1/topics/mine"))!;
+        Assert.Contains(owned.RootElement.EnumerateArray(), x => x.GetProperty("id").GetGuid() == topicId);
+        using var notOwned = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/topics/mine"))!;
+        Assert.DoesNotContain(notOwned.RootElement.EnumerateArray(), x => x.GetProperty("id").GetGuid() == topicId);
+        Assert.Equal(HttpStatusCode.Conflict,
+            (await admin.PatchAsJsonAsync($"/api/v1/topics/{topicId}/registration", new { isOpen = true })).StatusCode);
     }
 
     [Fact]
-    public async Task StudentProposal_WithdrawalPermanentlyDeletesTopicAndHistories()
+    public async Task AdminRepublishesRelinquishedTopic_AcceptedStudentWithdraws_LecturerReopens()
     {
         using var app = new TopicTestApp(); await app.SeedAsync();
         using var student = await Login(app, "student@tests.local");
         using var other = await Login(app, "other@tests.local");
         using var lecturer = await Login(app, "lecturer@tests.local");
-        var id = await Id(await student.PostAsJsonAsync("/api/v1/topic-proposals", Draft("Remove this topic")));
+        using var admin = await Login(app, "admin@tests.local");
+        var id = await Id(await student.PostAsJsonAsync("/api/v1/topic-proposals", Draft("Revive me")));
         Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/topic-proposals/{id}/approve", null)).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await other.PostAsync($"/api/v1/topics/{id}/withdraw", null)).StatusCode);
-        using var result = (await student.PostAsync($"/api/v1/topics/{id}/withdraw", null));
-        Assert.Equal(HttpStatusCode.OK, result.StatusCode);
-        using var payload = (await result.Content.ReadFromJsonAsync<JsonDocument>())!;
-        Assert.Equal("DELETED", payload.RootElement.GetProperty("status").GetString());
-        Assert.Equal(HttpStatusCode.NotFound, (await student.PostAsync($"/api/v1/topics/{id}/withdraw", null)).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await lecturer.GetAsync($"/api/v1/topics/{id}/history")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await other.GetAsync($"/api/v1/topics/{id}")).StatusCode);
-        using var mine = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/topics/mine"))!;
-        Assert.DoesNotContain(mine.RootElement.EnumerateArray(), t => t.GetProperty("id").GetGuid() == id);
-        using var scope = app.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<StudentProjectsDbContext>();
-        Assert.False(await db.Topics.AnyAsync(t => t.Id == id));
-        Assert.False(await db.TopicStateHistories.AnyAsync(h => h.TopicId == id));
+        Assert.Equal(HttpStatusCode.OK, (await student.PostAsync($"/api/v1/topics/{id}/withdraw", null)).StatusCode);
+        using (var reopened = (await other.GetFromJsonAsync<JsonDocument>($"/api/v1/topics/{id}"))!)
+        {
+            Assert.Equal("PUBLISHED", reopened.RootElement.GetProperty("status").GetString());
+            Assert.True(reopened.RootElement.GetProperty("isRegistrationOpen").GetBoolean());
+        }
+        Assert.Equal(HttpStatusCode.OK,
+            (await admin.PatchAsJsonAsync($"/api/v1/topics/{id}", Draft("Admin revised title"))).StatusCode);
+        var periodId = await Id(await admin.PostAsJsonAsync("/api/v1/registration-periods", new
+        { name = "Current", startsAt = DateTimeOffset.UtcNow.AddDays(-1), endsAt = DateTimeOffset.UtcNow.AddDays(1), isOpen = true }));
+        var r1 = await Id(await other.PostAsJsonAsync("/api/v1/topic-registrations", new { topicId = id, registrationPeriodId = periodId }));
+        Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/topic-registrations/{r1}/accept", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await other.PostAsync($"/api/v1/topics/{id}/withdraw", null)).StatusCode);
+        using var open = (await student.GetFromJsonAsync<JsonDocument>($"/api/v1/topics/{id}"))!;
+        Assert.True(open.RootElement.GetProperty("isRegistrationOpen").GetBoolean());
+        Assert.Equal("PUBLISHED", open.RootElement.GetProperty("status").GetString());
+        Assert.Equal(JsonValueKind.Null, open.RootElement.GetProperty("reservedForStudentUserId").ValueKind);
+        Assert.Equal(HttpStatusCode.Created,
+            (await student.PostAsJsonAsync("/api/v1/topic-registrations", new { topicId = id, registrationPeriodId = periodId })).StatusCode);
+    }
+
+    [Fact]
+    public async Task StudentProposal_AutoReopensImmediately_AuthorIsNotAutomaticallyReassigned()
+    {
+        using var app = new TopicTestApp(); await app.SeedAsync();
+        using var student = await Login(app, "student@tests.local");
+        using var other = await Login(app, "other@tests.local");
+        using var lecturer = await Login(app, "lecturer@tests.local");
+        using var admin = await Login(app, "admin@tests.local");
+
+        var id = await Id(await student.PostAsJsonAsync("/api/v1/topic-proposals", Draft("Original student title")));
+        Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/topic-proposals/{id}/approve", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await student.PostAsync($"/api/v1/topics/{id}/withdraw", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await student.PostAsync($"/api/v1/topics/{id}/withdraw", null)).StatusCode);
+
+        using (var reopened = (await other.GetFromJsonAsync<JsonDocument>($"/api/v1/topics/{id}"))!)
+        {
+            Assert.Equal("PUBLISHED", reopened.RootElement.GetProperty("status").GetString());
+            Assert.True(reopened.RootElement.GetProperty("isRegistrationOpen").GetBoolean());
+            Assert.Equal(JsonValueKind.Null, reopened.RootElement.GetProperty("reservedForStudentUserId").ValueKind);
+        }
+        using (var history = (await lecturer.GetFromJsonAsync<JsonDocument>($"/api/v1/topics/{id}/history"))!)
+            Assert.Contains(history.RootElement.EnumerateArray(), h =>
+                h.GetProperty("fromStatus").GetString() == "APPROVED" &&
+                h.GetProperty("toStatus").GetString() == "PUBLISHED");
+        using (var mine = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/topics/mine"))!)
+            Assert.DoesNotContain(mine.RootElement.EnumerateArray(), t => t.GetProperty("id").GetGuid() == id);
+
+        // Topic marked open does not bypass the independently governed registration period.
+        var periodId = await Id(await admin.PostAsJsonAsync("/api/v1/registration-periods", new
+        { name = "Initially closed", startsAt = DateTimeOffset.UtcNow.AddDays(-1), endsAt = DateTimeOffset.UtcNow.AddDays(1), isOpen = false }));
+        Assert.Equal(HttpStatusCode.Conflict,
+            (await other.PostAsJsonAsync("/api/v1/topic-registrations", new { topicId = id, registrationPeriodId = periodId })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK,
+            (await admin.PatchAsJsonAsync($"/api/v1/registration-periods/{periodId}/status", new { isOpen = true })).StatusCode);
+        var registrationId = await Id(await other.PostAsJsonAsync("/api/v1/topic-registrations", new { topicId = id, registrationPeriodId = periodId }));
+        Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/topic-registrations/{registrationId}/accept", null)).StatusCode);
+        using var reassigned = (await other.GetFromJsonAsync<JsonDocument>($"/api/v1/topics/{id}"))!;
+        Assert.False(reassigned.RootElement.GetProperty("isRegistrationOpen").GetBoolean());
+        Assert.NotEqual(JsonValueKind.Null, reassigned.RootElement.GetProperty("reservedForStudentUserId").ValueKind);
     }
 
     [Fact]

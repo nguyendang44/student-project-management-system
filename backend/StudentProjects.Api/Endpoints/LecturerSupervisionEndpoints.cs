@@ -29,8 +29,10 @@ public static class LecturerSupervisionEndpoints
         requests.MapPost("", CreateRequest).RequireAuthorization(x => x.RequireRole("Student"));
         requests.MapPost("/combined", SubmitCombined).RequireAuthorization(x => x.RequireRole("Student"));
         requests.MapPost("/{id:guid}/resubmit", ResubmitCombined).RequireAuthorization(x => x.RequireRole("Student"));
+        requests.MapPost("/{id:guid}/cancel", CancelRequest).RequireAuthorization(x => x.RequireRole("Student"));
         requests.MapPost("/{id:guid}/request-revision", RequestRevision).RequireAuthorization(x => x.RequireRole("Lecturer"));
         requests.MapPost("/{id:guid}/accept", AcceptRequest).RequireAuthorization(x => x.RequireRole("Lecturer"));
+        requests.MapPost("/{id:guid}/select", SelectOffer).RequireAuthorization(x => x.RequireRole("Student"));
         requests.MapPost("/{id:guid}/reject", RejectRequest).RequireAuthorization(x => x.RequireRole("Lecturer"));
 
         var projects = app.MapGroup("/api/v1/projects").RequireAuthorization();
@@ -52,6 +54,21 @@ public static class LecturerSupervisionEndpoints
         db.Database.IsSqlServer()
             ? db.LecturerCapacities.FromSqlInterpolated($"SELECT * FROM [LecturerCapacities] WITH (UPDLOCK, HOLDLOCK) WHERE [LecturerUserId] = {lecturerId} AND [RegistrationPeriodId] = {periodId}").SingleOrDefaultAsync(ct)
             : db.LecturerCapacities.SingleOrDefaultAsync(c => c.LecturerUserId == lecturerId && c.RegistrationPeriodId == periodId, ct);
+
+    // A single maximum per lecturer is shared by all periods. Active Projects, not
+    // period-specific capacity counters, are authoritative for occupied places.
+    private static async Task<(int Max, int Current)> GlobalCapacity(StudentProjectsDbContext db,
+        Guid lecturerId, CancellationToken ct)
+    {
+        // Existing period-specific settings may contain a reduced "remaining" value
+        // in a newer period. Adopt the highest configured maximum, not the latest row.
+        var max = await db.LecturerCapacities.AsNoTracking()
+            .Where(c => c.LecturerUserId == lecturerId)
+            .Select(c => (int?)c.MaxStudents).MaxAsync(ct) ?? 0;
+        var current = await db.Projects.CountAsync(p => p.LecturerUserId == lecturerId &&
+            p.Status != ProjectStatus.CANCELLED && p.Status != ProjectStatus.COMPLETED, ct);
+        return (max, current);
+    }
 
     private static Task<Topic?> LockTopic(StudentProjectsDbContext db, Guid topicId, CancellationToken ct) =>
         db.Database.IsSqlServer()
@@ -84,13 +101,16 @@ public static class LecturerSupervisionEndpoints
             where u.RoleId == RoleIds.Lecturer && u.IsActive
             orderby u.FullName
             select new { u.Id, u.FullName, Specialty = p == null ? null : p.Specialty }).ToListAsync(ct);
-        var capacities = await db.LecturerCapacities.AsNoTracking()
-            .Where(c => c.RegistrationPeriodId == selectedPeriod.Id).ToListAsync(ct);
+        var capacities = await db.LecturerCapacities.AsNoTracking().ToListAsync(ct);
+        var activeProjects = await db.Projects.AsNoTracking()
+            .Where(p => p.Status != ProjectStatus.CANCELLED && p.Status != ProjectStatus.COMPLETED)
+            .GroupBy(p => p.LecturerUserId)
+            .Select(g => new { lecturerId = g.Key, count = g.Count() }).ToListAsync(ct);
         return Results.Ok(lecturers.Select(u =>
         {
-            var c = capacities.FirstOrDefault(x => x.LecturerUserId == u.Id);
-            var max = c?.MaxStudents ?? 0;
-            var count = c?.CurrentStudents ?? 0;
+            var max = capacities.Where(x => x.LecturerUserId == u.Id)
+                .Select(x => x.MaxStudents).DefaultIfEmpty(0).Max();
+            var count = activeProjects.FirstOrDefault(x => x.lecturerId == u.Id)?.count ?? 0;
             return new { lecturerUserId = u.Id, lecturerName = u.FullName, specialty = u.Specialty,
                 registrationPeriodId = selectedPeriod.Id, periodName = selectedPeriod.Name,
                 maxStudents = max, currentStudents = count, remaining = Math.Max(0, max - count),
@@ -109,28 +129,31 @@ public static class LecturerSupervisionEndpoints
             ? await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct) : null;
         // Lock the lecturer row before inserting/updating a capacity to serialize first-time setup.
         if (await LockStudent(db, actor, ct) is null) return Results.NotFound();
-        var capacity = await LockCapacity(db, actor, body.RegistrationPeriodId, ct);
+        var all = await db.LecturerCapacities.Where(c => c.LecturerUserId == actor).ToListAsync(ct);
         var current = await db.Projects.CountAsync(p => p.LecturerUserId == actor &&
-            p.RegistrationPeriodId == body.RegistrationPeriodId && p.Status != ProjectStatus.CANCELLED, ct);
-        if (body.MaxStudents < current) return Conflict($"Cannot set capacity below {current} assigned students.");
+            p.Status != ProjectStatus.CANCELLED && p.Status != ProjectStatus.COMPLETED, ct);
+        if (body.MaxStudents < current) return Conflict($"Cannot set capacity below {current} active projects.");
+        var capacity = all.FirstOrDefault(c => c.RegistrationPeriodId == body.RegistrationPeriodId);
         if (capacity is null)
         {
-            capacity = new LecturerCapacity { LecturerUserId = actor, RegistrationPeriodId = body.RegistrationPeriodId,
+            capacity = new LecturerCapacity { LecturerUserId = actor,
+                RegistrationPeriodId = body.RegistrationPeriodId,
                 MaxStudents = body.MaxStudents, CurrentStudents = current };
             db.LecturerCapacities.Add(capacity);
         }
-        else
+        foreach (var c in all)
         {
-            capacity.MaxStudents = body.MaxStudents;
-            capacity.CurrentStudents = current;
-            capacity.UpdatedAt = DateTimeOffset.UtcNow;
+            c.MaxStudents = body.MaxStudents;
+            // The stored counter is only a cache; all decisions use Projects directly.
+            c.CurrentStudents = current;
+            c.UpdatedAt = DateTimeOffset.UtcNow;
         }
         db.AuditEntries.Add(new AuditEntry { ActorUserId = actor, Action = "LECTURER_CAPACITY_UPDATED",
             EntityName = "LecturerCapacity", EntityId = capacity.Id });
         await db.SaveChangesAsync(ct);
         if (tx is not null) await tx.CommitAsync(ct);
         return Results.Ok(new { capacity.Id, capacity.RegistrationPeriodId, capacity.MaxStudents,
-            capacity.CurrentStudents, remaining = capacity.MaxStudents - capacity.CurrentStudents });
+            currentStudents = current, remaining = body.MaxStudents - current });
     }
 
     private static async Task<IResult> ListRequests(StudentProjectsDbContext db, ClaimsPrincipal principal, CancellationToken ct)
@@ -174,13 +197,12 @@ public static class LecturerSupervisionEndpoints
             return Conflict("Student already has an accepted supervisor.");
         if (!await db.Users.AnyAsync(u => u.Id == body.LecturerUserId && u.IsActive && u.RoleId == RoleIds.Lecturer, ct))
             return Results.NotFound();
-        var capacity = await db.LecturerCapacities.AsNoTracking().SingleOrDefaultAsync(c =>
-            c.LecturerUserId == body.LecturerUserId && c.RegistrationPeriodId == body.RegistrationPeriodId, ct);
-        if (capacity is null || capacity.CurrentStudents >= capacity.MaxStudents)
-            return Conflict("Lecturer has no available capacity in this registration period.");
+        var (maximum, occupied) = await GlobalCapacity(db, body.LecturerUserId, ct);
+        if (maximum <= occupied) return Conflict("Lecturer has no available capacity.");
         if (await db.LecturerRequests.AnyAsync(r => r.StudentUserId == actor && r.TopicId == body.TopicId &&
             r.LecturerUserId == body.LecturerUserId && r.RegistrationPeriodId == body.RegistrationPeriodId &&
-            r.Status == RequestStatus.PENDING, ct)) return Conflict("Request to this lecturer is already pending.");
+            (r.Status == RequestStatus.PENDING || r.Status == RequestStatus.OFFERED ||
+                r.Status == RequestStatus.REVISION_REQUIRED), ct)) return Conflict("An active request to this lecturer already exists.");
         var request = new LecturerRequest { StudentUserId = actor, TopicId = body.TopicId,
             LecturerUserId = body.LecturerUserId, RegistrationPeriodId = body.RegistrationPeriodId };
         db.LecturerRequests.Add(request);
@@ -217,7 +239,7 @@ public static class LecturerSupervisionEndpoints
             (t.Status == TopicStatus.APPROVED || t.Status == TopicStatus.IN_PROGRESS || t.Status == TopicStatus.COMPLETED), ct) ||
         await db.TopicRegistrations.AnyAsync(r => r.StudentUserId == studentId && r.Status == RequestStatus.ACCEPTED, ct);
 
-    // A joint application does not pre-assign a topic. The lecturer approves topic + supervision together.
+    // Joint applications remain unassigned until the student chooses an offered supervisor.
     private static async Task<IResult> SubmitCombined(CombinedApplicationV061? body, StudentProjectsDbContext db,
         ClaimsPrincipal principal, CancellationToken ct)
     {
@@ -237,17 +259,21 @@ public static class LecturerSupervisionEndpoints
             return Conflict("You already own a topic or an active project.");
         if (!await db.Users.AnyAsync(u => u.Id == body.LecturerUserId && u.IsActive && u.RoleId == RoleIds.Lecturer, ct))
             return Results.NotFound();
-        var capacity = await db.LecturerCapacities.AsNoTracking().SingleOrDefaultAsync(c =>
-            c.LecturerUserId == body.LecturerUserId && c.RegistrationPeriodId == body.RegistrationPeriodId, ct);
-        if (capacity is null || capacity.CurrentStudents >= capacity.MaxStudents)
-            return Conflict("Lecturer has no available capacity.");
+        var (maximum, occupied) = await GlobalCapacity(db, body.LecturerUserId, ct);
+        if (maximum <= occupied) return Conflict("Lecturer has no available capacity.");
         Topic topic;
         if (body.TopicId.HasValue)
         {
             topic = (await LockTopic(db, body.TopicId.Value, ct))!;
             if (topic is null) return Results.NotFound();
-            if (topic.Status is not (TopicStatus.APPROVED or TopicStatus.PUBLISHED) || !topic.IsRegistrationOpen ||
-                await db.TopicRegistrations.AnyAsync(r => r.TopicId == topic.Id && r.Status == RequestStatus.ACCEPTED, ct))
+            var ownUnassignedProposal = topic.ProposedByUserId == actor &&
+                topic.Status == TopicStatus.PENDING_APPROVAL &&
+                await db.LecturerRequests.AnyAsync(r => r.TopicId == topic.Id && r.StudentUserId == actor &&
+                    r.IsCombined && (r.Status == RequestStatus.PENDING || r.Status == RequestStatus.OFFERED ||
+                        r.Status == RequestStatus.REVISION_REQUIRED), ct);
+            if (!ownUnassignedProposal &&
+                (topic.Status is not (TopicStatus.APPROVED or TopicStatus.PUBLISHED) || !topic.IsRegistrationOpen ||
+                await db.TopicRegistrations.AnyAsync(r => r.TopicId == topic.Id && r.Status == RequestStatus.ACCEPTED, ct)))
                 return Conflict("This topic is unavailable for new applications.");
         }
         else
@@ -264,7 +290,8 @@ public static class LecturerSupervisionEndpoints
         }
         if (await db.LecturerRequests.AnyAsync(r => r.StudentUserId == actor && r.TopicId == topic.Id &&
             r.LecturerUserId == body.LecturerUserId &&
-            (r.Status == RequestStatus.PENDING || r.Status == RequestStatus.REVISION_REQUIRED), ct))
+            (r.Status == RequestStatus.PENDING || r.Status == RequestStatus.REVISION_REQUIRED ||
+                r.Status == RequestStatus.OFFERED), ct))
             return Conflict("You already have an open request for this topic and lecturer.");
         var application = new LecturerRequest { StudentUserId = actor, LecturerUserId = body.LecturerUserId,
             RegistrationPeriodId = body.RegistrationPeriodId, TopicId = topic.Id, IsCombined = true };
@@ -278,6 +305,62 @@ public static class LecturerSupervisionEndpoints
         if (tx is not null) await tx.CommitAsync(ct);
         return Results.Created($"/api/v1/lecturer-requests/{application.Id}",
             new { application.Id, topicId = topic.Id, status = "PENDING", combined = true });
+    }
+
+    // A student may cancel a pending/revision/rejected joint application.
+    // Self-created proposals are deleted with all dependent rows; public topics stay intact.
+    private static async Task<IResult> CancelRequest(Guid id, StudentProjectsDbContext db,
+        ClaimsPrincipal principal, CancellationToken ct)
+    {
+        var actor = Actor(principal);
+        var candidate = await db.LecturerRequests.AsNoTracking().SingleOrDefaultAsync(r => r.Id == id, ct);
+        if (candidate is null) return Results.NotFound();
+        if (candidate.StudentUserId != actor) return Results.Forbid();
+        if (candidate.Status is not (RequestStatus.PENDING or RequestStatus.OFFERED or RequestStatus.REVISION_REQUIRED or RequestStatus.REJECTED))
+            return Conflict("This application is no longer cancellable.");
+        await using var tx = db.Database.IsSqlServer()
+            ? await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct) : null;
+        if (await LockStudent(db, actor, ct) is null) return Results.NotFound();
+        var request = await db.LecturerRequests.SingleOrDefaultAsync(r => r.Id == id, ct);
+        if (request is null) return Results.NotFound();
+        if (request.StudentUserId != actor) return Results.Forbid();
+        if (request.Status is not (RequestStatus.PENDING or RequestStatus.OFFERED or RequestStatus.REVISION_REQUIRED or RequestStatus.REJECTED))
+            return Conflict("This application is no longer cancellable.");
+        var topic = await LockTopic(db, request.TopicId, ct);
+        if (topic is null) return Results.NotFound();
+        var anotherLiveRequest = await db.LecturerRequests.AnyAsync(r => r.TopicId == topic.Id && r.Id != id &&
+            (r.Status == RequestStatus.PENDING || r.Status == RequestStatus.OFFERED ||
+             r.Status == RequestStatus.REVISION_REQUIRED), ct);
+        var isOwnProposal = request.IsCombined && topic.ProposedByUserId == actor && !anotherLiveRequest &&
+            (topic.Status == TopicStatus.PENDING_APPROVAL || topic.Status == TopicStatus.REJECTED);
+        if (isOwnProposal)
+        {
+            if (await db.Projects.AnyAsync(p => p.TopicId == topic.Id, ct) ||
+                await db.TopicRegistrations.AnyAsync(r => r.TopicId == topic.Id && r.Status == RequestStatus.ACCEPTED, ct) ||
+                await db.LecturerRequests.AnyAsync(r => r.TopicId == topic.Id && r.Status == RequestStatus.ACCEPTED, ct))
+                return Conflict("The proposal is assigned and cannot be deleted.");
+            // A self-created joint proposal is private. Remove its linked requests as well.
+            var related = await db.LecturerRequests.Where(r => r.TopicId == topic.Id).ToListAsync(ct);
+            if (related.Any(r => r.StudentUserId != actor))
+                return Conflict("Proposal has requests from other students and cannot be deleted.");
+            db.LecturerRequests.RemoveRange(related);
+            db.TopicRegistrations.RemoveRange(await db.TopicRegistrations.Where(r => r.TopicId == topic.Id).ToListAsync(ct));
+            db.TopicStateHistories.RemoveRange(await db.TopicStateHistories.Where(h => h.TopicId == topic.Id).ToListAsync(ct));
+            db.Topics.Remove(topic);
+        }
+        else
+        {
+            request.Status = RequestStatus.CANCELLED;
+            request.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+        db.AuditEntries.Add(new AuditEntry { ActorUserId = actor,
+            Action = isOwnProposal ? "STUDENT_JOINT_PROPOSAL_CANCELLED_DELETED" : "LECTURER_REQUEST_CANCELLED",
+            EntityName = isOwnProposal ? "Topic" : "LecturerRequest",
+            EntityId = isOwnProposal ? topic.Id : request.Id });
+        await db.SaveChangesAsync(ct);
+        if (tx is not null) await tx.CommitAsync(ct);
+        return Results.Ok(new { requestId = id, topicId = topic.Id, status = isOwnProposal ? "DELETED" : "CANCELLED",
+            deletedTopic = isOwnProposal });
     }
 
     private static async Task<IResult> RequestRevision(Guid id, RevisionRequestV061? body, StudentProjectsDbContext db,
@@ -333,7 +416,10 @@ public static class LecturerSupervisionEndpoints
         return Results.Ok(new { request.Id, status = "PENDING" });
     }
 
-    private static async Task<IResult> AcceptRequest(Guid id, StudentProjectsDbContext db, ClaimsPrincipal principal, CancellationToken ct)
+    // Lecturer offers supervision; student may receive offers from several lecturers.
+    // An offer does not create a Project or consume a supervision place.
+    private static async Task<IResult> AcceptRequest(Guid id, StudentProjectsDbContext db,
+        ClaimsPrincipal principal, CancellationToken ct)
     {
         var lecturerId = Actor(principal);
         var candidate = await db.LecturerRequests.AsNoTracking().SingleOrDefaultAsync(r => r.Id == id, ct);
@@ -341,15 +427,58 @@ public static class LecturerSupervisionEndpoints
         if (candidate.LecturerUserId != lecturerId) return Results.Forbid();
         await using var tx = db.Database.IsSqlServer()
             ? await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct) : null;
-        // All approvals for the same student lock this User row, including requests to different lecturers.
         if (await LockStudent(db, candidate.StudentUserId, ct) is null) return Results.NotFound();
+        if (await LockStudent(db, lecturerId, ct) is null) return Results.NotFound();
         var request = await db.LecturerRequests.SingleOrDefaultAsync(r => r.Id == id, ct);
         if (request is null) return Results.NotFound();
         if (request.LecturerUserId != lecturerId) return Results.Forbid();
         if (request.Status != RequestStatus.PENDING) return Conflict("Request is no longer pending.");
-        var capacity = await LockCapacity(db, lecturerId, request.RegistrationPeriodId, ct);
-        if (capacity is null || capacity.CurrentStudents >= capacity.MaxStudents)
-            return Conflict("Lecturer capacity is full. Request cannot be accepted.");
+        if (await db.Projects.AnyAsync(p => p.StudentUserId == request.StudentUserId &&
+            p.Status != ProjectStatus.CANCELLED, ct) ||
+            await db.LecturerRequests.AnyAsync(r => r.StudentUserId == request.StudentUserId &&
+            r.Status == RequestStatus.ACCEPTED, ct)) return Conflict("Student already selected a supervisor.");
+        if (!await db.Users.AnyAsync(u => u.Id == lecturerId && u.RoleId == RoleIds.Lecturer && u.IsActive, ct))
+            return Conflict("Lecturer account is inactive.");
+        var (maximum, occupied) = await GlobalCapacity(db, lecturerId, ct);
+        if (maximum <= occupied) return Conflict("Lecturer has no available capacity.");
+        if (!request.IsCombined && !await StudentOwnsTopic(db, request.StudentUserId,
+            request.TopicId, request.RegistrationPeriodId, ct))
+            return Conflict("Student no longer owns the topic.");
+        var topic = await db.Topics.AsNoTracking().SingleOrDefaultAsync(t => t.Id == request.TopicId, ct);
+        if (topic is null) return Results.NotFound();
+        if (request.IsCombined && !(topic.ProposedByUserId == request.StudentUserId &&
+            topic.Status == TopicStatus.PENDING_APPROVAL) &&
+            !((topic.Status == TopicStatus.APPROVED || topic.Status == TopicStatus.PUBLISHED) &&
+              topic.IsRegistrationOpen))
+            return Conflict("Topic is no longer available.");
+        request.Status = RequestStatus.OFFERED;
+        request.UpdatedAt = DateTimeOffset.UtcNow;
+        db.AuditEntries.Add(new AuditEntry { ActorUserId = lecturerId,
+            Action = "LECTURER_OFFERED_SUPERVISION", EntityName = "LecturerRequest", EntityId = request.Id });
+        await db.SaveChangesAsync(ct);
+        if (tx is not null) await tx.CommitAsync(ct);
+        return Results.Ok(new { request.Id, status = "OFFERED", projectCreated = false });
+    }
+
+    private static async Task<IResult> SelectOffer(Guid id, StudentProjectsDbContext db, ClaimsPrincipal principal, CancellationToken ct)
+    {
+        var studentId = Actor(principal);
+        var candidate = await db.LecturerRequests.AsNoTracking().SingleOrDefaultAsync(r => r.Id == id, ct);
+        if (candidate is null) return Results.NotFound();
+        if (candidate.StudentUserId != studentId) return Results.Forbid();
+        await using var tx = db.Database.IsSqlServer()
+            ? await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct) : null;
+        // Serialize final choices by this student before creating a Project.
+        if (await LockStudent(db, candidate.StudentUserId, ct) is null) return Results.NotFound();
+        var request = await db.LecturerRequests.SingleOrDefaultAsync(r => r.Id == id, ct);
+        if (request is null) return Results.NotFound();
+        if (request.StudentUserId != studentId) return Results.Forbid();
+        if (request.Status != RequestStatus.OFFERED) return Conflict("Lecturer has not offered supervision for this request.");
+        var lecturerId = request.LecturerUserId;
+        // Lock lecturer as well as student before checking global occupied places.
+        if (await LockStudent(db, lecturerId, ct) is null) return Results.NotFound();
+        var (maxStudents, occupied) = await GlobalCapacity(db, lecturerId, ct);
+        if (occupied >= maxStudents) return Conflict("Lecturer has reached their global supervision limit.");
         var topic = await LockTopic(db, request.TopicId, ct);
         if (topic is null) return Results.NotFound();
         var ownsTopic = await StudentOwnsTopic(db, request.StudentUserId, request.TopicId, request.RegistrationPeriodId, ct);
@@ -433,12 +562,10 @@ public static class LecturerSupervisionEndpoints
             // Only the accepted choice is retained for this student.
             db.TopicRegistrations.RemoveRange(priorChoices.Where(r => r != acceptedChoice));
         }
-        capacity.CurrentStudents++;
-        capacity.UpdatedAt = DateTimeOffset.UtcNow;
         request.Status = RequestStatus.ACCEPTED;
         request.UpdatedAt = DateTimeOffset.UtcNow;
         var otherRequests = await db.LecturerRequests.Where(r => r.StudentUserId == request.StudentUserId &&
-            r.Id != id && (r.Status == RequestStatus.PENDING ||
+            r.Id != id && (r.Status == RequestStatus.PENDING || r.Status == RequestStatus.OFFERED ||
             r.Status == RequestStatus.REVISION_REQUIRED)).ToListAsync(ct);
         foreach (var other in otherRequests)
         {
@@ -449,7 +576,8 @@ public static class LecturerSupervisionEndpoints
         {
             var otherIds = otherRequests.Where(r => r.IsCombined).Select(r => r.TopicId).Distinct().ToList();
             var otherOwnDrafts = await db.Topics.Where(t => otherIds.Contains(t.Id) &&
-                t.ProposedByUserId == request.StudentUserId && t.Status == TopicStatus.PENDING_APPROVAL)
+                t.Id != topic.Id && t.ProposedByUserId == request.StudentUserId &&
+                t.Status == TopicStatus.PENDING_APPROVAL)
                 .ToListAsync(ct);
             foreach (var otherDraft in otherOwnDrafts)
             {
@@ -466,7 +594,8 @@ public static class LecturerSupervisionEndpoints
             // Do not reject candidates for a public original when an edited personal copy was chosen.
             var competitors = await db.LecturerRequests.Where(r => r.TopicId == topic.Id &&
                 r.StudentUserId != request.StudentUserId && r.IsCombined &&
-                (r.Status == RequestStatus.PENDING || r.Status == RequestStatus.REVISION_REQUIRED)).ToListAsync(ct);
+                (r.Status == RequestStatus.PENDING || r.Status == RequestStatus.OFFERED ||
+                 r.Status == RequestStatus.REVISION_REQUIRED)).ToListAsync(ct);
             foreach (var other in competitors)
             {
                 other.Status = RequestStatus.REJECTED;
@@ -478,12 +607,12 @@ public static class LecturerSupervisionEndpoints
             LecturerUserId = lecturerId, TopicId = topic.Id, RegistrationPeriodId = request.RegistrationPeriodId,
             AcceptedLecturerRequestId = request.Id, Status = ProjectStatus.REGISTERED };
         db.Projects.Add(project);
-        db.AuditEntries.Add(new AuditEntry { ActorUserId = lecturerId, Action = "LECTURER_REQUEST_ACCEPTED_PROJECT_CREATED",
+        db.AuditEntries.Add(new AuditEntry { ActorUserId = studentId, Action = "STUDENT_SELECTED_LECTURER_PROJECT_CREATED",
             EntityName = "Project", EntityId = project.Id });
         await db.SaveChangesAsync(ct);
         if (tx is not null) await tx.CommitAsync(ct);
         return Results.Ok(new { request.Id, status = "ACCEPTED", projectId = project.Id,
-            cancelledOtherRequests = otherRequests.Count, currentStudents = capacity.CurrentStudents });
+            cancelledOtherRequests = otherRequests.Count, currentStudents = occupied + 1 });
     }
 
     private static async Task<IResult> RejectRequest(Guid id, LecturerRequestRejectV06? body, StudentProjectsDbContext db,
@@ -509,7 +638,10 @@ public static class LecturerSupervisionEndpoints
         {
             var topic = await LockTopic(db, request.TopicId, ct);
             if (topic is not null && topic.ProposedByUserId == request.StudentUserId &&
-                topic.Status == TopicStatus.PENDING_APPROVAL)
+                topic.Status == TopicStatus.PENDING_APPROVAL &&
+                !await db.LecturerRequests.AnyAsync(r => r.TopicId == topic.Id && r.Id != request.Id &&
+                    (r.Status == RequestStatus.PENDING || r.Status == RequestStatus.OFFERED ||
+                     r.Status == RequestStatus.REVISION_REQUIRED), ct))
             {
                 topic.Status = TopicStatus.REJECTED; topic.UpdatedAt = DateTimeOffset.UtcNow;
                 db.TopicStateHistories.Add(new TopicStateHistory { TopicId = topic.Id,

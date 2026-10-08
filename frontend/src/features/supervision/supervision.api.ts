@@ -20,7 +20,7 @@ export interface LecturerRequestV06 {
   lecturerName: string
   registrationPeriodId: string
   periodName: string
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'REVISION_REQUIRED'
+  status: 'PENDING' | 'OFFERED' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'REVISION_REQUIRED'
   rejectionReason: string | null
   isCombined: boolean
   draftTitle: string | null
@@ -58,7 +58,9 @@ export const supervisionApi = {
     { method: 'POST', body: JSON.stringify({ reason }) }),
   resubmit: (id: string, draft: JointTopicDraft) => request<void>(`/lecturer-requests/${id}/resubmit`,
     { method: 'POST', body: JSON.stringify({ draft }) }),
-  accept: (id: string) => request<{ status: string; projectId: string }>(`/lecturer-requests/${id}/accept`, { method: 'POST' }),
+  cancel: (id: string) => request<{ status: string; deletedTopic: boolean }>(`/lecturer-requests/${id}/cancel`, { method: 'POST' }),
+  accept: (id: string) => request<{ status: string; projectCreated: boolean }>(`/lecturer-requests/${id}/accept`, { method: 'POST' }),
+  selectOffer: (id: string) => request<{ status: string; projectId: string }>(`/lecturer-requests/${id}/select`, { method: 'POST' }),
   reject: (id: string, reason: string) => request<void>(`/lecturer-requests/${id}/reject`, {
     method: 'POST', body: JSON.stringify({ reason }),
   }),

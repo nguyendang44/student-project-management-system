@@ -78,6 +78,11 @@ public static class TopicEndpoints
                 .SingleOrDefaultAsync(ct)
             : db.Users.FindAsync([id], ct).AsTask();
 
+    private static Task<LecturerCapacity?> LockedCapacity(StudentProjectsDbContext db, Guid lecturerId, Guid periodId, CancellationToken ct) =>
+        db.Database.IsSqlServer()
+            ? db.LecturerCapacities.FromSqlInterpolated($"SELECT * FROM [LecturerCapacities] WITH (UPDLOCK, HOLDLOCK) WHERE [LecturerUserId] = {lecturerId} AND [RegistrationPeriodId] = {periodId}").SingleOrDefaultAsync(ct)
+            : db.LecturerCapacities.SingleOrDefaultAsync(c => c.LecturerUserId == lecturerId && c.RegistrationPeriodId == periodId, ct);
+
     private static async Task<bool> StudentHasReservedTopic(StudentProjectsDbContext db, Guid studentId, CancellationToken ct) =>
         await db.Topics.AnyAsync(t => t.ProposedByUserId == studentId &&
             (t.Status == TopicStatus.APPROVED || t.Status == TopicStatus.IN_PROGRESS ||
@@ -95,11 +100,9 @@ public static class TopicEndpoints
             t.Status == TopicStatus.APPROVED || t.Status == TopicStatus.PUBLISHED ||
             t.Status == TopicStatus.CANCELLED || t.ProposedByUserId == id ||
             (t.Status == TopicStatus.PENDING_APPROVAL &&
-                (!db.LecturerRequests.Any(r => r.TopicId == t.Id && r.IsCombined &&
-                    (r.Status == RequestStatus.PENDING || r.Status == RequestStatus.REVISION_REQUIRED)) ||
-                 db.LecturerRequests.Any(r => r.TopicId == t.Id && r.IsCombined &&
+                db.LecturerRequests.Any(r => r.TopicId == t.Id && r.IsCombined &&
                     r.LecturerUserId == id &&
-                    (r.Status == RequestStatus.PENDING || r.Status == RequestStatus.REVISION_REQUIRED)))));
+                    (r.Status == RequestStatus.PENDING || r.Status == RequestStatus.REVISION_REQUIRED))));
         else if (role != "Admin") baseQuery = baseQuery.Where(t => false);
         return baseQuery;
     }
@@ -545,7 +548,7 @@ public static class TopicEndpoints
             reservedForStudentUserId = accept ? reg.StudentUserId : (Guid?)null });
     }
 
-    // Relinquishing an owned topic releases it and automatically reopens registration.
+    // Student-authored topics are permanently deleted when relinquished. Staff-created topics reopen.
     // Cancelling a PENDING request is separate and does not change topic availability.
     private static async Task<IResult> WithdrawTopic(Guid id, StudentProjectsDbContext db,
         ClaimsPrincipal principal, CancellationToken ct)
@@ -553,6 +556,14 @@ public static class TopicEndpoints
         var actor = Actor(principal);
         await using var transaction = db.Database.IsSqlServer()
             ? await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct) : null;
+        // Maintain consistent lock order with supervision acceptance: Student -> Capacity -> Topic.
+        if (await LockedStudent(db, actor, ct) is null) return Results.NotFound();
+        var assignedProject = await db.Projects.SingleOrDefaultAsync(p => p.TopicId == id, ct);
+        LecturerCapacity? lockedCapacity = null;
+        if (assignedProject is not null && assignedProject.StudentUserId == actor &&
+            assignedProject.Status == ProjectStatus.REGISTERED)
+            lockedCapacity = await LockedCapacity(db, assignedProject.LecturerUserId,
+                assignedProject.RegistrationPeriodId, ct);
         var topic = await LockedTopic(db, id, ct);
         if (topic is null) return Results.NotFound();
         if (topic.Status is not (TopicStatus.APPROVED or TopicStatus.PUBLISHED))
@@ -589,12 +600,52 @@ public static class TopicEndpoints
             accepted.UpdatedAt = DateTimeOffset.UtcNow;
         }
 
-        // v0.6: a topic assigned to an active Project cannot be relinquished.
-        if (await db.Projects.AnyAsync(p => p.TopicId == id && p.Status != ProjectStatus.CANCELLED, ct))
-            return Conflict("Topic has an active project. Contact Admin to resolve the assignment.");
+        if (assignedProject is not null)
+        {
+            // The student may cancel their own freshly REGISTERED project before any work
+            // has started; in later phases, IN_PROGRESS and COMPLETED must be preserved.
+            if (!studentProposed || assignedProject.StudentUserId != actor ||
+                assignedProject.Status != ProjectStatus.REGISTERED)
+                return Conflict("An active or completed project cannot be deleted automatically. Contact Admin.");
+            // Capacity in v0.6.3 is global. There need not be a per-period cache row
+            // when the lecturer was configured in an older registration period.
+            // The authoritative count comes from active Projects and updates on delete.
+            if (lockedCapacity is not null)
+            {
+                lockedCapacity.CurrentStudents = await db.Projects.CountAsync(p =>
+                    p.Id != assignedProject.Id && p.LecturerUserId == assignedProject.LecturerUserId &&
+                    p.Status != ProjectStatus.CANCELLED && p.Status != ProjectStatus.COMPLETED, ct);
+                lockedCapacity.UpdatedAt = DateTimeOffset.UtcNow;
+            }
+            db.Projects.Remove(assignedProject);
+        }
+        if (studentProposed)
+        {
+            // Delete a student-owned topic rather than publishing it for others.
+            // NO ACTION FKs require dependents to be deleted explicitly.
+            if (assignedProject is null && await db.LecturerRequests.AnyAsync(r => r.TopicId == id && r.Status == RequestStatus.ACCEPTED, ct))
+                return Conflict("An accepted lecturer request is still linked to this topic.");
+            var supervision = await db.LecturerRequests.Where(r => r.TopicId == id).ToListAsync(ct);
+            var registrations = await db.TopicRegistrations.Where(r => r.TopicId == id).ToListAsync(ct);
+            var histories = await db.TopicStateHistories.Where(h => h.TopicId == id).ToListAsync(ct);
+            db.LecturerRequests.RemoveRange(supervision);
+            db.TopicRegistrations.RemoveRange(registrations);
+            db.TopicStateHistories.RemoveRange(histories);
+            db.Topics.Remove(topic);
+            db.AuditEntries.Add(new AuditEntry { ActorUserId = actor,
+                Action = "STUDENT_OWN_TOPIC_WITHDRAWN_DELETED", EntityName = "Topic", EntityId = id });
+            await db.SaveChangesAsync(ct);
+            if (transaction is not null) await transaction.CommitAsync(ct);
+            return Results.Ok(new { topicId = id, status = "DELETED", deleted = true,
+                isRegistrationOpen = false, reservedForStudentUserId = (Guid?)null });
+        }
+        if (assignedProject is not null)
+            return Conflict("Topic is linked to an active project and cannot be reopened.");
+        // Staff-authored (or public) topics may reopen for other students.
         // Requests to supervise a relinquished topic must not remain actionable.
         var pendingSupervision = await db.LecturerRequests.Where(r => r.TopicId == id &&
-            r.StudentUserId == actor && r.Status == RequestStatus.PENDING).ToListAsync(ct);
+            r.StudentUserId == actor && (r.Status == RequestStatus.PENDING ||
+                r.Status == RequestStatus.OFFERED)).ToListAsync(ct);
         foreach (var req in pendingSupervision) { req.Status = RequestStatus.CANCELLED; req.UpdatedAt = DateTimeOffset.UtcNow; }
 
         // Release and reopen atomically: the topic is immediately available for NEW requests,

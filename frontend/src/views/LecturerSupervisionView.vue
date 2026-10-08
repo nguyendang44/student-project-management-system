@@ -33,6 +33,17 @@ const activePeriod = computed(() => selectedPeriod.value?.isOpen &&
   new Date(selectedPeriod.value.endsAt).getTime() > Date.now())
 const publicTopics = computed(() => allTopics.value.filter(t => t.isRegistrationOpen &&
   (t.status === 'APPROVED' || t.status === 'PUBLISHED') && !t.reservedForStudentUserId))
+const ownPendingProposals = computed(() => {
+  const ids = new Set<string>()
+  return requests.value.filter(r => r.isCombined && ['PENDING', 'OFFERED', 'REVISION_REQUIRED'].includes(r.status) &&
+    !r.topicId.startsWith('00000000')).filter(r => {
+      if (ids.has(r.topicId)) return false
+      ids.add(r.topicId)
+      return true
+    }).filter(r => !publicTopics.value.some(t => t.id === r.topicId) &&
+      !topics.value.some(t => t.id === r.topicId))
+})
+const offeredRequests = computed(() => requests.value.filter(r => r.status === 'OFFERED'))
 const existingRequest = (lId: string) => requests.value.some(r => r.lecturerUserId === lId &&
   r.topicId === topicId.value && r.registrationPeriodId === periodId.value && r.status === 'PENDING')
 function message(e: unknown) {
@@ -107,7 +118,8 @@ async function submitJoint() {
   if (jointTopicId.value === 'new' && Object.values(jointDraft.value).some(s => !s.trim())) {
     error.value = 'Nhập đầy đủ năm trường của đề tài tự đề xuất.'; return
   }
-  if (jointTopicId.value !== 'new' && !publicTopics.value.some(t => t.id === jointTopicId.value)) {
+  if (jointTopicId.value !== 'new' && !publicTopics.value.some(t => t.id === jointTopicId.value) &&
+      !ownPendingProposals.value.some(r => r.topicId === jointTopicId.value)) {
     error.value = 'Chọn đề tài đang mở đăng ký.'; return
   }
   if (!window.confirm('Gửi đề tài và yêu cầu hướng dẫn đến giảng viên đã chọn?')) return
@@ -116,7 +128,7 @@ async function submitJoint() {
     await supervisionApi.combined({ topicId: jointTopicId.value === 'new' ? null : jointTopicId.value,
       lecturerUserId: jointLecturerId.value, registrationPeriodId: periodId.value,
       draft: jointTopicId.value === 'new' ? jointDraft.value : null })
-    await load(); success.value = 'Đã gửi đề tài và giảng viên để xét duyệt.'
+    await load(); success.value = 'Đã gửi yêu cầu. Khi giảng viên đồng ý, bạn sẽ được chọn giảng viên cuối cùng.'
   } catch (e) { error.value = message(e) } finally { loading.value = false }
 }
 async function resubmitJoint() {
@@ -139,6 +151,17 @@ async function requestRevision(item: LecturerRequestV06) {
     await load(); success.value = 'Đã gửi yêu cầu chỉnh sửa cho sinh viên.'
   } catch (e) { error.value = message(e) } finally { loading.value = false }
 }
+async function cancelJoint(item: LecturerRequestV06) {
+  if (!window.confirm(item.isCombined
+    ? `Hủy yêu cầu “${item.draftTitle || item.topicTitle}”? Nếu là đề tài do bạn tự tạo, đề tài sẽ bị xóa vĩnh viễn, không chuyển sang danh sách dự bị.`
+    : `Hủy yêu cầu hướng dẫn cho “${item.topicTitle}”?`)) return
+  loading.value = true; error.value = ''; success.value = ''
+  try {
+    const result = await supervisionApi.cancel(item.id)
+    await load()
+    success.value = result.deletedTopic ? 'Đã xóa đề tài tự tạo và hủy yêu cầu.' : 'Đã hủy yêu cầu hướng dẫn.'
+  } catch (e) { error.value = message(e) } finally { loading.value = false }
+}
 async function decide(item: LecturerRequestV06, accepted: boolean) {
   let reason = ''
   if (!accepted) {
@@ -146,12 +169,20 @@ async function decide(item: LecturerRequestV06, accepted: boolean) {
     if (entry === null) return
     reason = entry.trim()
     if (!reason) { error.value = 'Vui lòng nhập lý do.'; return }
-  } else if (!window.confirm(`Chấp nhận hướng dẫn ${item.studentName} với đề tài “${item.isCombined ? (item.draftTitle || item.topicTitle) : item.topicTitle}”? Hệ thống sẽ tạo Project và trừ một suất hướng dẫn.`)) return
+  } else if (!window.confirm(`Đồng ý hướng dẫn ${item.studentName}? Sinh viên sẽ chọn một giảng viên trong những người đã đồng ý. Chưa tạo Project và chưa trừ suất.`)) return
   loading.value = true; error.value = ''; success.value = ''
   try {
     if (accepted) await supervisionApi.accept(item.id)
     else await supervisionApi.reject(item.id, reason)
-    await load(); success.value = accepted ? 'Đã nhận sinh viên và tạo Project.' : 'Đã từ chối yêu cầu.'
+    await load(); success.value = accepted ? 'Đã đồng ý hướng dẫn. Đang chờ sinh viên lựa chọn.' : 'Đã từ chối yêu cầu.'
+  } catch (e) { error.value = message(e) } finally { loading.value = false }
+}
+async function selectOffer(item: LecturerRequestV06) {
+  if (!window.confirm(`Chọn giảng viên ${item.lecturerName} cho đề tài “${item.draftTitle || item.topicTitle}”? Sau khi xác nhận, các lời mời khác sẽ bị hủy và Project sẽ được tạo.`)) return
+  loading.value = true; error.value = ''; success.value = ''
+  try {
+    await supervisionApi.selectOffer(item.id)
+    await load(); success.value = 'Đã chọn giảng viên hướng dẫn, khóa đề tài và tạo Project.'
   } catch (e) { error.value = message(e) } finally { loading.value = false }
 }
 watch(() => props.moduleId, () => void load())
@@ -161,7 +192,7 @@ onMounted(() => void load())
 <template>
   <section class="intro"><span class="section-chip">Hướng dẫn · v0.6</span>
     <h2>{{moduleId === 'capacity' ? 'Sức chứa giảng viên' : moduleId === 'projects' ? 'Dự án của tôi' : 'Đăng ký đề tài & giảng viên hướng dẫn'}}</h2>
-    <p>{{moduleId === 'projects' ? 'Project được tự động tạo sau khi giảng viên chấp nhận hướng dẫn.' : 'Dữ liệu lấy từ API và SQL Server, được kiểm tra quyền tại Backend.'}}</p>
+    <p>{{moduleId === 'projects' ? 'Project được tạo sau khi sinh viên chọn một giảng viên đã đồng ý hướng dẫn.' : 'Dữ liệu lấy từ API và SQL Server, được kiểm tra quyền tại Backend.'}}</p>
   </section>
   <p v-if="error" class="user-alert error" role="alert">{{error}}</p>
   <p v-if="success" class="user-alert success" role="status">{{success}}</p>
@@ -175,20 +206,21 @@ onMounted(() => void load())
     <p v-if="!periods.length" class="secondary-cell">Chưa có đợt đăng ký. Admin cần tạo đợt ở mục Đợt đăng ký.</p>
   </article>
   <article v-if="moduleId === 'capacity' && role === 'Lecturer' && periodId" class="panel user-editor">
-    <h3>Thiết lập số sinh viên tối đa của bạn</h3>
+    <h3>Giới hạn hướng dẫn chung cho mọi đợt</h3>
     <form class="user-form" @submit.prevent="saveCapacity">
       <label>Giới hạn sinh viên<input v-model.number="maxStudents" type="number" min="0" max="1000" step="1" required /></label>
-      <p>Đã nhận: {{ownCapacity?.currentStudents ?? 0}}. Không thể đặt giới hạn thấp hơn số sinh viên đã nhận.</p>
+      <p>Đang hướng dẫn ở tất cả các đợt: {{ownCapacity?.currentStudents ?? 0}} / {{ownCapacity?.maxStudents ?? 0}}. Còn {{ownCapacity?.remaining ?? 0}} suất. Giới hạn được kế thừa sang đợt mới.</p>
       <button class="action-primary" type="submit" :disabled="loading">Lưu sức chứa</button>
     </form>
   </article>
   <article v-if="moduleId === 'lecturerrequests' && role === 'Student'" class="panel user-editor">
     <h3>Đăng ký đề tài và chọn giảng viên cùng lúc</h3>
-    <p>Chọn đề tài đang mở hoặc tự đề xuất đề tài mới. Giảng viên duyệt cả đề tài và yêu cầu hướng dẫn trong một lần.</p>
+    <p>Bạn có thể gửi yêu cầu đến nhiều giảng viên. Giảng viên đồng ý trước, sau đó bạn chọn một người để chốt đề tài và tạo Project.</p>
     <form class="user-form" @submit.prevent="submitJoint">
       <label>Đề tài
         <select v-model="jointTopicId">
           <option value="new">Tự đề xuất đề tài mới</option>
+          <option v-for="r in ownPendingProposals" :key="r.topicId" :value="r.topicId">Đề xuất đang chờ: {{r.draftTitle || r.topicTitle}} (gửi đến giảng viên khác)</option>
           <option v-for="t in publicTopics" :key="t.id" :value="t.id">{{t.title}}</option>
         </select>
       </label>
@@ -205,11 +237,11 @@ onMounted(() => void load())
           <option v-for="c in capacities.filter(c => c.remaining > 0)" :key="c.lecturerUserId" :value="c.lecturerUserId">{{c.lecturerName}} · Còn {{c.remaining}} chỗ</option>
         </select>
       </label>
-      <button class="action-primary" type="submit" :disabled="loading || !activePeriod">Gửi đăng ký đề tài + giảng viên</button>
+      <button class="action-primary" type="submit" :disabled="loading || !activePeriod">Gửi yêu cầu đến giảng viên</button>
     </form>
   </article>
   <article v-if="moduleId === 'capacity' || (moduleId === 'lecturerrequests' && role === 'Student')" class="panel users-panel">
-    <h3>Danh sách giảng viên và vị trí còn trống</h3>
+    <h3>Sức chứa tổng hợp của giảng viên qua tất cả các đợt</h3>
     <label v-if="moduleId === 'lecturerrequests' && role === 'Student'">Đề tài đã nhận
       <select v-model="topicId"><option value="" disabled>Chọn đề tài của bạn</option>
         <option v-for="t in topics" :key="t.id" :value="t.id">{{t.title}}</option>
@@ -225,6 +257,16 @@ onMounted(() => void load())
           @click="submit(c)">{{existingRequest(c.lecturerUserId) ? 'Đã gửi' : 'Đăng ký hướng dẫn'}}</button></td></tr>
     </tbody></table></div>
   </article>
+  <article v-if="moduleId === 'lecturerrequests' && role === 'Student' && offeredRequests.length" class="panel users-panel">
+    <h3>Giảng viên đã đồng ý nhận bạn · Hãy chọn một người</h3>
+    <p>Chỉ khi bạn chọn, hệ thống mới khóa đề tài, tính một suất hướng dẫn và tạo Project. Lời đồng ý có thể hết chỗ nếu giảng viên nhận sinh viên khác trước.</p>
+    <div class="table-scroller"><table><thead><tr><th>Giảng viên</th><th>Đề tài</th><th>Thao tác</th></tr></thead><tbody>
+      <tr v-for="offer in offeredRequests" :key="offer.id">
+        <td>{{offer.lecturerName}}</td><td>{{offer.draftTitle || offer.topicTitle}}</td>
+        <td><button type="button" class="action-primary" :disabled="loading" @click="selectOffer(offer)">Chọn giảng viên này</button></td>
+      </tr>
+    </tbody></table></div>
+  </article>
   <article v-if="moduleId === 'lecturerrequests'" class="panel users-panel">
     <h3>{{role === 'Lecturer' ? 'Yêu cầu gửi đến bạn' : 'Yêu cầu đăng ký giảng viên'}}</h3>
     <div class="table-scroller"><table><thead><tr><th>Đề tài</th><th>Sinh viên</th><th>Giảng viên</th><th>Đợt</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>
@@ -236,15 +278,17 @@ onMounted(() => void load())
             <p><strong>Nội dung:</strong> {{r.draftExpectedContent}}</p>
             <p><strong>Công nghệ:</strong> {{r.draftProposedTechnology}}</p>
           </details></td><td>{{r.studentName}}</td><td>{{r.lecturerName}}</td><td>{{r.periodName}}</td>
-        <td>{{r.status === 'REVISION_REQUIRED' ? 'CẦN CHỈNH SỬA' : r.status}}<div v-if="r.rejectionReason" class="secondary-cell">Phản hồi: {{r.rejectionReason}}</div>
+        <td>{{r.status === 'REVISION_REQUIRED' ? 'CẦN CHỈNH SỬA' : r.status === 'OFFERED' ? 'GIẢNG VIÊN ĐÃ ĐỒNG Ý' : r.status}}<div v-if="r.rejectionReason" class="secondary-cell">Phản hồi: {{r.rejectionReason}}</div>
           <div v-if="r.isCombined" class="secondary-cell">Đăng ký kết hợp</div></td>
         <td class="actions"><template v-if="role === 'Lecturer' && r.status === 'PENDING'">
-          <button type="button" :disabled="loading" @click="decide(r, true)">Chấp nhận & tạo Project</button>
+          <button type="button" :disabled="loading" @click="decide(r, true)">Đồng ý hướng dẫn</button>
           <button v-if="r.isCombined" type="button" :disabled="loading" @click="requestRevision(r)">Yêu cầu sửa</button>
           <button type="button" :disabled="loading" @click="decide(r, false)">Từ chối</button>
         </template>
         <button v-if="role === 'Student' && r.status === 'REVISION_REQUIRED' && r.isCombined"
-          type="button" :disabled="loading" @click="startRevision(r)">Sửa và gửi lại</button></td></tr>
+          type="button" :disabled="loading" @click="startRevision(r)">Sửa và gửi lại</button>
+        <button v-if="role === 'Student' && ['PENDING', 'OFFERED', 'REVISION_REQUIRED', 'REJECTED'].includes(r.status)"
+          type="button" :disabled="loading" @click="cancelJoint(r)">{{r.isCombined ? 'Hủy đề xuất' : 'Hủy yêu cầu'}}</button></td></tr>
     </tbody></table></div>
   </article>
   <article v-if="moduleId === 'lecturerrequests' && role === 'Student' && revisingId" class="panel user-editor">

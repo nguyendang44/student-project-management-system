@@ -92,11 +92,9 @@ export const modules: ModuleSpec[] = [
     "id": "proposals",
     "path": "/topic-proposals",
     "group": "Đề tài",
-    "title": "Đề xuất đề tài",
-    "description": "Sinh viên đề xuất, giảng viên phê duyệt hoặc từ chối",
+    "title": "Đề xuất cũ",
+    "description": "Chỉ xem dữ liệu cũ. Đề xuất mới thực hiện trong Đăng ký đề tài & giảng viên hướng dẫn",
     "roles": [
-      "Student",
-      "Lecturer",
       "Admin"
     ],
     "requirements": "FR-06",
