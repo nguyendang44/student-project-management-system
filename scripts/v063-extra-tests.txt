@@ -1,0 +1,82 @@
+    private static async Task<Guid> Choose(HttpClient student, Guid requestId)
+    {
+        using var response = await student.PostAsync($"/api/v1/lecturer-requests/{requestId}/select", null);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = (await response.Content.ReadFromJsonAsync<JsonDocument>())!;
+        Assert.Equal("ACCEPTED", json.RootElement.GetProperty("status").GetString());
+        return json.RootElement.GetProperty("projectId").GetGuid();
+    }
+
+    [Fact]
+    public async Task StudentCannotSelectAnotherStudentsOfferOrUnapprovedRequest()
+    {
+        using var app = new TestServer(); await app.Seed();
+        using var admin = await Login(app, "v06-admin@test.local");
+        using var lecturer = await Login(app, "v06-lecturer@test.local");
+        using var student = await Login(app, "v06-student@test.local");
+        using var stranger = await Login(app, "v06-student2@test.local");
+        var period = await Period(admin);
+        var lecturerId = await UserId(app, "v06-lecturer@test.local");
+        await SetMax(lecturer, period, 2);
+        var request = await Combined(student, null, lecturerId, period);
+        Assert.Equal(HttpStatusCode.Conflict, (await student.PostAsync($"/api/v1/lecturer-requests/{request}/select", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await stranger.PostAsync($"/api/v1/lecturer-requests/{request}/select", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/lecturer-requests/{request}/accept", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await stranger.PostAsync($"/api/v1/lecturer-requests/{request}/select", null)).StatusCode);
+        await Choose(student, request);
+        Assert.Equal(HttpStatusCode.Conflict, (await student.PostAsync($"/api/v1/lecturer-requests/{request}/select", null)).StatusCode);
+    }
+
+    [Fact]
+    public async Task SelfProposedTopicCanReceiveTwoOffersBeforeStudentChooses()
+    {
+        using var app = new TestServer(); await app.Seed();
+        using var admin = await Login(app, "v06-admin@test.local");
+        using var lecturer = await Login(app, "v06-lecturer@test.local");
+        using var lecturer2 = await Login(app, "v06-lecturer2@test.local");
+        using var student = await Login(app, "v06-student@test.local");
+        var period = await Period(admin);
+        var l1 = await UserId(app, "v06-lecturer@test.local");
+        var l2 = await UserId(app, "v06-lecturer2@test.local");
+        await SetMax(lecturer, period, 10); await SetMax(lecturer2, period, 10);
+        var first = await Combined(student, null, l1, period);
+        using var rows = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/lecturer-requests"))!;
+        var topicId = rows.RootElement.EnumerateArray().Single().GetProperty("topicId").GetGuid();
+        var second = await Combined(student, topicId, l2, period);
+        Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/lecturer-requests/{first}/accept", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await lecturer2.PostAsync($"/api/v1/lecturer-requests/{second}/accept", null)).StatusCode);
+        using (var before = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/topics/mine"))!)
+            Assert.Empty(before.RootElement.EnumerateArray());
+        await Choose(student, second);
+        using var after = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/lecturer-requests"))!;
+        Assert.Equal("CANCELLED", after.RootElement.EnumerateArray().Single(r => r.GetProperty("id").GetGuid() == first).GetProperty("status").GetString());
+        using var projects = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/projects"))!;
+        Assert.Equal(l2, projects.RootElement.EnumerateArray().Single().GetProperty("lecturerUserId").GetGuid());
+        Assert.Equal(topicId, projects.RootElement.EnumerateArray().Single().GetProperty("topicId").GetGuid());
+    }
+
+    [Fact]
+    public async Task PeriodTwoInheritsCapacityAndCountsPeriodOneProjects()
+    {
+        using var app = new TestServer(); await app.Seed();
+        using var admin = await Login(app, "v06-admin@test.local");
+        using var lecturer = await Login(app, "v06-lecturer@test.local");
+        using var student = await Login(app, "v06-student@test.local");
+        var firstPeriod = await Period(admin);
+        var lecturerId = await UserId(app, "v06-lecturer@test.local");
+        await SetMax(lecturer, firstPeriod, 10);
+        var topicId = await Proposal(student, lecturer);
+        var request = await Submit(student, topicId, lecturerId, firstPeriod);
+        Assert.Equal(HttpStatusCode.OK, (await lecturer.PostAsync($"/api/v1/lecturer-requests/{request}/accept", null)).StatusCode);
+        await Choose(student, request);
+        var secondPeriod = await Period(admin);
+        using var capacities = (await lecturer.GetFromJsonAsync<JsonDocument>($"/api/v1/lecturer-capacity?periodId={secondPeriod}"))!;
+        var value = capacities.RootElement.EnumerateArray().Single(c => c.GetProperty("lecturerUserId").GetGuid() == lecturerId);
+        Assert.Equal(10, value.GetProperty("maxStudents").GetInt32());
+        Assert.Equal(1, value.GetProperty("currentStudents").GetInt32());
+        Assert.Equal(9, value.GetProperty("remaining").GetInt32());
+        await SetMax(lecturer, secondPeriod, 10);
+        using var repeated = (await lecturer.GetFromJsonAsync<JsonDocument>($"/api/v1/lecturer-capacity?periodId={firstPeriod}"))!;
+        Assert.Equal(9, repeated.RootElement.EnumerateArray().Single(c => c.GetProperty("lecturerUserId").GetGuid() == lecturerId)
+            .GetProperty("remaining").GetInt32());
+    }

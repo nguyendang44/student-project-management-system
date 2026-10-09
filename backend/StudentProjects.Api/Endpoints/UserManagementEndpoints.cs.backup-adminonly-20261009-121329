@@ -21,7 +21,7 @@ public static class UserManagementEndpoints
         users.MapPut("/{id:guid}", Update).RequireAuthorization(p => p.RequireRole("Admin"));
         users.MapPatch("/{id:guid}/status", SetStatus).RequireAuthorization(p => p.RequireRole("Admin"));
         users.MapGet("/me/profile", GetOwnProfile).RequireAuthorization(p => p.RequireRole("Student", "Lecturer"));
-        users.MapPut("/me/profile", () => Results.Forbid()).RequireAuthorization();
+        users.MapPut("/me/profile", UpdateOwnProfile).RequireAuthorization(p => p.RequireRole("Student", "Lecturer"));
 
         // A safe, read-only directory without student personal data.
         app.MapGet("/api/v1/lecturers", LecturerDirectory)
@@ -208,6 +208,35 @@ public static class UserManagementEndpoints
         var id = Actor(principal);
         var profile = await SelectUsers(db, userId: id).SingleOrDefaultAsync(ct);
         return profile is null ? Results.NotFound() : Results.Ok(profile);
+    }
+
+    private static async Task<IResult> UpdateOwnProfile(UpdateOwnProfileRequest? req,
+        ClaimsPrincipal principal, StudentProjectsDbContext db, CancellationToken ct)
+    {
+        if (req is null || !ValidName(req.FullName) || req.Faculty?.Length > 200 || req.Specialty?.Length > 300)
+            return Invalid("Invalid name or profile information.");
+        var id = Actor(principal);
+        var user = await db.Users.Include(x => x.Role).SingleOrDefaultAsync(x => x.Id == id, ct);
+        if (user is null || !IsManaged(user.Role.Name)) return Results.NotFound();
+        user.FullName = req.FullName!.Trim();
+        user.UpdatedAt = DateTimeOffset.UtcNow;
+        if (user.Role.Name == "Student")
+        {
+            var student = await db.Students.SingleOrDefaultAsync(x => x.UserId == id, ct);
+            if (student is null) return Results.Problem("Student profile missing.", statusCode: 409);
+            student.Faculty = req.Faculty?.Trim();
+            student.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+        else
+        {
+            var lecturer = await db.Lecturers.SingleOrDefaultAsync(x => x.UserId == id, ct);
+            if (lecturer is null) return Results.Problem("Lecturer profile missing.", statusCode: 409);
+            lecturer.Specialty = req.Specialty?.Trim();
+            lecturer.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+        db.AuditEntries.Add(new AuditEntry { ActorUserId = id, Action = "OWN_PROFILE_UPDATED", EntityName = "User", EntityId = id });
+        await db.SaveChangesAsync(ct);
+        return Results.Ok(await SelectUsers(db, userId: id).SingleAsync(ct));
     }
 
     private static async Task<IResult> LecturerDirectory(StudentProjectsDbContext db, CancellationToken ct)

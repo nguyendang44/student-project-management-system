@@ -109,7 +109,7 @@ public sealed class UserManagementIntegrationTests
     }
 
     [Fact]
-    public async Task Student_CannotManageAccounts_OrEditOwnProfile()
+    public async Task Student_CannotManageAccounts_ButCanUpdateOnlyOwnAllowedFields()
     {
         using var app = new TestApp();
         await app.SeedAsync();
@@ -119,16 +119,15 @@ public sealed class UserManagementIntegrationTests
         {
             fullName = "Wrong", email = "fail@test.local", password = Password, role = "Student", studentCode = "X1"
         })).StatusCode);
-        var before = await student.GetFromJsonAsync<JsonDocument>("/api/v1/users/me/profile");
-        Assert.Equal("ST100", before!.RootElement.GetProperty("studentCode").GetString());
-        var response = await student.PutAsJsonAsync("/api/v1/users/me/profile",
+        var own = await student.GetFromJsonAsync<JsonDocument>("/api/v1/users/me/profile");
+        Assert.Equal("ST100", own!.RootElement.GetProperty("studentCode").GetString());
+        var updated = await student.PutAsJsonAsync("/api/v1/users/me/profile",
             new { fullName = "Changed Student", faculty = "Computer Science", specialty = (string?)null });
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        using var after = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/users/me/profile"))!;
-        Assert.Equal("Test Student", after.RootElement.GetProperty("fullName").GetString());
-        Assert.Equal("ST100", after.RootElement.GetProperty("studentCode").GetString());
-        Assert.Equal(JsonValueKind.Null, after.RootElement.GetProperty("faculty").ValueKind);
-        var id = after.RootElement.GetProperty("id").GetGuid();
+        Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
+        using var result = (await updated.Content.ReadFromJsonAsync<JsonDocument>())!;
+        Assert.Equal("ST100", result.RootElement.GetProperty("studentCode").GetString());
+        Assert.Equal("Computer Science", result.RootElement.GetProperty("faculty").GetString());
+        var id = result.RootElement.GetProperty("id").GetGuid();
         Assert.Equal(HttpStatusCode.Forbidden, (await student.GetAsync($"/api/v1/users/{id}")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden,
             (await student.PatchAsJsonAsync($"/api/v1/users/{id}/status", new { isActive = false })).StatusCode);
@@ -162,7 +161,7 @@ public sealed class UserManagementIntegrationTests
     }
 
     [Fact]
-    public async Task Lecturer_CannotEditOwnProfile_AdminCanUpdateSpecialty_DirectoryShowsActive()
+    public async Task Lecturer_UpdatesSpecialty_DirectoryShowsOnlyActiveLecturers()
     {
         using var app = new TestApp();
         await app.SeedAsync();
@@ -170,18 +169,11 @@ public sealed class UserManagementIntegrationTests
         using var admin = await Authenticated(app, "admin@test.local");
         var edit = await lecturer.PutAsJsonAsync("/api/v1/users/me/profile",
             new { fullName = "Professor L", specialty = "Data Science", faculty = (string?)null });
-        Assert.Equal(HttpStatusCode.Forbidden, edit.StatusCode);
-        using var own = (await lecturer.GetFromJsonAsync<JsonDocument>("/api/v1/users/me/profile"))!;
-        Assert.Equal("Test Lecturer", own.RootElement.GetProperty("fullName").GetString());
-        var id = own.RootElement.GetProperty("id").GetGuid();
-        var adminEdit = await admin.PutAsJsonAsync($"/api/v1/users/{id}", new
-        {
-            fullName = "Professor L", email = "lecturer@test.local", specialty = "Data Science"
-        });
-        Assert.Equal(HttpStatusCode.OK, adminEdit.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, edit.StatusCode);
         using var directory = (await lecturer.GetFromJsonAsync<JsonDocument>("/api/v1/lecturers"))!;
         Assert.Single(directory.RootElement.EnumerateArray());
         Assert.Equal("Data Science", directory.RootElement[0].GetProperty("specialty").GetString());
+        var id = (await lecturer.GetFromJsonAsync<JsonDocument>("/api/v1/users/me/profile"))!.RootElement.GetProperty("id").GetGuid();
         Assert.Equal(HttpStatusCode.OK, (await admin.PatchAsJsonAsync($"/api/v1/users/{id}/status", new { isActive = false })).StatusCode);
         using var another = await Authenticated(app, "student@test.local");
         using var noLecturers = (await another.GetFromJsonAsync<JsonDocument>("/api/v1/lecturers"))!;

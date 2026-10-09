@@ -123,18 +123,32 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
             e.HasOne<User>().WithMany().HasForeignKey(x => x.StudentUserId).OnDelete(onDelete);
             e.HasOne<RegistrationPeriod>().WithMany().HasForeignKey(x => x.RegistrationPeriodId).OnDelete(onDelete);
             e.HasIndex(x => new { x.StudentUserId, x.RegistrationPeriodId, x.Status });
+            // Multiple active topic choices are allowed in the same registration period.
+            // Uniqueness is per (student, topic), regardless of registration period.
+            e.HasIndex(x => new { x.StudentUserId, x.TopicId }).IsUnique()
+                .HasFilter("[Status] IN ('PENDING','ACCEPTED')");
         });
 
         modelBuilder.Entity<LecturerRequest>(e =>
         {
             e.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
             e.Property(x => x.RejectionReason).HasMaxLength(2000);
+            e.Property(x => x.DraftTitle).HasMaxLength(300);
+            e.Property(x => x.DraftDescription).HasMaxLength(4000);
+            e.Property(x => x.DraftObjective).HasMaxLength(2000);
+            e.Property(x => x.DraftExpectedContent).HasMaxLength(2000);
+            e.Property(x => x.DraftProposedTechnology).HasMaxLength(1000);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.StudentUserId).OnDelete(onDelete);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.LecturerUserId).OnDelete(onDelete);
             e.HasOne<Topic>().WithMany().HasForeignKey(x => x.TopicId).OnDelete(onDelete);
             e.HasOne<RegistrationPeriod>().WithMany().HasForeignKey(x => x.RegistrationPeriodId).OnDelete(onDelete);
             e.HasIndex(x => new { x.LecturerUserId, x.RegistrationPeriodId, x.Status });
             e.HasIndex(x => new { x.StudentUserId, x.RegistrationPeriodId, x.Status });
+            e.HasIndex(x => x.StudentUserId).IsUnique().HasDatabaseName("UX_LecturerRequests_OneAcceptedPerStudent")
+                .HasFilter("[Status] = 'ACCEPTED'");
+            e.HasIndex(x => new { x.StudentUserId, x.LecturerUserId, x.TopicId, x.RegistrationPeriodId }).IsUnique()
+                .HasDatabaseName("UX_LecturerRequests_OnePendingPerStudentLecturerTopicPeriod")
+                .HasFilter("[Status] = 'PENDING'");
         });
 
         modelBuilder.Entity<Project>(e =>
@@ -148,6 +162,10 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
             e.HasOne<LecturerRequest>().WithMany().HasForeignKey(x => x.AcceptedLecturerRequestId).OnDelete(onDelete);
             e.HasIndex(x => x.AcceptedLecturerRequestId).IsUnique(); // SQL Server filters nullable unique indexes
             e.HasIndex(x => new { x.StudentUserId, x.RegistrationPeriodId });
+            e.HasIndex(x => x.StudentUserId).IsUnique().HasDatabaseName("UX_Projects_OneActiveProjectPerStudent")
+                .HasFilter("[Status] <> 'CANCELLED'");
+            e.HasIndex(x => x.TopicId).IsUnique().HasDatabaseName("UX_Projects_OneActiveProjectPerTopic")
+                .HasFilter("[Status] <> 'CANCELLED'");
         });
 
         modelBuilder.Entity<Milestone>(e =>
@@ -250,15 +268,12 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
             e.HasIndex(x => x.Key).IsUnique();
         });
 
-        // v0.4: Students, Lecturers and AuditEntries are now included in migrations.
-        // Other draft modules remain excluded until their respective feature migrations.
+        // InitialAuth migration must create only Users and Roles. Other modules are
+        // drafted in the model but their schema is deliberately NOT migrated yet.
+        // Remove an exclusion in a later feature-specific migration after its rules are approved.
         modelBuilder.Entity<StudentProfile>().ToTable("Students");
         modelBuilder.Entity<LecturerProfile>().ToTable("Lecturers");
-        modelBuilder.Entity<RegistrationPeriod>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<LecturerCapacity>().ToTable(t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<Topic>().ToTable(t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<TopicStateHistory>().ToTable(t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<TopicRegistration>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<LecturerRequest>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<Project>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<Milestone>().ToTable(t => t.ExcludeFromMigrations());

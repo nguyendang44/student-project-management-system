@@ -1,5 +1,9 @@
 import { request } from '../../api/client'
-/** Planned endpoint only. Backend deliberately responds 501 until this feature is implemented. */
+import type { Topic, TopicPayload } from '../topics/topics.types'
 export const proposalsApi = {
-  list: (token?: string) => request<unknown>('/topic-proposals', { method: 'GET' }, token),
+  list: () => request<Topic[]>('/topic-proposals'),
+  create: (body:TopicPayload) => request<Topic>('/topic-proposals', {method:'POST',body:JSON.stringify(body)}),
+  submit: (id:string) => request<Topic>(`/topic-proposals/${id}/submit`,{method:'POST'}),
+  approve: (id:string) => request<Topic>(`/topic-proposals/${id}/approve`,{method:'POST'}),
+  reject: (id:string, reason:string) => request<Topic>(`/topic-proposals/${id}/reject`,{method:'POST',body:JSON.stringify({reason})}),
 }
