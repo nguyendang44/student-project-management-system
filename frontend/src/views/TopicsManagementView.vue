@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { HttpError } from '../api/client'
 import { moduleById, type ModuleId } from '../app/modules'
 import { useAuthStore } from '../stores/auth'
@@ -8,16 +8,25 @@ import { topicsApi } from '../features/topics/topics.api'
 import { proposalsApi } from '../features/proposals/proposals.api'
 import { periodsApi } from '../features/periods/periods.api'
 import { topicregistrationsApi } from '../features/topicregistrations/topicregistrations.api'
+import { supervisionApi } from '../features/supervision/supervision.api'
+import type { JointTopicDraft, LecturerRequestV06 } from '../features/supervision/supervision.api'
 import type { Topic, TopicPayload, TopicRegistration, RegistrationPeriod } from '../features/topics/topics.types'
 
 const props = defineProps<{moduleId: ModuleId}>()
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const moduleInfo = computed(() => moduleById(props.moduleId))
 const role = computed(() => auth.role)
 const busy = ref(false), error = ref(''), success = ref('')
 const topics = ref<Topic[]>([]), proposals = ref<Topic[]>([]), periods = ref<RegistrationPeriod[]>([])
 const registrations = ref<TopicRegistration[]>([]), mineTopics = ref<Topic[]>([])
+const lecturerRequests = ref<LecturerRequestV06[]>([])
+const revisionId = ref('')
+const revisionDraft = ref<JointTopicDraft>({ title:'', description:'', objective:'', expectedContent:'', proposedTechnology:'' })
+const visibleLecturerRequests = computed(() => lecturerRequests.value.filter(r => r.status !== 'CANCELLED'))
+const currentRevision = computed(() => lecturerRequests.value.find(r => r.id === revisionId.value))
+const revisionPanel = ref<HTMLElement | null>(null)
 const rejectionNotes = reactive<Record<string,string>>({})
 const total = ref(0), page = ref(1), search = ref('')
 const editor = ref<'none'|'create'|'edit'|'propose'>('none'), editedId = ref('')
@@ -42,7 +51,15 @@ async function reload(){
   try {
     if (props.moduleId === 'topics') { const data=await topicsApi.list(search.value,page.value);topics.value=data.items;total.value=data.total;if(role.value==='Student'){registrations.value=await topicregistrationsApi.list();mineTopics.value=await topicsApi.mine()} }
     if (props.moduleId === 'proposals') proposals.value=await proposalsApi.list()
-    if (props.moduleId === 'topicregistrations') { registrations.value=await topicregistrationsApi.list(); mineTopics.value=role.value==='Student'?await topicsApi.mine():[] }
+    if (props.moduleId === 'topicregistrations') {
+      registrations.value = await topicregistrationsApi.list()
+      if (role.value === 'Student') {
+        // Combined topic + lecturer applications live in LecturerRequests, not TopicRegistrations.
+        lecturerRequests.value = await supervisionApi.requests()
+        mineTopics.value = await topicsApi.mine()
+        openRevisionFromLink()
+      } else { lecturerRequests.value = []; mineTopics.value = [] }
+    }
     if (props.moduleId === 'periods') periods.value=await periodsApi.list()
   } catch(e){error.value=errMessage(e)} finally {busy.value=false}
 }
@@ -80,6 +97,73 @@ function startRegister(t:Topic){
   // Direct students to the joint application form; do not create a standalone topic registration.
   void router.push({ path:'/lecturer-requests', query:{ topicId:t.id } })
 }
+function lecturerRequestStatus(status:string){
+  const labels:Record<string,string> = {
+    PENDING: 'CHỜ GIẢNG VIÊN',
+    REVISION_REQUIRED: 'GIẢNG VIÊN YÊU CẦU SỬA',
+    OFFERED: 'GIẢNG VIÊN ĐÃ ĐỒNG Ý',
+    REJECTED: 'ĐÃ BỊ TỪ CHỐI',
+    ACCEPTED: 'ĐÃ XÁC NHẬN',
+    CANCELLED: 'ĐÃ HỦY',
+  }
+  return labels[status] || status
+}
+function openRevisionFromLink(){
+  if (props.moduleId !== 'topicregistrations' || role.value !== 'Student') return
+  const requestId = route.query.revisionId
+  if (typeof requestId !== 'string' || !requestId) return
+  const matching = lecturerRequests.value.find(r => r.id === requestId)
+  if (!matching || !matching.isCombined || matching.status !== 'REVISION_REQUIRED') {
+    revisionId.value = ''
+    error.value = 'Yêu cầu chỉnh sửa này không còn khả dụng. Hãy kiểm tra trạng thái mới nhất trong bảng.'
+    return
+  }
+  beginLecturerRevision(matching)
+}
+function closeLecturerRevision(){
+  revisionId.value = ''
+  if (typeof route.query.revisionId === 'string') {
+    void router.replace({ path: '/topic-registrations' })
+  }
+}
+function beginLecturerRevision(r:LecturerRequestV06){
+  if (role.value !== 'Student' || !r.isCombined || r.status !== 'REVISION_REQUIRED') return
+  clearAlert()
+  revisionId.value = r.id
+  if (route.query.revisionId !== r.id) {
+    void router.replace({ path: '/topic-registrations', query: { revisionId: r.id } })
+  }
+  revisionDraft.value = {
+    title: r.draftTitle || r.topicTitle,
+    description: r.draftDescription || '',
+    objective: r.draftObjective || '',
+    expectedContent: r.draftExpectedContent || '',
+    proposedTechnology: r.draftProposedTechnology || '',
+  }
+  void nextTick(() => revisionPanel.value?.scrollIntoView({ behavior:'smooth', block:'start' }))
+}
+async function submitLecturerRevision(){
+  if (role.value !== 'Student' || !revisionId.value) return
+  const current = lecturerRequests.value.find(r => r.id === revisionId.value)
+  if (!current || current.status !== 'REVISION_REQUIRED' || !current.isCombined) {
+    error.value = 'Yêu cầu không còn ở trạng thái cần chỉnh sửa. Vui lòng tải lại.'; return
+  }
+  if (Object.values(revisionDraft.value).some(v => !v.trim())) {
+    error.value = 'Vui lòng nhập đủ năm nội dung đề tài.'; return
+  }
+  busy.value=true;clearAlert()
+  try {
+    await supervisionApi.resubmit(revisionId.value, { ...revisionDraft.value })
+    // Drop the now-resolved revision ID before loading the new PENDING state.
+    revisionId.value=''
+    if (typeof route.query.revisionId === 'string') {
+      await router.replace({ path: '/topic-registrations' })
+    }
+    await reload()
+    success.value='Đã gửi lại bản chỉnh sửa cho giảng viên.'
+  } catch(e) { error.value=errMessage(e) }
+  finally { busy.value=false }
+}
 async function decideRegistration(r:TopicRegistration,accept:boolean){
   if(!window.confirm(accept?`Chấp nhận sinh viên ${r.studentName} và khóa đề tài ${r.topicTitle}? Toàn bộ đăng ký khác (kể cả lịch sử đã hủy hoặc từ chối) của sinh viên sẽ bị xóa vĩnh viễn.`:`Từ chối yêu cầu của ${r.studentName}?`))return
   busy.value=true;clearAlert()
@@ -106,6 +190,7 @@ async function createPeriod(){busy.value=true;clearAlert();try{
 }catch(e){error.value=errMessage(e)}finally{busy.value=false}}
 async function togglePeriod(p:RegistrationPeriod){busy.value=true;clearAlert();try{await periodsApi.setState(p.id,!p.isOpen);success.value='Đã cập nhật đợt đăng ký.';await reload()}catch(e){error.value=errMessage(e)}finally{busy.value=false}}
 function formatDate(iso:string){return new Date(iso).toLocaleString('vi-VN')}
+watch(() => route.query.revisionId, () => { if (!busy.value) openRevisionFromLink() })
 watch(()=>props.moduleId,()=>{editor.value='none';void reload()})
 onMounted(()=>void reload())
 </script>
@@ -135,9 +220,61 @@ onMounted(()=>void reload())
     </tbody></table></div>
   </article>
   <article v-if="moduleId==='topicregistrations'&&role==='Student'&&mineTopics.length" class="panel users-panel"><h3>Đề tài đã dành riêng cho bạn</h3><p v-if="mineTopics.length>1" class="user-alert error" role="alert">Tài khoản hiện đang có nhiều đề tài được duyệt. Mỗi sinh viên chỉ được giữ một đề tài. Hãy chọn đề tài muốn giữ và nhấn “Từ bỏ đề tài” ở đề tài còn lại. Hệ thống không tự xóa dữ liệu của bạn.</p><div v-for="t in mineTopics" :key="t.id"><strong>{{t.title}}</strong><span class="secondary-cell"> · Đã khóa · {{t.proposedByUserId===auth.currentUser?.userId?'Đề xuất của bạn':'Giảng viên đã chấp nhận'}}</span> <button v-if="['APPROVED','PUBLISHED'].includes(t.status)" class="action-secondary" type="button" :disabled="busy" @click="withdrawTopic(t)">Từ bỏ đề tài</button></div></article>
-  <article v-if="moduleId==='topicregistrations'" class="panel users-panel"><h3>Yêu cầu đăng ký đề tài</h3><p v-if="role==='Student'" class="secondary-cell">Bạn có thể đăng ký nhiều đề tài trong cùng đợt. Khi giảng viên chấp nhận một đề tài, hệ thống chỉ giữ đăng ký ACCEPTED và xóa toàn bộ các đăng ký còn lại của bạn.</p><div class="table-scroller"><table><thead><tr><th>Đề tài</th><th>Sinh viên</th><th>Đợt</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>
-    <tr v-if="!registrations.length"><td colspan="5" class="empty-cell">Chưa có yêu cầu. Sinh viên đăng ký từ trang Danh sách đề tài.</td></tr><tr v-for="r in registrations" :key="r.id"><td>{{r.topicTitle}}</td><td>{{r.studentName}}</td><td>{{r.periodName}}</td><td>{{r.status}}<span v-if="r.status==='ACCEPTED'" class="secondary-cell"> · Đã khóa</span></td><td class="actions"><button v-if="role==='Student'&&r.status==='PENDING'" class="action-secondary" @click="cancelRegistration(r)">Hủy yêu cầu</button><button v-if="role==='Lecturer'&&r.status==='PENDING'" :disabled="busy" @click="decideRegistration(r,true)">Chấp nhận & khóa</button><button v-if="role==='Lecturer'&&r.status==='PENDING'" :disabled="busy" @click="decideRegistration(r,false)">Từ chối</button></td></tr>
-  </tbody></table></div></article>
+  <article v-if="moduleId==='topicregistrations'&&role==='Student'" class="panel users-panel">
+    <h3>Đề tài đã gửi cho giảng viên</h3>
+    <p class="secondary-cell">Theo dõi các yêu cầu hướng dẫn đã gửi. Nếu giảng viên yêu cầu sửa, bạn có thể chỉnh sửa bản đề xuất và gửi lại ngay tại đây. Đề tài gốc không bị thay đổi.</p>
+    <div class="table-scroller"><table><thead><tr><th>Đề tài</th><th>Giảng viên</th><th>Đợt</th><th>Trạng thái / Phản hồi</th><th>Thao tác</th></tr></thead><tbody>
+      <tr v-if="!visibleLecturerRequests.length"><td colspan="5" class="empty-cell">Chưa có đề tài gửi giảng viên. Hãy đăng ký tại Danh sách đề tài hoặc Yêu cầu hướng dẫn.</td></tr>
+      <tr v-for="r in visibleLecturerRequests" :key="r.id">
+        <td><strong>{{r.isCombined ? (r.draftTitle || r.topicTitle) : r.topicTitle}}</strong>
+          <details v-if="r.isCombined"><summary>Xem bản đề xuất đã gửi</summary>
+            <p><strong>Đề tài gốc:</strong> {{r.topicTitle}}</p>
+            <p><strong>Tên đề tài đề xuất:</strong> {{r.draftTitle || r.topicTitle}}</p>
+            <p><strong>Mô tả:</strong> {{r.draftDescription}}</p>
+            <p><strong>Mục tiêu:</strong> {{r.draftObjective}}</p>
+            <p><strong>Nội dung dự kiến:</strong> {{r.draftExpectedContent}}</p>
+            <p><strong>Công nghệ:</strong> {{r.draftProposedTechnology}}</p>
+          </details>
+        </td>
+        <td>{{r.lecturerName}}</td><td>{{r.periodName}}</td>
+        <td>{{lecturerRequestStatus(r.status)}}
+          <div v-if="r.status==='REVISION_REQUIRED'" class="secondary-cell"><strong>Giảng viên yêu cầu sửa:</strong> {{r.lecturerName}}</div>
+          <div v-if="r.rejectionReason" class="secondary-cell">Nhận xét của giảng viên: {{r.rejectionReason}}</div></td>
+        <td class="actions">
+          <button v-if="r.isCombined && r.status==='REVISION_REQUIRED'" type="button" class="action-primary" :disabled="busy" @click="beginLecturerRevision(r)">Sửa và gửi lại</button>
+          <button v-else-if="r.status==='OFFERED'" type="button" class="action-secondary" @click="router.push('/lecturer-confirmation')">Xác nhận giảng viên</button>
+          <span v-else class="secondary-cell">{{r.status==='PENDING'?'Đang chờ phản hồi':'Đã cập nhật'}}</span>
+        </td>
+      </tr>
+    </tbody></table></div>
+  </article>
+  <article v-if="moduleId==='topicregistrations'&&role==='Student'&&revisionId" ref="revisionPanel" class="panel user-editor">
+    <h3>Chỉnh sửa đề tài theo góp ý giảng viên</h3>
+    <p v-if="currentRevision" class="secondary-cell"><strong>Giảng viên yêu cầu sửa:</strong> {{currentRevision.lecturerName}}</p>
+    <p v-if="currentRevision" class="secondary-cell"><strong>Đề tài:</strong> {{currentRevision.draftTitle || currentRevision.topicTitle}}</p>
+    <p v-if="currentRevision?.rejectionReason" class="secondary-cell">
+      Nhận xét: {{currentRevision?.rejectionReason}}
+    </p>
+    <form class="user-form" @submit.prevent="submitLecturerRevision">
+      <label>Tên đề tài<input v-model="revisionDraft.title" required maxlength="300" /></label>
+      <label>Mô tả<textarea v-model="revisionDraft.description" required maxlength="4000" /></label>
+      <label>Mục tiêu<textarea v-model="revisionDraft.objective" required maxlength="2000" /></label>
+      <label>Nội dung dự kiến<textarea v-model="revisionDraft.expectedContent" required maxlength="2000" /></label>
+      <label>Công nghệ dự kiến<textarea v-model="revisionDraft.proposedTechnology" required maxlength="1000" /></label>
+      <button type="submit" class="action-primary" :disabled="busy">Gửi lại giảng viên</button>
+      <button type="button" class="action-secondary" :disabled="busy" @click="closeLecturerRevision">Đóng</button>
+    </form>
+  </article>
+  <article v-if="moduleId==='topicregistrations'&&(role!=='Student'||registrations.length>0)" class="panel users-panel">
+    <h3>{{role==='Student'?'Đăng ký đề tài theo quy trình cũ':'Yêu cầu đăng ký đề tài'}}</h3>
+    <p v-if="role==='Student'" class="secondary-cell">Các đăng ký cũ được hiển thị riêng để không mất lịch sử. Đăng ký kết hợp đề tài và giảng viên được theo dõi ở bảng phía trên.</p>
+    <div class="table-scroller"><table><thead><tr><th>Đề tài</th><th>Sinh viên</th><th>Đợt</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>
+      <tr v-if="!registrations.length"><td colspan="5" class="empty-cell">Chưa có yêu cầu đăng ký đề tài.</td></tr>
+      <tr v-for="r in registrations" :key="r.id"><td>{{r.topicTitle}}</td><td>{{r.studentName}}</td><td>{{r.periodName}}</td><td>{{r.status}}<span v-if="r.status==='ACCEPTED'" class="secondary-cell"> · Đã khóa</span></td>
+        <td class="actions"><button v-if="role==='Student'&&r.status==='PENDING'" class="action-secondary" @click="cancelRegistration(r)">Hủy yêu cầu</button><button v-if="role==='Lecturer'&&r.status==='PENDING'" :disabled="busy" @click="decideRegistration(r,true)">Chấp nhận &amp; khóa</button><button v-if="role==='Lecturer'&&r.status==='PENDING'" :disabled="busy" @click="decideRegistration(r,false)">Từ chối</button></td>
+      </tr>
+    </tbody></table></div>
+  </article>
   <article v-if="moduleId==='periods'" class="panel users-panel"><h3>Đợt đăng ký</h3><div class="table-scroller"><table><thead><tr><th>Tên đợt</th><th>Bắt đầu</th><th>Kết thúc</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody><tr v-if="!periods.length"><td colspan="5" class="empty-cell">Chưa có đợt đăng ký.</td></tr><tr v-for="p in periods" :key="p.id"><td>{{p.name}}</td><td>{{formatDate(p.startsAt)}}</td><td>{{formatDate(p.endsAt)}}</td><td>{{p.isOpen?'Đang mở':'Đóng'}}</td><td><button class="action-secondary" type="button" @click="togglePeriod(p)">{{p.isOpen?'Đóng':'Mở'}}</button></td></tr></tbody></table></div>
     <form class="user-form" @submit.prevent="createPeriod"><label>Tên đợt<input v-model.trim="periodForm.name" maxlength="200" required /></label><label>Bắt đầu<input v-model="periodForm.startsAt" type="datetime-local" required /></label><label>Kết thúc<input v-model="periodForm.endsAt" type="datetime-local" required /></label><label>Trạng thái<select v-model="periodForm.isOpen"><option :value="true">Mở</option><option :value="false">Đóng</option></select></label><button class="action-primary" :disabled="busy" type="submit">Tạo đợt</button></form>
   </article>

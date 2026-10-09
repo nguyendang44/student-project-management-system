@@ -7,7 +7,6 @@ export type ModuleId =
   | 'lecturers'
   | 'capacity'
   | 'lecturerrequests'
-  | 'lecturerconfirmation'
   | 'projects'
   | 'milestones'
   | 'progress'
@@ -226,18 +225,6 @@ export const modules: ModuleSpec[] = [
       "POST /lecturer-requests",
       "POST /lecturer-requests/{id}/accept"
     ]
-  },
-  {
-    "id": "lecturerconfirmation",
-    "path": "/lecturer-confirmation",
-    "group": "Hướng dẫn",
-    "title": "Xác nhận giảng viên",
-    "description": "Chọn giảng viên đã đồng ý hướng dẫn để xác nhận và tạo Project",
-    "roles": ["Student"],
-    "requirements": "FR-08, FR-09",
-    "useCases": ["UC-11", "UC-13"],
-    "columns": ["Giảng viên", "Đề tài", "Thao tác"],
-    "endpoints": ["GET /lecturer-requests", "POST /lecturer-requests/{id}/select"]
   },
   {
     "id": "projects",

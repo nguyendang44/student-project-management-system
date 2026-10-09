@@ -30,7 +30,7 @@ async function signOut() {
       <header class="topbar"><div><div class="eyebrow">HỆ THỐNG QUẢN LÝ DỰ ÁN SINH VIÊN</div><h1>{{ route.meta.title || 'Dashboard' }}</h1></div>
         <div class="account-summary"><RouterLink v-if="auth.role !== 'Admin'" class="profile-link" to="/profile">Hồ sơ của tôi</RouterLink><div><strong>{{ auth.currentUser?.fullName }}</strong><small>{{ auth.currentUser?.role }} · {{ auth.currentUser?.email }}</small></div><button type="button" @click="signOut">Đăng xuất</button></div>
       </header>
-      <main class="main-content"><RouterView /></main>
+      <main class="main-content"><div class="notice"><strong>Authentication, User Management và Topic Management đã triển khai API.</strong> Một số module nghiệp vụ khác vẫn ở dạng skeleton.</div><RouterView /></main>
     </div>
   </div>
 </template>

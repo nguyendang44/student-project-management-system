@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { HttpError } from '../api/client'
 import { periodsApi } from '../features/periods/periods.api'
@@ -12,6 +12,7 @@ import type { ModuleId } from '../app/modules'
 const props = defineProps<{moduleId: ModuleId}>()
 const auth = useAuthStore()
 const route = useRoute()
+const router = useRouter()
 const role = computed(() => auth.role)
 const periods = ref<RegistrationPeriod[]>([])
 const periodId = ref('')
@@ -19,14 +20,11 @@ const capacities = ref<LecturerCapacityV06[]>([])
 const requests = ref<LecturerRequestV06[]>([])
 const projects = ref<ProjectV06[]>([])
 const topics = ref<Topic[]>([])
-const topicId = ref('')
 const jointTopicId = ref('new')
 const jointLecturerId = ref('')
 const allTopics = ref<Topic[]>([])
 const blankDraft = (): JointTopicDraft => ({ title: '', description: '', objective: '', expectedContent: '', proposedTechnology: '' })
 const jointDraft = ref<JointTopicDraft>(blankDraft())
-const revisingId = ref('')
-const revisingDraft = ref<JointTopicDraft>({ title: '', description: '', objective: '', expectedContent: '', proposedTechnology: '' })
 const maxStudents = ref(1)
 const loading = ref(false), error = ref(''), success = ref('')
 const ownCapacity = computed(() => capacities.value.find(c => c.lecturerUserId === auth.currentUser?.userId))
@@ -90,9 +88,25 @@ async function applyTopicFromLink() {
   jointTopicId.value = id
 }
 watch(() => route.query.topicId, () => { void applyTopicFromLink() })
+// A lecturer selected in the capacity table is only preselected here.
+// Do not change the topic, application draft, or submit a request automatically.
+function selectLecturerFromLink() {
+  if (props.moduleId !== 'lecturerrequests' || role.value !== 'Student') return
+  const lecturerId = route.query.lecturerId
+  if (typeof lecturerId !== 'string' || !lecturerId) return
+  const selected = capacities.value.find(c => c.lecturerUserId === lecturerId)
+  if (selected && selected.remaining > 0) {
+    jointLecturerId.value = lecturerId
+  } else {
+    error.value = 'Giảng viên được chọn hiện không còn suất hướng dẫn hoặc không khả dụng.'
+  }
+}
+watch(() => route.query.lecturerId, () => selectLecturerFromLink())
+function startLecturerRegistration(c: LecturerCapacityV06) {
+  if (role.value !== 'Student' || c.remaining <= 0) return
+  void router.push({ path: '/lecturer-requests', query: { lecturerId: c.lecturerUserId } })
+}
 const offeredRequests = computed(() => requests.value.filter(r => r.status === 'OFFERED'))
-const existingRequest = (lId: string) => requests.value.some(r => r.lecturerUserId === lId &&
-  r.topicId === topicId.value && r.registrationPeriodId === periodId.value && r.status === 'PENDING')
 function message(e: unknown) {
   return e instanceof HttpError ? (e.payload?.message || `API ${e.status}`)
     : e instanceof Error ? e.message : 'Không thể tải dữ liệu.'
@@ -101,11 +115,20 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
+    // Confirmation is a separate student-only page. Offers do not depend on the selected period.
+    if (props.moduleId === 'lecturerconfirmation') {
+      requests.value = await supervisionApi.requests()
+      return
+    }
     periods.value = await periodsApi.list()
-    if (!periodId.value || !periods.value.some(p => p.id === periodId.value)) {
-      const current = periods.value.find(p => p.isOpen && new Date(p.startsAt).getTime() <= Date.now() &&
-        new Date(p.endsAt).getTime() > Date.now())
-      periodId.value = (current || periods.value[0])?.id || ''
+    const currentPeriod = periods.value.find(p => p.isOpen &&
+      new Date(p.startsAt).getTime() <= Date.now() && new Date(p.endsAt).getTime() > Date.now())
+    if (role.value === 'Student') {
+      // Student never selects a period manually. Use an active period for submissions;
+      // if none is active, retain a period only to show the global capacity table.
+      periodId.value = (currentPeriod || periods.value[0])?.id || ''
+    } else if (!periodId.value || !periods.value.some(p => p.id === periodId.value)) {
+      periodId.value = (currentPeriod || periods.value[0])?.id || ''
     }
     if (props.moduleId === 'capacity') {
       capacities.value = periodId.value ? await supervisionApi.capacities(periodId.value) : []
@@ -115,10 +138,10 @@ async function load() {
       requests.value = await supervisionApi.requests()
       if (role.value === 'Student') {
         topics.value = await topicsApi.mine()
-        if (!topics.value.some(t => t.id === topicId.value)) topicId.value = topics.value[0]?.id || ''
         allTopics.value = (await topicsApi.list('', 1, 100)).items
         await applyTopicFromLink()
         capacities.value = periodId.value ? await supervisionApi.capacities(periodId.value) : []
+        selectLecturerFromLink()
       }
     }
     if (props.moduleId === 'projects') projects.value = await supervisionApi.projects()
@@ -137,29 +160,15 @@ async function saveCapacity() {
     await load(); success.value = 'Đã lưu giới hạn hướng dẫn.'
   } catch (e) { error.value = message(e) } finally { loading.value = false }
 }
-async function submit(lecturer: LecturerCapacityV06) {
-  if (!topicId.value || !periodId.value) { error.value = 'Chọn đề tài đã được xác nhận.'; return }
-  if (!window.confirm(`Gửi yêu cầu hướng dẫn đến ${lecturer.lecturerName}?`)) return
-  loading.value = true; error.value = ''; success.value = ''
-  try {
-    await supervisionApi.submit(topicId.value, lecturer.lecturerUserId, periodId.value)
-    await load(); success.value = 'Đã gửi yêu cầu đến giảng viên.'
-  } catch (e) { error.value = message(e) } finally { loading.value = false }
-}
 function startRevision(item: LecturerRequestV06) {
-  revisingId.value = item.id
-  revisingDraft.value = {
-    title: item.draftTitle || item.topicTitle,
-    description: item.draftDescription || '',
-    objective: item.draftObjective || '',
-    expectedContent: item.draftExpectedContent || '',
-    proposedTechnology: item.draftProposedTechnology || '',
-  }
-  error.value = ''; success.value = ''
+  if (role.value !== 'Student' || !item.isCombined || item.status !== 'REVISION_REQUIRED') return
+  // Keep the exact request ID: two lecturers can request different edits to one topic.
+  // The dedicated Topic Registration page owns the edit form and resubmit action.
+  void router.push({ path: '/topic-registrations', query: { revisionId: item.id } })
 }
 async function submitJoint() {
   if (!activePeriod.value || !periodId.value || !jointLecturerId.value) {
-    error.value = 'Chọn đợt còn hiệu lực và giảng viên.'; return
+    error.value = !activePeriod.value ? 'Chưa có đợt đăng ký đang mở. Vui lòng chờ Admin mở đợt.' : 'Vui lòng chọn giảng viên hướng dẫn.'; return
   }
   const chosen = capacities.value.find(c => c.lecturerUserId === jointLecturerId.value)
   if (!chosen || chosen.remaining <= 0) { error.value = 'Giảng viên đã đủ số lượng hướng dẫn.'; return }
@@ -178,16 +187,6 @@ async function submitJoint() {
       // Backend stores this draft on the lecturer request and never edits the public topic.
       draft: { ...jointDraft.value } })
     await load(); success.value = 'Đã gửi yêu cầu. Khi giảng viên đồng ý, bạn sẽ được chọn giảng viên cuối cùng.'
-  } catch (e) { error.value = message(e) } finally { loading.value = false }
-}
-async function resubmitJoint() {
-  if (Object.values(revisingDraft.value).some(s => !s.trim())) {
-    error.value = 'Điền đầy đủ nội dung đề tài trước khi gửi lại.'; return
-  }
-  loading.value = true; error.value = ''; success.value = ''
-  try {
-    await supervisionApi.resubmit(revisingId.value, revisingDraft.value)
-    revisingId.value = ''; await load(); success.value = 'Đã gửi lại đề tài cho đúng giảng viên.'
   } catch (e) { error.value = message(e) } finally { loading.value = false }
 }
 async function requestRevision(item: LecturerRequestV06) {
@@ -240,12 +239,12 @@ onMounted(() => void load())
 </script>
 <template>
   <section class="intro"><span class="section-chip">Hướng dẫn · v0.6</span>
-    <h2>{{moduleId === 'capacity' ? 'Sức chứa giảng viên' : moduleId === 'projects' ? 'Dự án của tôi' : 'Đăng ký đề tài & giảng viên hướng dẫn'}}</h2>
-    <p>{{moduleId === 'projects' ? 'Project được tạo sau khi sinh viên chọn một giảng viên đã đồng ý hướng dẫn.' : 'Dữ liệu lấy từ API và SQL Server, được kiểm tra quyền tại Backend.'}}</p>
+    <h2>{{moduleId === 'lecturerconfirmation' ? 'Xác nhận giảng viên' : moduleId === 'capacity' ? 'Sức chứa giảng viên' : moduleId === 'projects' ? 'Dự án của tôi' : 'Đăng ký đề tài & giảng viên hướng dẫn'}}</h2>
+    <p>{{moduleId === 'lecturerconfirmation' ? 'Chọn một giảng viên đã đồng ý nhận bạn để xác nhận hướng dẫn chính thức.' : moduleId === 'projects' ? 'Project được tạo sau khi sinh viên chọn một giảng viên đã đồng ý hướng dẫn.' : 'Dữ liệu lấy từ API và SQL Server, được kiểm tra quyền tại Backend.'}}</p>
   </section>
   <p v-if="error" class="user-alert error" role="alert">{{error}}</p>
   <p v-if="success" class="user-alert success" role="status">{{success}}</p>
-  <article v-if="moduleId !== 'projects'" class="panel users-panel">
+  <article v-if="moduleId !== 'projects' && moduleId !== 'lecturerconfirmation' && role !== 'Student'" class="panel users-panel">
     <div class="panel-heading"><h3>Đợt đăng ký</h3></div>
     <label>Chọn đợt
       <select v-model="periodId"><option value="" disabled>Chọn đợt</option>
@@ -295,33 +294,27 @@ onMounted(() => void load())
         <label>Nội dung dự kiến<textarea v-model="jointDraft.expectedContent" required maxlength="2000" /></label>
         <label>Công nghệ dự kiến<textarea v-model="jointDraft.proposedTechnology" required maxlength="1000" /></label>
       </template>
+      <p v-if="!activePeriod" class="secondary-cell">Chưa có đợt đăng ký đang mở. Admin cần mở đợt trước khi sinh viên gửi yêu cầu.</p>
       <button class="action-primary" type="submit" :disabled="loading || !activePeriod">Gửi yêu cầu đến giảng viên</button>
     </form>
   </article>
-  <article v-if="moduleId === 'capacity' || (moduleId === 'lecturerrequests' && role === 'Student')" class="panel users-panel">
+  <article v-if="moduleId === 'capacity'" class="panel users-panel">
     <h3>Sức chứa tổng hợp của giảng viên qua tất cả các đợt</h3>
-    <label v-if="moduleId === 'lecturerrequests' && role === 'Student'">Đề tài đã nhận
-      <select v-model="topicId"><option value="" disabled>Chọn đề tài của bạn</option>
-        <option v-for="t in topics" :key="t.id" :value="t.id">{{t.title}}</option>
-      </select>
-    </label>
-    <p v-if="moduleId === 'lecturerrequests' && role === 'Student' && !topics.length" class="secondary-cell">Bạn cần được xác nhận sở hữu một đề tài trước khi đăng ký giảng viên.</p>
-    <div class="table-scroller"><table><thead><tr><th>Giảng viên</th><th>Chuyên môn</th><th>Đã nhận / Tối đa</th><th>Còn trống</th><th>Thao tác</th></tr></thead><tbody>
-      <tr v-if="!capacities.length"><td colspan="5" class="empty-cell">Chưa có giảng viên hoặc chưa chọn đợt.</td></tr>
+    <div class="table-scroller"><table><thead><tr><th>Giảng viên</th><th>Chuyên môn</th><th>Đã nhận / Tối đa</th><th>Còn trống</th><th v-if="role === 'Student'">Thao tác</th></tr></thead><tbody>
+      <tr v-if="!capacities.length"><td :colspan="role === 'Student' ? 5 : 4" class="empty-cell">Chưa có dữ liệu sức chứa giảng viên.</td></tr>
       <tr v-for="c in capacities" :key="c.lecturerUserId"><td>{{c.lecturerName}}</td><td>{{c.specialty || 'Chưa cập nhật'}}</td>
         <td>{{c.currentStudents}} / {{c.maxStudents}}</td><td>{{c.remaining}} · {{c.status}}</td>
-        <td><button v-if="moduleId === 'lecturerrequests' && role === 'Student'" type="button" class="action-secondary"
-          :disabled="loading || !activePeriod || !topicId || c.remaining <= 0 || existingRequest(c.lecturerUserId)"
-          @click="submit(c)">{{existingRequest(c.lecturerUserId) ? 'Đã gửi' : 'Đăng ký hướng dẫn'}}</button></td></tr>
+        <td v-if="role === 'Student'"><button type="button" class="action-primary" :disabled="loading || c.remaining <= 0" @click="startLecturerRegistration(c)">Đăng ký hướng dẫn</button></td></tr>
     </tbody></table></div>
   </article>
-  <article v-if="moduleId === 'lecturerrequests' && role === 'Student' && offeredRequests.length" class="panel users-panel">
-    <h3>Giảng viên đã đồng ý nhận bạn · Hãy chọn một người</h3>
-    <p>Chỉ khi bạn chọn, hệ thống mới khóa đề tài, tính một suất hướng dẫn và tạo Project. Lời đồng ý có thể hết chỗ nếu giảng viên nhận sinh viên khác trước.</p>
+  <article v-if="moduleId === 'lecturerconfirmation' && role === 'Student'" class="panel users-panel">
+    <h3>Giảng viên đã đồng ý nhận bạn</h3>
+    <p>Chọn một người để xác nhận hướng dẫn chính thức. Chỉ khi bạn xác nhận, hệ thống mới khóa đề tài, tính một suất hướng dẫn và tạo Project. Lời đồng ý có thể hết chỗ nếu giảng viên nhận sinh viên khác trước.</p>
     <div class="table-scroller"><table><thead><tr><th>Giảng viên</th><th>Đề tài</th><th>Thao tác</th></tr></thead><tbody>
+      <tr v-if="!offeredRequests.length"><td colspan="3" class="empty-cell">Chưa có giảng viên đồng ý nhận bạn.</td></tr>
       <tr v-for="offer in offeredRequests" :key="offer.id">
         <td>{{offer.lecturerName}}</td><td>{{offer.draftTitle || offer.topicTitle}}</td>
-        <td><button type="button" class="action-primary" :disabled="loading" @click="selectOffer(offer)">Chọn giảng viên này</button></td>
+        <td><button type="button" class="action-primary" :disabled="loading" @click="selectOffer(offer)">Xác nhận giảng viên này</button></td>
       </tr>
     </tbody></table></div>
   </article>
@@ -350,18 +343,6 @@ onMounted(() => void load())
         <button v-if="role === 'Student' && ['PENDING', 'OFFERED', 'REVISION_REQUIRED', 'REJECTED'].includes(r.status)"
           type="button" :disabled="loading" @click="cancelJoint(r)">{{r.isCombined ? 'Hủy đề xuất' : 'Hủy yêu cầu'}}</button></td></tr>
     </tbody></table></div>
-  </article>
-  <article v-if="moduleId === 'lecturerrequests' && role === 'Student' && revisingId" class="panel user-editor">
-    <h3>Chỉnh sửa đề tài theo góp ý giảng viên</h3>
-    <form class="user-form" @submit.prevent="resubmitJoint">
-      <label>Tên đề tài<input v-model="revisingDraft.title" required maxlength="300" /></label>
-      <label>Mô tả<textarea v-model="revisingDraft.description" required maxlength="4000" /></label>
-      <label>Mục tiêu<textarea v-model="revisingDraft.objective" required maxlength="2000" /></label>
-      <label>Nội dung dự kiến<textarea v-model="revisingDraft.expectedContent" required maxlength="2000" /></label>
-      <label>Công nghệ dự kiến<textarea v-model="revisingDraft.proposedTechnology" required maxlength="1000" /></label>
-      <button class="action-primary" type="submit" :disabled="loading">Gửi lại giảng viên</button>
-      <button class="action-secondary" type="button" @click="revisingId = ''">Hủy chỉnh sửa</button>
-    </form>
   </article>
   <article v-if="moduleId === 'projects'" class="panel users-panel"><h3>Dự án đã được xác nhận</h3>
     <div class="table-scroller"><table><thead><tr><th>Đề tài</th><th>Sinh viên</th><th>Giảng viên hướng dẫn</th><th>Đợt</th><th>Trạng thái</th></tr></thead><tbody>
