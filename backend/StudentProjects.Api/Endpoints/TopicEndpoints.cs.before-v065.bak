@@ -277,8 +277,6 @@ public static class TopicEndpoints
             ? await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct) : null;
         var topic = await LockedTopic(db, id, ct);
         if (topic is null) return Results.NotFound();
-        // v0.6.5: only the creator or Admin may open/close this topic.
-        if (Role(principal) != "Admin" && topic.ProposedByUserId != Actor(principal)) return Results.Forbid();
         var role = Role(principal); var actor = Actor(principal);
         if (role != "Admin" && (role != "Lecturer" ||
             (topic.ProposedByUserId != actor && topic.Status is not (TopicStatus.CANCELLED or TopicStatus.PUBLISHED))))

@@ -24,13 +24,13 @@ const editor = ref<'none'|'create'|'edit'|'propose'>('none'), editedId = ref('')
 const values = reactive<TopicPayload>({title:'',description:'',objective:'',expectedContent:'',proposedTechnology:''})
 const periodForm = reactive({ name:'', startsAt:'', endsAt:'', isOpen:true })
 const canManage = (t:Topic) => role.value === 'Admin' ||
- (role.value === 'Lecturer' && (t.proposedByUserId === auth.currentUser?.userId || ['CANCELLED','PUBLISHED'].includes(t.status))) ||
+ (role.value === 'Lecturer' && t.proposedByUserId === auth.currentUser?.userId) ||
  (role.value === 'Student' && t.proposedByUserId === auth.currentUser?.userId && ['DRAFT','REJECTED'].includes(t.status))
 const canDeleteTopic = (t:Topic) => t.canDelete && (role.value === 'Admin' ||
   (role.value === 'Lecturer' && t.proposedByUserId === auth.currentUser?.userId))
 const canToggleRegistration = (t:Topic) => !t.reservedForStudentUserId &&
  (role.value === 'Admin' || role.value === 'Lecturer' &&
- (t.proposedByUserId === auth.currentUser?.userId || ['CANCELLED','PUBLISHED'].includes(t.status))) &&
+ t.proposedByUserId === auth.currentUser?.userId) &&
  (t.status === 'CANCELLED' || t.status === 'PUBLISHED' ||
   t.status === 'APPROVED')
 const isReservedForMe = (t:Topic) => !!t.reservedForStudentUserId && t.reservedForStudentUserId === auth.currentUser?.userId
