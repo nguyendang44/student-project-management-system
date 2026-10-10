@@ -6,7 +6,6 @@ import { HttpError } from '../api/client'
 import { periodsApi } from '../features/periods/periods.api'
 import { topicsApi } from '../features/topics/topics.api'
 import { supervisionApi } from '../features/supervision/supervision.api'
-import { globalCapacityApi } from '../features/capacity/globalCapacity.api'
 import type { RegistrationPeriod, Topic } from '../features/topics/topics.types'
 import type { LecturerCapacityV06, LecturerRequestV06, ProjectV06, JointTopicDraft } from '../features/supervision/supervision.api'
 import type { ModuleId } from '../app/modules'
@@ -27,7 +26,6 @@ const allTopics = ref<Topic[]>([])
 const blankDraft = (): JointTopicDraft => ({ title: '', description: '', objective: '', expectedContent: '', proposedTechnology: '' })
 const jointDraft = ref<JointTopicDraft>(blankDraft())
 const maxStudents = ref(1)
-const adminCapacityEdits = ref<Record<string, number>>({})
 const loading = ref(false), error = ref(''), success = ref('')
 const ownCapacity = computed(() => capacities.value.find(c => c.lecturerUserId === auth.currentUser?.userId))
 const selectedPeriod = computed(() => periods.value.find(p => p.id === periodId.value))
@@ -122,13 +120,6 @@ async function load() {
       requests.value = await supervisionApi.requests()
       return
     }
-    // Global capacity is independent of registration periods, even when all are closed.
-    if (props.moduleId === 'capacity') {
-      capacities.value = await globalCapacityApi.list()
-      maxStudents.value = ownCapacity.value?.maxStudents ?? 1
-      adminCapacityEdits.value = Object.fromEntries(capacities.value.map(c => [c.lecturerUserId, c.maxStudents]))
-      return
-    }
     periods.value = await periodsApi.list()
     const currentPeriod = periods.value.find(p => p.isOpen &&
       new Date(p.startsAt).getTime() <= Date.now() && new Date(p.endsAt).getTime() > Date.now())
@@ -138,6 +129,10 @@ async function load() {
       periodId.value = (currentPeriod || periods.value[0])?.id || ''
     } else if (!periodId.value || !periods.value.some(p => p.id === periodId.value)) {
       periodId.value = (currentPeriod || periods.value[0])?.id || ''
+    }
+    if (props.moduleId === 'capacity') {
+      capacities.value = periodId.value ? await supervisionApi.capacities(periodId.value) : []
+      maxStudents.value = ownCapacity.value?.maxStudents ?? 1
     }
     if (props.moduleId === 'lecturerrequests') {
       requests.value = await supervisionApi.requests()
@@ -155,28 +150,14 @@ async function load() {
 }
 async function saveCapacity() {
   error.value = ''; success.value = ''
+  if (!periodId.value) { error.value = 'Chọn đợt đăng ký.'; return }
   if (!Number.isInteger(maxStudents.value) || maxStudents.value < 0 || maxStudents.value > 1000) {
     error.value = 'Giới hạn phải là số nguyên từ 0 đến 1000.'; return
   }
   loading.value = true
   try {
-    if (!ownCapacity.value) { error.value = 'Không tìm thấy tài khoản giảng viên.'; return }
-    await globalCapacityApi.update(ownCapacity.value.lecturerUserId, maxStudents.value)
+    await supervisionApi.updateCapacity(periodId.value, maxStudents.value)
     await load(); success.value = 'Đã lưu giới hạn hướng dẫn.'
-  } catch (e) { error.value = message(e) } finally { loading.value = false }
-}
-async function saveAdminCapacity(lecturerId: string) {
-  error.value = ''; success.value = ''
-  const selected = capacities.value.find(c => c.lecturerUserId === lecturerId)
-  const target = adminCapacityEdits.value[lecturerId]
-  if (!selected || !Number.isInteger(target) || target < selected.currentStudents || target > 1000) {
-    error.value = 'Sức chứa phải là số nguyên từ số sinh viên đang hướng dẫn đến 1000.'; return
-  }
-  loading.value = true
-  try {
-    await globalCapacityApi.update(lecturerId, target)
-    await load()
-    success.value = 'Admin đã cập nhật giới hạn hướng dẫn cho giảng viên.'
   } catch (e) { error.value = message(e) } finally { loading.value = false }
 }
 function startRevision(item: LecturerRequestV06) {
@@ -253,7 +234,7 @@ async function selectOffer(item: LecturerRequestV06) {
   } catch (e) { error.value = message(e) } finally { loading.value = false }
 }
 watch(() => props.moduleId, () => void load())
-watch(periodId, () => { if (props.moduleId === 'lecturerrequests') void load() })
+watch(periodId, () => { if (props.moduleId === 'capacity' || props.moduleId === 'lecturerrequests') void load() })
 onMounted(() => void load())
 </script>
 <template>
@@ -263,7 +244,7 @@ onMounted(() => void load())
   </section>
   <p v-if="error" class="user-alert error" role="alert">{{error}}</p>
   <p v-if="success" class="user-alert success" role="status">{{success}}</p>
-  <article v-if="moduleId === 'lecturerrequests' && role !== 'Student'" class="panel users-panel">
+  <article v-if="moduleId !== 'projects' && moduleId !== 'lecturerconfirmation' && role !== 'Student'" class="panel users-panel">
     <div class="panel-heading"><h3>Đợt đăng ký</h3></div>
     <label>Chọn đợt
       <select v-model="periodId"><option value="" disabled>Chọn đợt</option>
@@ -272,7 +253,7 @@ onMounted(() => void load())
     </label>
     <p v-if="!periods.length" class="secondary-cell">Chưa có đợt đăng ký. Admin cần tạo đợt ở mục Đợt đăng ký.</p>
   </article>
-  <article v-if="moduleId === 'capacity' && role === 'Lecturer'" class="panel user-editor">
+  <article v-if="moduleId === 'capacity' && role === 'Lecturer' && periodId" class="panel user-editor">
     <h3>Giới hạn hướng dẫn chung cho mọi đợt</h3>
     <form class="user-form" @submit.prevent="saveCapacity">
       <label>Giới hạn sinh viên<input v-model.number="maxStudents" type="number" min="0" max="1000" step="1" required /></label>
@@ -319,18 +300,11 @@ onMounted(() => void load())
   </article>
   <article v-if="moduleId === 'capacity'" class="panel users-panel">
     <h3>Sức chứa tổng hợp của giảng viên qua tất cả các đợt</h3>
-    <div class="table-scroller"><table><thead><tr><th>Giảng viên</th><th>Chuyên môn</th><th>Đã nhận / Tối đa</th><th>Còn trống</th><th v-if="role === 'Student'">Thao tác</th><th v-if="role === 'Admin'">Chỉnh sức chứa</th></tr></thead><tbody>
-      <tr v-if="!capacities.length"><td :colspan="role === 'Student' || role === 'Admin' ? 5 : 4" class="empty-cell">Chưa có dữ liệu sức chứa giảng viên.</td></tr>
+    <div class="table-scroller"><table><thead><tr><th>Giảng viên</th><th>Chuyên môn</th><th>Đã nhận / Tối đa</th><th>Còn trống</th><th v-if="role === 'Student'">Thao tác</th></tr></thead><tbody>
+      <tr v-if="!capacities.length"><td :colspan="role === 'Student' ? 5 : 4" class="empty-cell">Chưa có dữ liệu sức chứa giảng viên.</td></tr>
       <tr v-for="c in capacities" :key="c.lecturerUserId"><td>{{c.lecturerName}}</td><td>{{c.specialty || 'Chưa cập nhật'}}</td>
         <td>{{c.currentStudents}} / {{c.maxStudents}}</td><td>{{c.remaining}} · {{c.status}}</td>
-        <td v-if="role === 'Student'"><button type="button" class="action-primary" :disabled="loading || c.remaining <= 0" @click="startLecturerRegistration(c)">Đăng ký hướng dẫn</button></td>
-        <td v-if="role === 'Admin'">
-          <form class="capacity-inline-form" @submit.prevent="saveAdminCapacity(c.lecturerUserId)">
-            <input v-model.number="adminCapacityEdits[c.lecturerUserId]" type="number" min="0" max="1000" step="1"
-              :aria-label="'Sức chứa giảng viên ' + c.lecturerName" required style="max-width: 110px; margin-right: 8px" />
-            <button class="action-primary" type="submit" :disabled="loading">Lưu</button>
-          </form>
-        </td></tr>
+        <td v-if="role === 'Student'"><button type="button" class="action-primary" :disabled="loading || c.remaining <= 0" @click="startLecturerRegistration(c)">Đăng ký hướng dẫn</button></td></tr>
     </tbody></table></div>
   </article>
   <article v-if="moduleId === 'lecturerconfirmation' && role === 'Student'" class="panel users-panel">
