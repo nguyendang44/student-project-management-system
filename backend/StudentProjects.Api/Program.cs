@@ -88,6 +88,7 @@ app.UseAuthorization();
 app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "StudentProjects API + Auth, Users and Topic Management v0.5 + Lecturer Supervision v0.6" }));
 app.MapAuthEndpoints();
 app.MapGlobalLecturerCapacityEndpoints();
+app.MapProjectProgressV07Endpoints();
 app.MapUserManagementEndpoints();
 app.MapSkeletonEndpoints();
 app.MapTopicEndpoints();

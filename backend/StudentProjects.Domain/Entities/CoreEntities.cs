@@ -129,6 +129,9 @@ public sealed class Milestone : Entity
     public string? ExpectedResult { get; set; }
     public int PercentComplete { get; set; }
     public MilestoneStatus Status { get; set; } = MilestoneStatus.PENDING;
+    public bool ProposedByStudent { get; set; }
+    public string ProposalStatus { get; set; } = "CONFIRMED";
+    public string? ProposalFeedback { get; set; }
 }
 
 public sealed class ProgressUpdate : Entity

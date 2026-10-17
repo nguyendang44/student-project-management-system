@@ -174,6 +174,8 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
             e.Property(x => x.Description).HasMaxLength(4000);
             e.Property(x => x.ExpectedResult).HasMaxLength(2000);
             e.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+            e.Property(x => x.ProposalStatus).HasMaxLength(32).IsRequired();
+            e.Property(x => x.ProposalFeedback).HasMaxLength(2000);
             e.HasOne<Project>().WithMany().HasForeignKey(x => x.ProjectId).OnDelete(onDelete);
             e.HasIndex(x => new { x.ProjectId, x.DeadlineAt });
             e.ToTable(t =>
