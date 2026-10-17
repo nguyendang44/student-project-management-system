@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import ProjectMilestoneSummary from '../components/ProjectMilestoneSummary.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { HttpError } from '../api/client'
@@ -376,4 +377,5 @@ onMounted(() => void load())
       <tr v-for="p in projects" :key="p.id"><td>{{p.topicTitle}}</td><td>{{p.studentName}}</td><td>{{p.lecturerName}}</td><td>{{p.periodName}}</td><td>{{p.status}}</td></tr>
     </tbody></table></div>
   </article>
+  <ProjectMilestoneSummary v-if="moduleId === 'projects'" />
 </template>

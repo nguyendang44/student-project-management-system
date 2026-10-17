@@ -72,8 +72,8 @@ public static class ProjectProgressV07Endpoints
             Status = p.Status.ToString(), p.Description,
             MilestoneCount = milestones.Count(m => m.ProjectId == p.Id),
             ApprovedCount = milestones.Count(m => m.ProjectId == p.Id && m.Status == MilestoneStatus.APPROVED),
-            PercentComplete = milestones.Any(m => m.ProjectId == p.Id && m.ProposalStatus == "CONFIRMED")
-                ? (int)Math.Round(milestones.Where(m => m.ProjectId == p.Id && m.ProposalStatus == "CONFIRMED")
+            PercentComplete = milestones.Any(m => m.ProjectId == p.Id)
+                ? (int)Math.Round(milestones.Where(m => m.ProjectId == p.Id)
                     .Average(m => (double)m.PercentComplete)) : 0
         });
         return Results.Ok(items);
@@ -93,7 +93,7 @@ public static class ProjectProgressV07Endpoints
             m.Id, m.ProjectId, m.Title, m.Description, m.StartAt, m.DeadlineAt,
             m.ExpectedResult, m.PercentComplete, Status = m.Status.ToString(),
             m.ProposedByStudent, m.ProposalStatus, m.ProposalFeedback,
-            IsOverdue = m.ProposalStatus == "CONFIRMED" && m.DeadlineAt < now && m.Status != MilestoneStatus.APPROVED,
+            IsOverdue = m.ProposalStatus == "CONFIRMED" && EndOfDeadlineDay(m.DeadlineAt) < now && m.Status != MilestoneStatus.APPROVED,
             m.CreatedAt, m.UpdatedAt
         }));
     }
@@ -101,13 +101,23 @@ public static class ProjectProgressV07Endpoints
     public sealed record SaveMilestone(string? Title, string? Description,
         DateTimeOffset StartAt, DateTimeOffset DeadlineAt, string? ExpectedResult);
 
+    // V075_DEADLINE_END_OF_DAY
+    // Business deadline = last tick of the selected calendar day in Vietnam (UTC+07:00).
+    // Vietnam currently has no daylight-saving transitions.
+    private static DateTimeOffset EndOfDeadlineDay(DateTimeOffset value)
+    {
+        var local = value.ToOffset(TimeSpan.FromHours(7));
+        var midnight = new DateTimeOffset(local.Year, local.Month, local.Day, 0, 0, 0, TimeSpan.FromHours(7));
+        return midnight.AddDays(1).AddTicks(-1);
+    }
+
     private static string? Validate(SaveMilestone? req)
     {
         if (req is null || Text(req.Title).Length is < 1 or > 300) return "Tên Milestone phải dài từ 1 đến 300 ký tự.";
         if (Text(req.Description).Length > 4000 || Text(req.ExpectedResult).Length > 2000)
             return "Nội dung mô tả hoặc kết quả dự kiến quá dài.";
-        if (req.StartAt == default || req.DeadlineAt == default || req.DeadlineAt < req.StartAt)
-            return "Deadline phải bằng hoặc sau ngày bắt đầu.";
+        if (req.StartAt == default || req.DeadlineAt == default || EndOfDeadlineDay(req.DeadlineAt) < req.StartAt)
+            return "Ngày Deadline không thể trước ngày bắt đầu.";
         return null;
     }
 
@@ -119,16 +129,22 @@ public static class ProjectProgressV07Endpoints
         var creator = Role(principal);
         if (creator is not ("Lecturer" or "Student") || !CanWrite(project, principal, creator))
             return Results.Forbid();
-        if (!Active(project)) return Conflict("Project đã kết thúc, không thể thêm Milestone.");
+        if (project.Status == ProjectStatus.CANCELLED) return Conflict("Project đã hủy, không thể thêm Milestone.");
         var error = Validate(req); if (error != null) return Invalid(error);
         var item = new Milestone
         {
             ProjectId = projectId, Title = Text(req!.Title), Description = Text(req.Description),
-            StartAt = req.StartAt, DeadlineAt = req.DeadlineAt, ExpectedResult = Text(req.ExpectedResult),
+            StartAt = req.StartAt, DeadlineAt = EndOfDeadlineDay(req.DeadlineAt), ExpectedResult = Text(req.ExpectedResult),
             Status = MilestoneStatus.PENDING, PercentComplete = 0,
             ProposedByStudent = creator == "Student",
             ProposalStatus = creator == "Student" ? "PENDING_REVIEW" : "CONFIRMED"
         };
+        if (project.Status == ProjectStatus.COMPLETED)
+        {
+            project.Status = ProjectStatus.IN_PROGRESS;
+            project.UpdatedAt = DateTimeOffset.UtcNow;
+            Audit(db, Actor(principal), "PROJECT_REOPENED_FOR_NEW_MILESTONE", "Project", project.Id);
+        }
         db.Milestones.Add(item);
         Audit(db, Actor(principal), creator == "Student" ? "MILESTONE_PROPOSED" : "MILESTONE_CREATED", "Milestone", item.Id);
         await db.SaveChangesAsync(ct);
@@ -150,7 +166,7 @@ public static class ProjectProgressV07Endpoints
             return Conflict("Không được sửa Milestone đang nộp chờ duyệt, đã duyệt hoặc Project đã kết thúc.");
         var error = Validate(req); if (error != null) return Invalid(error);
         item.Title = Text(req!.Title); item.Description = Text(req.Description);
-        item.StartAt = req.StartAt; item.DeadlineAt = req.DeadlineAt;
+        item.StartAt = req.StartAt; item.DeadlineAt = EndOfDeadlineDay(req.DeadlineAt);
         item.ExpectedResult = Text(req.ExpectedResult); item.UpdatedAt = DateTimeOffset.UtcNow;
         if (studentRevision) item.ProposalStatus = "PENDING_REVIEW";
         Audit(db, Actor(principal), studentRevision ? "MILESTONE_PROPOSAL_RESUBMITTED" : "MILESTONE_UPDATED", "Milestone", id);

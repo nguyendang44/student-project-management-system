@@ -31,6 +31,7 @@ const feedback = ref('')
 const selectedProject = computed(() => projects.value.find(x => x.id === projectId.value))
 const selected = computed(() => milestones.value.find(x => x.id === selectedId.value))
 const canWork = computed(() => selectedProject.value && ['REGISTERED','IN_PROGRESS','DRAFT'].includes(selectedProject.value.status))
+const canAddMilestone = computed(() => selectedProject.value && ['REGISTERED','IN_PROGRESS','DRAFT','COMPLETED'].includes(selectedProject.value.status))
 const canStudentUpdate = computed(() => role.value === 'Student' && canWork.value && selected.value && selected.value.proposalStatus === 'CONFIRMED' && !['SUBMITTED','APPROVED'].includes(selected.value.status))
 const canStudentSubmit = computed(() => role.value === 'Student' && canWork.value && selected.value && selected.value.proposalStatus === 'CONFIRMED' && selected.value.status !== 'APPROVED')
 const canStudentEditProposal = computed(() => role.value === 'Student' && canWork.value && selected.value?.proposedByStudent && selected.value.proposalStatus === 'CHANGES_REQUESTED')
@@ -52,11 +53,17 @@ function errorText(e: unknown) {
   if (e instanceof HttpError) return e.payload?.message || `API lỗi (${e.status})`
   return e instanceof Error ? e.message : 'Không thể xử lý yêu cầu.'
 }
-const dateLocal = (date: string) => {
-  const d = new Date(date)
-  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-  return local.toISOString().slice(0, 16)
+// V075_DEADLINE_DATE_ONLY
+// Date-only deadline is a Vietnamese civil day, independent of OS/browser timezone.
+const deadlineDate = (date: string) => {
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone:'Asia/Ho_Chi_Minh',
+    year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date(date))
+  const part = (type: string) => parts.find(p => p.type === type)?.value ?? ''
+  return `${part('year')}-${part('month')}-${part('day')}`
 }
+const readableDeadline = (date: string) => new Intl.DateTimeFormat('vi-VN', {
+  timeZone:'Asia/Ho_Chi_Minh', day:'2-digit', month:'2-digit', year:'numeric'
+}).format(new Date(date))
 const readableDate = (date: string) => new Date(date).toLocaleString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:false, hourCycle:'h23' })
 const statusName = (status: string) => ({PENDING:'Chưa bắt đầu', IN_PROGRESS:'Đang thực hiện', SUBMITTED:'Chờ giảng viên duyệt', REVISION_REQUIRED:'Cần chỉnh sửa', APPROVED:'Đã duyệt', OVERDUE:'Quá hạn', REGISTERED:'Đã đăng ký',COMPLETED:'Hoàn thành',CANCELLED:'Đã hủy'}[status] || status)
 async function loadProjects() {
@@ -113,15 +120,24 @@ function editMilestone() {
   if (!selected.value) return
   editing.value = true
   milestoneForm.value = {title:selected.value.title,description:selected.value.description || '',expectedResult:selected.value.expectedResult || '',
-    startAt:dateLocal(selected.value.startAt),deadlineAt:dateLocal(selected.value.deadlineAt)}
+    startAt:selected.value.startAt,deadlineAt:deadlineDate(selected.value.deadlineAt)}
   showMilestoneForm.value = true
 }
 async function saveMilestone() {
-  if (!projectId.value || !milestoneForm.value.startAt || !milestoneForm.value.deadlineAt) return
-  const request: MilestoneForm = {...milestoneForm.value,
-    startAt:new Date(milestoneForm.value.startAt).toISOString(),
-    deadlineAt:new Date(milestoneForm.value.deadlineAt).toISOString()}
-  if (new Date(request.deadlineAt).getTime() < new Date(request.startAt).getTime()) { error.value = 'Deadline không thể trước ngày bắt đầu.'; return }
+  if (!projectId.value) return
+  const day = milestoneForm.value.deadlineAt
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) { error.value = 'Vui lòng chọn ngày Deadline.'; return }
+  // Date input has no timezone. Interpret the chosen day in Vietnam (+07:00).
+  const deadline = new Date(`${day}T23:59:59.999+07:00`)
+  const midnight = new Date(`${day}T00:00:00+07:00`)
+  if (!Number.isFinite(deadline.getTime()) || !Number.isFinite(midnight.getTime())) {
+    error.value = 'Ngày Deadline không hợp lệ.'; return
+  }
+  // StartAt remains an internal backward-compatible API field, never a required UI input.
+  const oldStart = editing.value && selected.value ? new Date(selected.value.startAt) : midnight
+  const start = Number.isFinite(oldStart.getTime()) && oldStart <= deadline ? oldStart : midnight
+  const request: MilestoneForm = { ...milestoneForm.value,
+    startAt:start.toISOString(), deadlineAt:deadline.toISOString() }
   const wasEditing = editing.value
   const id = selectedId.value
   await run(() => wasEditing ? projectProgressApi.update(id,request) : projectProgressApi.create(projectId.value,request),
@@ -181,14 +197,14 @@ onMounted(() => { void loadProjects() })
   <article v-if="selectedProject && isMilestonesPage" class="panel v07-block">
     <div class="v07-head">
       <h3>Milestones của Project</h3>
-      <button v-if="['Lecturer','Student'].includes(role || '') && canWork" type="button" @click="newMilestone">{{role === 'Student' ? '+ Đề xuất Milestone' : '+ Tạo Milestone'}}</button>
+      <button v-if="['Lecturer','Student'].includes(role || '') && canAddMilestone" type="button" @click="newMilestone">{{role === 'Student' ? '+ Đề xuất Milestone' : '+ Tạo Milestone'}}</button>
     </div>
     <div class="table-scroller"><table class="v07-table">
       <thead><tr><th>Milestone</th><th>Deadline</th><th>Tiến độ</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
       <tbody>
         <tr v-for="m in milestones" :key="m.id">
           <td><strong>{{m.title}}</strong><p class="v07-muted">{{m.description}}</p></td>
-          <td>{{readableDate(m.deadlineAt)}}</td><td>{{m.percentComplete}}%</td>
+          <td>{{readableDeadline(m.deadlineAt)}}</td><td>{{m.percentComplete}}%</td>
           <td><span v-if="m.proposalStatus !== 'CONFIRMED'">{{proposalStatusName(m.proposalStatus)}}</span><span v-else>{{statusName(m.status)}}</span><strong v-if="m.isOverdue" class="v07-late"> · Quá hạn</strong></td>
           <td><button type="button" :disabled="saving" @click="selectedId = m.id">{{selectedId === m.id ? 'Đang xem' : 'Chi tiết'}}</button></td>
         </tr>
@@ -199,8 +215,8 @@ onMounted(() => { void loadProjects() })
       <h4>{{editing ? (role === 'Student' ? 'Sửa kế hoạch theo góp ý giảng viên' : 'Chỉnh sửa Milestone') : (role === 'Student' ? 'Đề xuất Milestone gửi giảng viên' : 'Tạo Milestone')}}</h4>
       <label>Tên Milestone <input v-model.trim="milestoneForm.title" required maxlength="300" /></label>
       <label>Mô tả <textarea v-model.trim="milestoneForm.description" maxlength="4000" rows="2" /></label>
-      <div class="v07-grid"><label>Bắt đầu <input v-model="milestoneForm.startAt" type="datetime-local" lang="en-GB" required /></label>
-        <label>Deadline <input v-model="milestoneForm.deadlineAt" type="datetime-local" lang="en-GB" required /></label></div>
+      <label>Deadline (ngày cuối cùng) <input v-model="milestoneForm.deadlineAt" type="date" required /></label>
+      <p class="v07-muted">Hạn nộp được tính đến hết ngày đã chọn (giờ Việt Nam).</p>
       <label>Kết quả cần đạt <textarea v-model.trim="milestoneForm.expectedResult" maxlength="2000" rows="2" /></label>
       <div class="v07-actions">
         <button :disabled="saving" type="submit">{{role === 'Student' ? (editing ? 'Sửa và gửi lại giảng viên' : 'Gửi kế hoạch cho giảng viên') : (editing ? 'Lưu Milestone' : 'Tạo Milestone')}}</button>
@@ -219,7 +235,7 @@ onMounted(() => { void loadProjects() })
       </select>
     </label>
     <div v-if="selected" class="v07-meta">
-      <span>Deadline: <strong>{{readableDate(selected.deadlineAt)}}</strong></span>
+      <span>Deadline: <strong>{{readableDeadline(selected.deadlineAt)}}</strong></span>
       <span>Tiến độ: <strong>{{selected.percentComplete}}%</strong></span>
       <span>Trạng thái: <strong>{{selected.proposalStatus !== 'CONFIRMED' ? proposalStatusName(selected.proposalStatus) : statusName(selected.status)}}</strong></span>
     </div>
@@ -231,8 +247,7 @@ onMounted(() => { void loadProjects() })
       <button v-if="canLecturerEdit || canStudentEditProposal" type="button" @click="editMilestone">{{canStudentEditProposal ? 'Sửa kế hoạch và gửi lại' : 'Sửa thông tin mốc'}}</button>
     </div>
     <div class="v07-meta">
-      <span><strong>Bắt đầu:</strong> {{readableDate(selected.startAt)}}</span>
-      <span><strong>Hạn:</strong> {{readableDate(selected.deadlineAt)}}</span>
+      <span><strong>Deadline:</strong> {{readableDeadline(selected.deadlineAt)}}</span>
       <span><strong>Trạng thái:</strong> {{statusName(selected.status)}}</span>
     </div>
     <p><strong>Kết quả cần đạt:</strong> {{selected.expectedResult || 'Chưa cập nhật'}}</p>
