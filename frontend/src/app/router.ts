@@ -4,7 +4,9 @@ import { modules } from './modules'
 import { useAuthStore } from '../stores/auth'
 const moduleRoutes: RouteRecordRaw[] = modules.map((mod) => ({
   path: mod.path.slice(1), name: mod.id,
-  component: mod.id === 'users' ? () => import('../views/UsersView.vue')
+  component: ['milestones', 'progress', 'submissions', 'evaluations'].includes(mod.id)
+    ? () => import('../views/ProjectProgressV07View.vue')
+    : mod.id === 'users' ? () => import('../views/UsersView.vue')
     : mod.id === 'lecturers' ? () => import('../views/LecturerDirectoryView.vue')
     : ['topics', 'proposals', 'topicregistrations', 'periods'].includes(mod.id) ? () => import('../views/TopicsManagementView.vue')
     : ['capacity', 'lecturerrequests', 'projects'].includes(mod.id) ? () => import('../views/LecturerSupervisionView.vue')
@@ -23,8 +25,9 @@ const router = createRouter({
     { path: '/:pathMatch(.*)*', component: () => import('../views/NotFoundView.vue') },
   ],
 })
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
+  await auth.initialize()
   if (to.path === '/login') return auth.isAuthenticated ? '/dashboard' : true
   if (!auth.isAuthenticated) return { path: '/login', query: { next: to.fullPath } }
   const roles = to.meta.allowedRoles as string[] | undefined

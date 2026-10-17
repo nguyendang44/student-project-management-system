@@ -1,0 +1,156 @@
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
+import { HttpError } from '../api/client'
+import { projectProgressApi, type ProjectV07, type MilestoneV07 } from '../features/progress/projectProgress.api'
+
+const projects = ref<ProjectV07[]>([])
+const projectId = ref('')
+const milestones = ref<MilestoneV07[]>([])
+const loading = ref(false)
+const loadingMilestones = ref(false)
+const error = ref('')
+const selectedProject = computed(() => projects.value.find(p => p.id === projectId.value))
+const percent = computed(() => Math.max(0, Math.min(100, selectedProject.value?.percentComplete ?? 0)))
+const counts = computed(() => ({
+  completed: milestones.value.filter(m => m.status === 'APPROVED').length,
+  working: milestones.value.filter(m => m.proposalStatus === 'CONFIRMED' && ['IN_PROGRESS', 'OVERDUE'].includes(m.status)).length,
+  submitted: milestones.value.filter(m => m.proposalStatus === 'CONFIRMED' && m.status === 'SUBMITTED').length,
+  needsRevision: milestones.value.filter(m => m.proposalStatus === 'CONFIRMED' && m.status === 'REVISION_REQUIRED').length,
+  notStarted: milestones.value.filter(m => m.proposalStatus === 'CONFIRMED' && m.status === 'PENDING').length,
+  planPending: milestones.value.filter(m => m.proposalStatus !== 'CONFIRMED').length
+}))
+const statusName = (status: string) => ({
+  PENDING:'Chưa bắt đầu', IN_PROGRESS:'Đang thực hiện', OVERDUE:'Quá hạn',
+  SUBMITTED:'Chờ giảng viên duyệt', REVISION_REQUIRED:'Cần chỉnh sửa',
+  APPROVED:'Đã hoàn thành', COMPLETED:'Hoàn thành', REGISTERED:'Đã đăng ký',
+  DRAFT:'Bản nháp', CANCELLED:'Đã hủy'
+}[status] || status)
+const milestoneStatus = (m: MilestoneV07) => {
+  if (m.proposalStatus === 'PENDING_REVIEW') return 'Chờ xác nhận kế hoạch'
+  if (m.proposalStatus === 'CHANGES_REQUESTED') return 'Cần sửa kế hoạch'
+  if (m.isOverdue && m.status !== 'APPROVED') return 'Quá hạn · ' + statusName(m.status)
+  return statusName(m.status)
+}
+// V075_DEADLINE_DATE_ONLY_SUMMARY
+const formatDate = (value: string) => new Intl.DateTimeFormat('vi-VN', {
+  timeZone:'Asia/Ho_Chi_Minh', day:'2-digit', month:'2-digit', year:'numeric'
+}).format(new Date(value))
+const errorText = (e: unknown) => e instanceof HttpError
+  ? e.payload?.message || `API lỗi ${e.status}` : e instanceof Error ? e.message : 'Không tải được tiến độ.'
+
+async function loadMilestones(id: string) {
+  milestones.value = []
+  if (!id) return
+  loadingMilestones.value = true
+  error.value = ''
+  try {
+    const data = await projectProgressApi.milestones(id)
+    if (projectId.value === id) milestones.value = data
+  } catch (e) {
+    if (projectId.value === id) error.value = errorText(e)
+  } finally { if (projectId.value === id) loadingMilestones.value = false }
+}
+async function refresh() {
+  loading.value = true
+  error.value = ''
+  try {
+    const data = await projectProgressApi.projects()
+    projects.value = data
+    const next = data.some(p => p.id === projectId.value) ? projectId.value : (data[0]?.id || '')
+    if (next === projectId.value) await loadMilestones(next)
+    else projectId.value = next
+  } catch (e) { error.value = errorText(e) }
+  finally { loading.value = false }
+}
+watch(projectId, id => { void loadMilestones(id) })
+onMounted(() => { void refresh() })
+</script>
+
+<template>
+  <article class="panel spms-overview" aria-label="Tiến độ tổng hợp dự án">
+    <div class="spms-overview-head">
+      <div>
+        <h3>Tiến độ tổng hợp dự án</h3>
+        <p class="spms-subtitle">Xem những Milestone đã hoàn thành, đang thực hiện và cần xử lý.</p>
+      </div>
+      <button type="button" class="spms-refresh" :disabled="loading || loadingMilestones" @click="refresh">Làm mới</button>
+    </div>
+    <p v-if="error" role="alert" class="spms-error">{{error}}</p>
+    <label class="spms-project-label">Chọn Project
+      <select v-model="projectId" :disabled="loading">
+        <option v-if="!projects.length" value="">Chưa có Project</option>
+        <option v-for="p in projects" :key="p.id" :value="p.id">{{p.topicTitle}} · {{p.studentName}} · {{p.lecturerName}}</option>
+      </select>
+    </label>
+    <p v-if="loading">Đang tải danh sách Project…</p>
+    <template v-if="selectedProject">
+      <div class="spms-overview-meta">
+        <span>Trạng thái dự án: <strong>{{statusName(selectedProject.status)}}</strong></span>
+        <span>Đã duyệt: <strong>{{selectedProject.approvedCount}}/{{selectedProject.milestoneCount}}</strong></span>
+      </div>
+      <div class="spms-overview-percent">
+        <strong>Tiến độ tổng hợp</strong>
+        <strong>{{percent}}%</strong>
+      </div>
+      <div class="spms-progress-track" role="progressbar" :aria-valuenow="percent" aria-valuemin="0" aria-valuemax="100" aria-label="Tiến độ tổng hợp dự án">
+        <div class="spms-progress-fill" :style="{ width: percent + '%' }"></div>
+      </div>
+      <div class="spms-counts">
+        <div><strong>{{counts.completed}}</strong><span>Đã hoàn thành</span></div>
+        <div><strong>{{counts.working}}</strong><span>Đang thực hiện</span></div>
+        <div><strong>{{counts.submitted}}</strong><span>Chờ duyệt kết quả</span></div>
+        <div><strong>{{counts.needsRevision}}</strong><span>Cần chỉnh sửa</span></div>
+        <div><strong>{{counts.notStarted}}</strong><span>Chưa bắt đầu</span></div>
+        <div><strong>{{counts.planPending}}</strong><span>Chờ duyệt / sửa kế hoạch</span></div>
+      </div>
+      <div class="spms-milestones-head">
+        <h4>Chi tiết Milestones</h4>
+        <RouterLink :to="{ path: '/milestones', query: { projectId } }">Mở quản lý Milestone</RouterLink>
+      </div>
+      <p v-if="loadingMilestones">Đang tải Milestone…</p>
+      <div v-else class="table-scroller">
+        <table class="spms-milestones-table">
+          <thead><tr><th>Milestone</th><th>Hạn hoàn thành</th><th>Tiến độ</th><th>Trạng thái</th></tr></thead>
+          <tbody>
+            <tr v-for="m in milestones" :key="m.id">
+              <td><strong>{{m.title}}</strong><div class="spms-desc">{{m.description}}</div></td>
+              <td>{{formatDate(m.deadlineAt)}}</td>
+              <td>{{m.percentComplete}}%</td>
+              <td>{{milestoneStatus(m)}}</td>
+            </tr>
+            <tr v-if="!milestones.length"><td colspan="4" class="spms-empty">Project chưa có Milestone.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </template>
+    <p v-else-if="!loading" class="spms-empty">Chưa có Project nào để tổng hợp tiến độ.</p>
+  </article>
+</template>
+
+<style scoped>
+.spms-overview{margin-top:22px}
+.spms-overview-head,.spms-milestones-head,.spms-overview-percent{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.spms-overview-head{flex-wrap:wrap}
+.spms-subtitle{color:#69798d;font-size:13px;margin:8px 0 16px;line-height:1.5}
+.spms-project-label{display:grid;gap:8px;max-width:640px;font-size:13px;font-weight:700;margin:12px 0 18px}
+.spms-project-label select{padding:11px 12px;border:1px solid #dce4ee;border-radius:8px;background:#fff;max-width:100%;min-width:0}
+.spms-overview-meta{display:flex;flex-wrap:wrap;gap:12px 24px;margin-bottom:20px;font-size:13px}
+.spms-overview-percent{font-size:13px;margin-bottom:8px}
+.spms-progress-track{width:100%;height:12px;border-radius:12px;background:#e9edf3;overflow:hidden}
+.spms-progress-fill{height:100%;background:#3764bc;border-radius:12px;transition:width .18s}
+.spms-counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0 24px}
+.spms-counts>div{padding:13px;border:1px solid #e6eaf0;border-radius:10px;display:flex;flex-direction:column;gap:5px;background:#fcfdff}
+.spms-counts strong{font-size:22px;color:#243750}
+.spms-counts span{font-size:12px;color:#62728a;line-height:1.3}
+.spms-milestones-head{flex-wrap:wrap;margin-bottom:12px}
+.spms-milestones-head h4{margin:0;font-size:15px}
+.spms-milestones-head a{color:#3157ac;font-size:13px;font-weight:700}
+.spms-refresh{background:#fff;color:#284d9b;border:1px solid #d9e1f0;padding:9px 12px;border-radius:8px;cursor:pointer}
+.spms-refresh:disabled{opacity:.5;cursor:not-allowed}
+.spms-milestones-table td{padding:13px 14px;border-bottom:1px solid #edf0f5;font-size:13px;vertical-align:top}
+.spms-desc{color:#758195;font-size:12px;margin-top:5px;white-space:pre-wrap;max-width:420px}
+.spms-error{color:#a3252b;font-size:13px}
+.spms-empty{padding:20px;color:#65758c;text-align:center}
+@media(max-width:720px){.spms-counts{grid-template-columns:repeat(2,minmax(0,1fr))}.spms-overview-meta{flex-direction:column;gap:7px}}
+</style>
