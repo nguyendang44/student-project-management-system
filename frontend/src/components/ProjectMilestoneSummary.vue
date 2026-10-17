@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useAuthStore } from '../stores/auth'
 import { RouterLink } from 'vue-router'
 import { HttpError } from '../api/client'
 import { projectProgressApi, type ProjectV07, type MilestoneV07 } from '../features/progress/projectProgress.api'
 
+const auth = useAuthStore()
 const projects = ref<ProjectV07[]>([])
 const projectId = ref('')
 const milestones = ref<MilestoneV07[]>([])
@@ -77,7 +79,14 @@ onMounted(() => { void refresh() })
       <button type="button" class="spms-refresh" :disabled="loading || loadingMilestones" @click="refresh">Làm mới</button>
     </div>
     <p v-if="error" role="alert" class="spms-error">{{error}}</p>
-    <label class="spms-project-label">Chọn Project
+    <!-- V077_STUDENT_SINGLE_PROJECT_OVERVIEW -->
+    <div v-if="auth.role === 'Student' && projects.length === 1" class="spms-project-label">
+      <span>Project của bạn</span>
+      <div class="spms-project-static">
+        <strong>{{projects[0].topicTitle}}</strong> · {{projects[0].studentName}} · {{projects[0].lecturerName}}
+      </div>
+    </div>
+    <label v-else-if="auth.role !== 'Student' || projects.length > 1" class="spms-project-label">Chọn Project
       <select v-model="projectId" :disabled="loading">
         <option v-if="!projects.length" value="">Chưa có Project</option>
         <option v-for="p in projects" :key="p.id" :value="p.id">{{p.topicTitle}} · {{p.studentName}} · {{p.lecturerName}}</option>
@@ -135,6 +144,7 @@ onMounted(() => { void refresh() })
 .spms-subtitle{color:#69798d;font-size:13px;margin:8px 0 16px;line-height:1.5}
 .spms-project-label{display:grid;gap:8px;max-width:640px;font-size:13px;font-weight:700;margin:12px 0 18px}
 .spms-project-label select{padding:11px 12px;border:1px solid #dce4ee;border-radius:8px;background:#fff;max-width:100%;min-width:0}
+.spms-project-static{padding:11px 12px;border:1px solid #dce4ee;border-radius:8px;background:#f8fafc;line-height:1.5;font-weight:400}
 .spms-overview-meta{display:flex;flex-wrap:wrap;gap:12px 24px;margin-bottom:20px;font-size:13px}
 .spms-overview-percent{font-size:13px;margin-bottom:8px}
 .spms-progress-track{width:100%;height:12px;border-radius:12px;background:#e9edf3;overflow:hidden}

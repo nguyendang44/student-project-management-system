@@ -178,8 +178,12 @@ onMounted(() => { void loadProjects() })
   <p v-if="success" class="v07-notice v07-success" role="status">{{success}}</p>
 
   <article class="panel v07-block">
-    <h3>Chọn Project</h3>
+    <!-- V076_STUDENT_SINGLE_PROJECT_AUTO_SELECT -->
+    <h3>{{role === 'Student' && projects.length === 1 ? 'Project của bạn' : 'Chọn Project'}}</h3>
     <p v-if="loading">Đang tải dữ liệu…</p>
+    <p v-else-if="role === 'Student' && projects.length === 1" class="v07-single-project">
+      <strong>{{projects[0].topicTitle}}</strong> · {{projects[0].studentName}} · {{projects[0].lecturerName}}
+    </p>
     <label v-else>Project của {{role === 'Student' ? 'bạn' : role === 'Lecturer' ? 'sinh viên bạn hướng dẫn' : 'hệ thống'}}
       <select v-model="projectId" :disabled="saving">
         <option v-if="!projects.length" value="">Chưa có Project</option>
@@ -188,7 +192,7 @@ onMounted(() => { void loadProjects() })
     </label>
     <div v-if="selectedProject" class="v07-meta">
       <span>Trạng thái: <strong>{{statusName(selectedProject.status)}}</strong></span>
-      <span>Đã duyệt: <strong>{{selectedProject.approvedCount}}/{{selectedProject.milestoneCount}}</strong></span>
+      <span>Milestone đã duyệt: <strong>{{selectedProject.approvedCount}}/{{selectedProject.milestoneCount}}</strong></span>
       <span>Tiến độ tổng hợp: <strong>{{selectedProject.percentComplete}}%</strong></span>
     </div>
   </article>
