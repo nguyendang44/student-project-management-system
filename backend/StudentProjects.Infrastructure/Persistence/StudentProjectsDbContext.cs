@@ -28,6 +28,7 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
     public DbSet<RepositoryLink> Repositories => Set<RepositoryLink>();
     public DbSet<CodeAnalysisReport> CodeAnalysisReports => Set<CodeAnalysisReport>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<GuidanceSession> GuidanceSessions => Set<GuidanceSession>(); // // V080_AUTOMATION_GUIDANCE
     public DbSet<AutomationRun> AutomationRuns => Set<AutomationRun>();
     public DbSet<SystemError> SystemErrors => Set<SystemError>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
@@ -240,6 +241,15 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
             e.HasIndex(x => new { x.RecipientUserId, x.IsRead, x.CreatedAt });
         });
 
+        modelBuilder.Entity<GuidanceSession>(e =>
+        {
+            e.Property(x => x.Summary).HasMaxLength(4000).IsRequired();
+            e.Property(x => x.Feedback).HasMaxLength(4000).IsRequired();
+            e.Property(x => x.NextActions).HasMaxLength(4000).IsRequired();
+            e.HasOne<Project>().WithMany().HasForeignKey(x => x.ProjectId).OnDelete(onDelete);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.CreatedByUserId).OnDelete(onDelete);
+            e.HasIndex(x => new { x.ProjectId, x.MeetingAt });
+        });
         modelBuilder.Entity<AutomationRun>(e =>
         {
             e.Property(x => x.JobName).HasMaxLength(200).IsRequired();
@@ -285,6 +295,7 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
         modelBuilder.Entity<RepositoryLink>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<CodeAnalysisReport>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<Notification>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<GuidanceSession>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<AutomationRun>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<SystemError>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<AuditEntry>().ToTable("AuditEntries");

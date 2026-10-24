@@ -1,8 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { v08Api } from '../features/v08/v08.api'
+// V080_AUTOMATION_GUIDANCE
 import { useRoute, useRouter } from 'vue-router'
 import { modules } from '../app/modules'
 import { useAuthStore } from '../stores/auth'
+const unreadV08 = ref(0)
+let v08Timer: ReturnType<typeof setInterval> | undefined
+async function reloadUnreadV08() {
+  try { unreadV08.value = (await v08Api.notifications()).unreadCount }
+  catch { /* notifications may not be upgraded yet; don't break existing site */ }
+}
+onMounted(() => { void reloadUnreadV08(); v08Timer = setInterval(() => { void reloadUnreadV08() }, 60000) })
+onUnmounted(() => { if (v08Timer) clearInterval(v08Timer) })
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
@@ -28,7 +38,7 @@ async function signOut() {
     </aside>
     <div class="main-column">
       <header class="topbar"><div><div class="eyebrow">HỆ THỐNG QUẢN LÝ DỰ ÁN SINH VIÊN</div><h1>{{ route.meta.title || 'Dashboard' }}</h1></div>
-        <div class="account-summary"><RouterLink v-if="auth.role !== 'Admin'" class="profile-link" to="/profile">Hồ sơ của tôi</RouterLink><div><strong>{{ auth.currentUser?.fullName }}</strong><small>{{ auth.currentUser?.role }} · {{ auth.currentUser?.email }}</small></div><button type="button" @click="signOut">Đăng xuất</button></div>
+        <div class="account-summary"><RouterLink to="/notifications" title="Thông báo mới">Thông báo <strong v-if="unreadV08">({{ unreadV08 }})</strong></RouterLink><RouterLink v-if="auth.role !== 'Admin'" class="profile-link" to="/profile">Hồ sơ của tôi</RouterLink><div><strong>{{ auth.currentUser?.fullName }}</strong><small>{{ auth.currentUser?.role }} · {{ auth.currentUser?.email }}</small></div><button type="button" @click="signOut">Đăng xuất</button></div>
       </header>
       <main class="main-content"><RouterView /></main>
     </div>

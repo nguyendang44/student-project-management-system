@@ -19,6 +19,7 @@ public static class ProjectProgressV07Endpoints
         api.MapGet("/projects", Projects);
         api.MapGet("/projects/{projectId:guid}/milestones", Milestones);
         api.MapPost("/projects/{projectId:guid}/milestones", CreateMilestone);
+        api.MapPost("/projects/{projectId:guid}/milestone-plan", CreateMilestonePlan);
         api.MapPut("/milestones/{id:guid}", UpdateMilestone);
         api.MapGet("/milestones/{id:guid}/history", History);
         api.MapPost("/milestones/{id:guid}/progress", UpdateProgress);
@@ -149,6 +150,64 @@ public static class ProjectProgressV07Endpoints
         Audit(db, Actor(principal), creator == "Student" ? "MILESTONE_PROPOSED" : "MILESTONE_CREATED", "Milestone", item.Id);
         await db.SaveChangesAsync(ct);
         return Results.Created($"/api/v1/v07/projects/{projectId}/milestones", new { item.Id });
+    }
+
+    // V078_MILESTONE_TEMPLATE_BATCH
+    // A single EF SaveChanges call ensures the requested plan is atomic.
+    // Same access checks as single-milestone creation: Student proposes, Lecturer creates directly.
+    public sealed record MilestonePlanInput(List<SaveMilestone>? Items);
+
+    private static async Task<IResult> CreateMilestonePlan(Guid projectId, MilestonePlanInput? req,
+        ClaimsPrincipal principal, StudentProjectsDbContext db, CancellationToken ct)
+    {
+        var project = await db.Projects.FirstOrDefaultAsync(p => p.Id == projectId, ct);
+        if (project is null) return Results.NotFound();
+        var creator = Role(principal);
+        if (creator is not ("Lecturer" or "Student") || !CanWrite(project, principal, creator))
+            return Results.Forbid();
+        if (project.Status == ProjectStatus.CANCELLED)
+            return Conflict("Project đã hủy, không thể thêm Milestone.");
+        if (req?.Items == null || req.Items.Count < 1 || req.Items.Count > 48)
+            return Invalid("Mỗi lần áp dụng phải chọn 1 đến 48 Milestone.");
+
+        // Validate every entry and detect duplicates BEFORE tracking or saving anything.
+        var titles = await db.Milestones.AsNoTracking().Where(m => m.ProjectId == projectId)
+            .Select(m => m.Title).ToListAsync(ct);
+        var unique = new HashSet<string>(titles.Select(x => x.Trim()), StringComparer.OrdinalIgnoreCase);
+        foreach (var item in req.Items)
+        {
+            var error = Validate(item);
+            if (error != null) return Invalid(error);
+            var title = Text(item.Title);
+            if (!unique.Add(title))
+                return Conflict($"Milestone '{title}' đã tồn tại hoặc trùng trong bộ mẫu.");
+        }
+
+        var ids = new List<Guid>(req.Items.Count);
+        foreach (var item in req.Items)
+        {
+            var record = new Milestone
+            {
+                ProjectId = projectId, Title = Text(item.Title), Description = Text(item.Description),
+                StartAt = item.StartAt, DeadlineAt = EndOfDeadlineDay(item.DeadlineAt),
+                ExpectedResult = Text(item.ExpectedResult),
+                Status = MilestoneStatus.PENDING, PercentComplete = 0,
+                ProposedByStudent = creator == "Student",
+                ProposalStatus = creator == "Student" ? "PENDING_REVIEW" : "CONFIRMED"
+            };
+            db.Milestones.Add(record);
+            ids.Add(record.Id);
+            Audit(db, Actor(principal), creator == "Student" ? "MILESTONE_PROPOSED_FROM_TEMPLATE" : "MILESTONE_CREATED_FROM_TEMPLATE",
+                "Milestone", record.Id);
+        }
+        if (project.Status == ProjectStatus.COMPLETED)
+        {
+            project.Status = ProjectStatus.IN_PROGRESS;
+            project.UpdatedAt = DateTimeOffset.UtcNow;
+            Audit(db, Actor(principal), "PROJECT_REOPENED_FOR_NEW_MILESTONE", "Project", project.Id);
+        }
+        await db.SaveChangesAsync(ct);
+        return Results.Ok(new { CreatedCount = ids.Count, Ids = ids });
     }
 
     private static async Task<IResult> UpdateMilestone(Guid id, SaveMilestone? req,

@@ -1,0 +1,83 @@
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue'
+import { useAuthStore } from '../stores/auth'
+import { v08Api, type ProjectOptionV08, type GuidanceV08 } from '../features/v08/v08.api'
+const auth = useAuthStore()
+const projects = ref<ProjectOptionV08[]>([])
+const projectId = ref('')
+const entries = ref<GuidanceV08[]>([])
+const error = ref('')
+const success = ref('')
+const busy = ref(false)
+const form = ref({ meetingLocal: '', summary: '', feedback: '', nextActions: '' })
+const selected = computed(() => projects.value.find(p => p.id === projectId.value))
+const fmt = (s: string) => new Date(s).toLocaleString('vi-VN', { hour12: false, timeZone: 'Asia/Ho_Chi_Minh' })
+async function loadProjects() {
+  try {
+    projects.value = await v08Api.projects()
+    if (auth.role === 'Student' && projects.value.length === 1) projectId.value = projects.value[0].id
+    else if (!projects.value.some(p => p.id === projectId.value)) projectId.value = projects.value[0]?.id ?? ''
+  } catch(e) { error.value = e instanceof Error ? e.message : 'Không tải được Project.' }
+}
+async function load() {
+  if (!projectId.value) { entries.value = []; return }
+  try { entries.value = await v08Api.guidance(projectId.value); error.value = '' }
+  catch(e) { error.value = e instanceof Error ? e.message : 'Không tải được nhật ký.' }
+}
+async function save() {
+  if (!projectId.value || !form.value.meetingLocal || !form.value.summary.trim()) { error.value = 'Vui lòng nhập ngày gặp và nội dung báo cáo.'; return }
+  const ms = Date.parse(form.value.meetingLocal)
+  if (!Number.isFinite(ms)) { error.value = 'Ngày giờ không hợp lệ.'; return }
+  busy.value = true; error.value = '';success.value = ''
+  try {
+    await v08Api.createGuidance(projectId.value, { meetingAt: new Date(ms).toISOString(),
+      summary: form.value.summary, feedback: form.value.feedback, nextActions: form.value.nextActions })
+    form.value = { meetingLocal: '', summary: '', feedback: '', nextActions: '' }
+    success.value = 'Đã ghi nhật ký. Giảng viên có thể xem và xác nhận.'
+    await load()
+  } catch(e) { error.value = e instanceof Error ? e.message : 'Không thể ghi nhật ký.' }
+  finally { busy.value = false }
+}
+async function confirm(id: string) {
+  busy.value = true;error.value='';success.value=''
+  try { await v08Api.confirmGuidance(id); success.value = 'Đã xác nhận nhật ký.'; await load() }
+  catch(e) { error.value = e instanceof Error ? e.message : 'Không thể xác nhận.' }
+  finally { busy.value=false }
+}
+watch(projectId,load)
+onMounted(loadProjects)
+</script>
+<template>
+  <section class="v08-journal">
+    <header><h2>Nhật ký hướng dẫn</h2><p>Ghi lại kết quả các buổi gặp trực tiếp hoặc trao đổi với giảng viên.</p></header>
+    <p v-if="error" role="alert" class="error">{{ error }}</p><p v-if="success" role="status" class="success">{{ success }}</p>
+    <div v-if="auth.role === 'Student' && projects.length === 1"><strong>Project của bạn:</strong> {{ selected?.topicTitle }} · {{ selected?.studentName }} · {{ selected?.lecturerName }}</div>
+    <label v-else>Chọn Project <select v-model="projectId"><option value="">-- Chọn Project --</option><option v-for="p in projects" :key="p.id" :value="p.id">{{ p.topicTitle }} · {{ p.studentName }} · {{ p.lecturerName }}</option></select></label>
+    <form v-if="projectId && auth.role !== 'Admin'" @submit.prevent="save">
+      <h3>Ghi nhật ký buổi hướng dẫn</h3>
+      <label>Ngày giờ gặp <input type="datetime-local" required v-model="form.meetingLocal" /></label>
+      <label>Nội dung báo cáo <textarea required maxlength="4000" v-model="form.summary" rows="3" /></label>
+      <label>Nhận xét / góp ý <textarea maxlength="4000" v-model="form.feedback" rows="3" /></label>
+      <label>Công việc cần thực hiện tiếp <textarea maxlength="4000" v-model="form.nextActions" rows="3" /></label>
+      <button :disabled="busy" type="submit">Lưu nhật ký</button>
+    </form>
+    <h3>Lịch sử hướng dẫn</h3>
+    <button v-if="projectId" type="button" @click="load">Làm mới</button>
+    <p v-if="projectId && !entries.length">Chưa có nhật ký hướng dẫn.</p>
+    <article v-for="entry in entries" :key="entry.id">
+      <div class="entry-head"><strong>{{ fmt(entry.meetingAt) }}</strong>
+        <span>{{ entry.lecturerConfirmedAt ? 'Đã được giảng viên xác nhận' : 'Chờ xác nhận' }}</span></div>
+      <p><strong>Báo cáo:</strong> {{ entry.summary }}</p>
+      <p><strong>Góp ý:</strong> {{ entry.feedback || 'Chưa ghi nhận' }}</p>
+      <p><strong>Việc tiếp theo:</strong> {{ entry.nextActions || 'Chưa ghi nhận' }}</p>
+      <button v-if="auth.role === 'Lecturer' && !entry.lecturerConfirmedAt" type="button" :disabled="busy" @click="confirm(entry.id)">Xác nhận nhật ký</button>
+    </article>
+  </section>
+</template>
+<style scoped>
+.v08-journal{background:#fff;border:1px solid #dae2ec;border-radius:12px;padding:20px}
+.v08-journal form{display:grid;gap:12px;padding:16px;border:1px solid #e2e8f0;border-radius:8px;margin:18px 0}
+.v08-journal label{display:grid;gap:5px}.v08-journal input,.v08-journal select,.v08-journal textarea{max-width:700px;width:100%;padding:9px;border:1px solid #b9c5d5;border-radius:6px}
+.v08-journal button {width:max-content;cursor:pointer}.v08-journal article{padding:16px 0;border-bottom:1px solid #e2e8f0}
+.entry-head{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}.entry-head span{color:#475569}.error{color:#b91c1c}.success{color:#166534}
+</style>

@@ -1,12 +1,16 @@
 <script setup lang="ts">
+// v0.7.8: editable 8x6 Milestone templates.
+import MilestoneTemplatePlanner from '../components/MilestoneTemplatePlanner.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { HttpError } from '../api/client'
+import { sortMilestonesForDisplay } from '../features/progress/sortMilestones'
+// V0712_SORT_MILESTONES
 import { projectProgressApi, type ProjectV07, type MilestoneV07, type MilestoneForm, type ProgressHistory } from '../features/progress/projectProgress.api'
 
 const props = defineProps<{ moduleId: string }>()
-const route = useRoute()
+const route = useRoute() // V0804_NOTIFICATION_LINKS
 const auth = useAuthStore()
 const role = computed(() => auth.role)
 const projects = ref<ProjectV07[]>([])
@@ -20,6 +24,8 @@ const error = ref('')
 const success = ref('')
 const editing = ref(false)
 const showMilestoneForm = ref(false)
+// V078_MILESTONE_TEMPLATE_LIBRARY
+const showTemplatePlanner = ref(false)
 const emptyMilestone = (): MilestoneForm => ({title:'', description:'', startAt:'', deadlineAt:'', expectedResult:''})
 const milestoneForm = ref<MilestoneForm>(emptyMilestone())
 const percent = ref(0)
@@ -77,11 +83,14 @@ async function loadProjects() {
   finally { loading.value = false }
 }
 async function loadMilestones() {
+  showTemplatePlanner.value = false
   error.value = ''; success.value = ''; showMilestoneForm.value = false
   if (!projectId.value) { milestones.value = []; selectedId.value = ''; history.value = null; return }
   try {
-    milestones.value = await projectProgressApi.milestones(projectId.value)
-    if (!milestones.value.some(x => x.id === selectedId.value)) selectedId.value = milestones.value[0]?.id || ''
+    milestones.value = sortMilestonesForDisplay(await projectProgressApi.milestones(projectId.value))
+    const requestedMilestone = typeof route.query.milestoneId === 'string' ? route.query.milestoneId : ''
+    if (requestedMilestone && milestones.value.some(x => x.id === requestedMilestone)) selectedId.value = requestedMilestone
+    else if (!milestones.value.some(x => x.id === selectedId.value)) selectedId.value = milestones.value[0]?.id || ''
     await loadHistory()
   } catch(e) { error.value = errorText(e) }
 }
@@ -113,10 +122,19 @@ function reviewProposal(isConfirmed: boolean) {
   void run(() => projectProgressApi.proposalReview(selectedId.value,isConfirmed,proposalFeedback.value),
     isConfirmed ? 'Đã xác nhận kế hoạch Milestone và chuyển cho sinh viên thực hiện.' : 'Đã gửi góp ý để sinh viên sửa kế hoạch.')
 }
+async function onTemplatesApplied(count: number) {
+  showTemplatePlanner.value = false
+  await loadProjects()
+  success.value = role.value === 'Student'
+    ? `Đã gửi ${count} Milestone đề xuất để giảng viên xem xét.`
+    : `Đã tạo ${count} Milestone từ mẫu.`
+}
 function newMilestone() {
+  showTemplatePlanner.value = false
   editing.value = false; milestoneForm.value = emptyMilestone(); showMilestoneForm.value = true
 }
 function editMilestone() {
+  showTemplatePlanner.value = false
   if (!selected.value) return
   editing.value = true
   milestoneForm.value = {title:selected.value.title,description:selected.value.description || '',expectedResult:selected.value.expectedResult || '',
@@ -162,6 +180,9 @@ function review(isApproved: boolean) {
 }
 watch(projectId, () => { void loadMilestones() })
 watch(selectedId, () => { showMilestoneForm.value = false; void loadHistory() })
+watch(() => route.query.milestoneId, (id) => {
+  if (typeof id === 'string' && milestones.value.some(m => m.id === id)) selectedId.value = id
+})
 watch(() => route.query.projectId, (id) => {
   if (typeof id === 'string' && projects.value.some(p => p.id === id)) projectId.value = id
 })
@@ -202,6 +223,7 @@ onMounted(() => { void loadProjects() })
     <div class="v07-head">
       <h3>Milestones của Project</h3>
       <button v-if="['Lecturer','Student'].includes(role || '') && canAddMilestone" type="button" @click="newMilestone">{{role === 'Student' ? '+ Đề xuất Milestone' : '+ Tạo Milestone'}}</button>
+      <button v-if="['Lecturer','Student'].includes(role || '') && canAddMilestone" type="button" @click="showTemplatePlanner = !showTemplatePlanner; showMilestoneForm = false">{{role === 'Student' ? '+ Đề xuất theo mẫu' : '+ Tạo từ mẫu'}}</button>
     </div>
     <div class="table-scroller"><table class="v07-table">
       <thead><tr><th>Milestone</th><th>Deadline</th><th>Tiến độ</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
@@ -215,6 +237,10 @@ onMounted(() => { void loadProjects() })
         <tr v-if="!milestones.length"><td colspan="5" class="empty-cell">Chưa có Milestone. Giảng viên có thể tạo mốc hoặc sinh viên đề xuất kế hoạch mới.</td></tr>
       </tbody>
     </table></div>
+    <MilestoneTemplatePlanner v-if="showTemplatePlanner && canAddMilestone && ['Lecturer','Student'].includes(role || '')"
+      :project-id="projectId" :role="role === 'Student' ? 'Student' : 'Lecturer'"
+      :existing-titles="milestones.map(m => m.title)"
+      @applied="onTemplatesApplied" @close="showTemplatePlanner = false" />
     <form v-if="['Lecturer','Student'].includes(role || '') && showMilestoneForm" class="v07-form" @submit.prevent="saveMilestone">
       <h4>{{editing ? (role === 'Student' ? 'Sửa kế hoạch theo góp ý giảng viên' : 'Chỉnh sửa Milestone') : (role === 'Student' ? 'Đề xuất Milestone gửi giảng viên' : 'Tạo Milestone')}}</h4>
       <label>Tên Milestone <input v-model.trim="milestoneForm.title" required maxlength="300" /></label>

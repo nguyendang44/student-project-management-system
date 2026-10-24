@@ -20,6 +20,13 @@ export type ProgressHistory = {
 export const projectProgressApi = {
   projects: () => request<ProjectV07[]>('/v07/projects'),
   milestones: (id: string) => request<MilestoneV07[]>(`/v07/projects/${id}/milestones`),
+  // V078_MILESTONE_TEMPLATE_API
+  /** Atomic creation: all selected Milestones are saved together or none are. */
+  createBatch: (id: string, items: MilestoneForm[]) =>
+    request<{ createdCount: number; ids: string[] }>(
+      `/v07/projects/${id}/milestone-plan`,
+      {method:'POST',body:JSON.stringify({items})}
+    ),
   create: (id: string, data: MilestoneForm) => request<{ id: string }>(`/v07/projects/${id}/milestones`, {method:'POST',body:JSON.stringify(data)}),
   update: (id: string, data: MilestoneForm) => request<{ id: string }>(`/v07/milestones/${id}`, {method:'PUT',body:JSON.stringify(data)}),
   history: (id: string) => request<ProgressHistory>(`/v07/milestones/${id}/history`),
