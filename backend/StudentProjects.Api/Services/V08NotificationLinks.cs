@@ -21,6 +21,8 @@ public static class V08NotificationLinks
         var submissionIds = new HashSet<Guid>();
         var reviewIds = new HashSet<Guid>();
         var auditIds = new HashSet<Guid>();
+        var requestIds = new HashSet<Guid>();
+        var requestEventIds = new HashSet<Guid>();
         var parsed = new Dictionary<string, (string Kind, Guid EventId)>(StringComparer.Ordinal);
 
         foreach (var type in keys)
@@ -29,7 +31,9 @@ public static class V08NotificationLinks
             if (fields.Length < 3 || fields[0] != "V08" || !Guid.TryParseExact(fields[2], "N", out var id))
                 continue;
             var kind = fields[1];
-            if (kind is "DUE" or "LATE") milestoneIds.Add(id);
+            if (kind == "REQ") requestIds.Add(id);
+            else if (kind == "REQEV") requestEventIds.Add(id);
+            else if (kind is "DUE" or "LATE") milestoneIds.Add(id);
             else if (kind == "SUB") submissionIds.Add(id);
             else if (kind == "REVIEW") reviewIds.Add(id);
             else if (kind is "PLAN" or "MEET" or "MEETOK") auditIds.Add(id);
@@ -37,6 +41,20 @@ public static class V08NotificationLinks
             parsed[type] = (kind, id);
         }
         if (parsed.Count == 0) return result;
+
+        // V094_REQUEST_DEEPLINKS: request links need their own participant authorization;
+        // a LecturerRequest can exist before any Project has been created.
+        var requestEvents = await db.AuditEntries.AsNoTracking()
+            .Where(a => requestEventIds.Contains(a.Id) && a.EntityName == "LecturerRequest")
+            .Select(a => new { a.Id, a.EntityId, a.Action }).ToDictionaryAsync(a => a.Id, ct);
+        foreach (var entry in requestEvents.Values)
+            if (entry.EntityId.HasValue) requestIds.Add(entry.EntityId.Value);
+        var isAdmin = user.IsInRole("Admin");
+        var requestRows = await db.LecturerRequests.AsNoTracking()
+            .Where(r => requestIds.Contains(r.Id) &&
+                (r.StudentUserId == actor || r.LecturerUserId == actor || isAdmin))
+            .Select(r => new { r.Id, r.StudentUserId, r.LecturerUserId })
+            .ToDictionaryAsync(r => r.Id, ct);
 
         var submissions = await db.MilestoneSubmissions.AsNoTracking()
             .Where(s => submissionIds.Contains(s.Id))
@@ -77,6 +95,28 @@ public static class V08NotificationLinks
 
         foreach (var (type, entry) in parsed)
         {
+            if (entry.Kind is "REQ" or "REQEV")
+            {
+                var requestId = entry.EventId;
+                string? action = null;
+                if (entry.Kind == "REQEV")
+                {
+                    if (!requestEvents.TryGetValue(entry.EventId, out var requestEvent) ||
+                        requestEvent.EntityId is not Guid originalId) continue;
+                    requestId = originalId;
+                    action = requestEvent.Action;
+                }
+                if (!requestRows.TryGetValue(requestId, out var request)) continue;
+                if (user.IsInRole("Student") && request.StudentUserId != actor) continue;
+                if (user.IsInRole("Lecturer") && request.LecturerUserId != actor) continue;
+                if (action == "LECTURER_OFFERED_SUPERVISION" && user.IsInRole("Student"))
+                    result[type] = $"/lecturer-confirmation?requestId={requestId:D}";
+                else if (action == "JOINT_APPLICATION_REVISION_REQUIRED" && user.IsInRole("Student"))
+                    result[type] = $"/topic-registrations?revisionId={requestId:D}";
+                else
+                    result[type] = $"/lecturer-requests?requestId={requestId:D}";
+                continue;
+            }
             Guid projectId = Guid.Empty;
             Guid milestoneId = Guid.Empty;
             Guid meetingId = Guid.Empty;

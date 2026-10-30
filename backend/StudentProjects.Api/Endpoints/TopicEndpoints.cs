@@ -122,7 +122,8 @@ public static class TopicEndpoints
             // Requests can be deleted with their topic, but assigned topics cannot.
             !db.TopicRegistrations.Any(r => r.TopicId == t.Id && r.Status == RequestStatus.ACCEPTED) &&
             t.Status != TopicStatus.IN_PROGRESS && t.Status != TopicStatus.COMPLETED &&
-            !(author.RoleId == RoleIds.Student && t.Status == TopicStatus.APPROVED));
+            !(author.RoleId == RoleIds.Student && t.Status == TopicStatus.APPROVED),
+            author.Role.Name);
     private static IQueryable<TopicItem> QueryTopics(StudentProjectsDbContext db, ClaimsPrincipal principal) =>
         ProjectTopics(db, VisibleTopics(db, principal));
     private static async Task<IResult> ListTopics(StudentProjectsDbContext db, ClaimsPrincipal principal,
@@ -505,9 +506,13 @@ public static class TopicEndpoints
         // Recheck registration after the topic lock, in case it was cancelled meanwhile.
         if (db.Database.IsSqlServer()) await db.Entry(reg).ReloadAsync(ct);
         if (topic is null) return Results.NotFound();
-        // A lecturer owns their published topic; admin-published topics can be reviewed by any lecturer
-        // until a dedicated supervisor-assignment workflow is introduced.
-        if (topic.Status != TopicStatus.PUBLISHED && topic.ProposedByUserId != Actor(principal) &&
+        // A lecturer-created topic can only be reviewed by its author, including after publication.
+        // Admin-authored topics retain the existing flexible lecturer workflow.
+        var lecturerAuthored = await db.Users.AnyAsync(u => u.Id == topic.ProposedByUserId &&
+            u.RoleId == RoleIds.Lecturer, ct);
+        if (lecturerAuthored && topic.ProposedByUserId != Actor(principal)) return Results.Forbid();
+        if (!lecturerAuthored && topic.Status != TopicStatus.PUBLISHED &&
+            topic.ProposedByUserId != Actor(principal) &&
             !await db.Users.AnyAsync(u => u.Id == topic.ProposedByUserId && u.RoleId == RoleIds.Admin, ct))
             return Results.Forbid();
         if (reg.Status != RequestStatus.PENDING) return Conflict("The registration is no longer pending.");

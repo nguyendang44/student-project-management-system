@@ -21,6 +21,80 @@ public sealed class V08NotificationEngine(IServiceScopeFactory scopeFactory, ILo
         return TimeZoneInfo.CreateCustomTimeZone("UTC+07", TimeSpan.FromHours(7), "UTC+07", "UTC+07");
     }
 
+    // V094_REQUEST_NOTIFICATIONS
+    // On-demand when Notifications is opened and also by the background worker.
+    // Pending requests from older releases are backfilled once. Subsequent decisions
+    // use immutable audit IDs, so resubmissions/revisions are separate events.
+    private static async Task RefreshRequestNotificationsAsync(StudentProjectsDbContext db,
+        DateTimeOffset now, CancellationToken ct)
+    {
+        var recent = now.AddDays(-30);
+        var events = await db.AuditEntries.AsNoTracking()
+            .Where(a => a.EntityName == "LecturerRequest" && a.EntityId != null && a.CreatedAt >= recent &&
+                (a.Action == "JOINT_APPLICATION_RESUBMITTED" ||
+                 a.Action == "JOINT_APPLICATION_REVISION_REQUIRED" ||
+                 a.Action == "LECTURER_OFFERED_SUPERVISION" ||
+                 a.Action == "LECTURER_REQUEST_REJECTED" ||
+                 a.Action == "LECTURER_REQUEST_CANCELLED"))
+            .ToListAsync(ct);
+        var eventRequestIds = events.Select(a => a.EntityId!.Value).Distinct().ToArray();
+        var requests = await db.LecturerRequests.AsNoTracking()
+            .Where(r => r.Status == RequestStatus.PENDING || eventRequestIds.Contains(r.Id))
+            .ToListAsync(ct);
+        if (requests.Count == 0) return;
+
+        var byRequest = requests.ToDictionary(r => r.Id);
+        var peopleIds = requests.SelectMany(r => new[] { r.StudentUserId, r.LecturerUserId }).Distinct().ToArray();
+        var names = await db.Users.AsNoTracking().Where(u => peopleIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.FullName, ct);
+        var topicIds = requests.Select(r => r.TopicId).Distinct().ToArray();
+        var titles = await db.Topics.AsNoTracking().Where(t => topicIds.Contains(t.Id))
+            .ToDictionaryAsync(t => t.Id, t => t.Title, ct);
+        var receivers = peopleIds;
+        var seenRows = await db.Notifications.AsNoTracking()
+            .Where(n => receivers.Contains(n.RecipientUserId) && n.Type.StartsWith("V08:REQ"))
+            .Select(n => new { n.RecipientUserId, n.Type }).ToListAsync(ct);
+        var seen = new HashSet<string>(seenRows.Select(n => $"{n.RecipientUserId:N}:{n.Type}"));
+
+        void Queue(Guid recipient, string type, string message)
+        {
+            if (recipient == Guid.Empty || message.Length > 4000 ||
+                !seen.Add($"{recipient:N}:{type}")) return;
+            db.Notifications.Add(new Notification { RecipientUserId = recipient, Type = type,
+                Message = message });
+        }
+        string TopicName(LecturerRequest r) =>
+            !string.IsNullOrWhiteSpace(r.DraftTitle) ? r.DraftTitle! :
+            titles.TryGetValue(r.TopicId, out var name) ? name : "đề tài";
+        string StudentName(LecturerRequest r) =>
+            names.TryGetValue(r.StudentUserId, out var name) ? name : "Sinh viên";
+        string LecturerName(LecturerRequest r) =>
+            names.TryGetValue(r.LecturerUserId, out var name) ? name : "Giảng viên";
+
+        foreach (var r in requests.Where(r => r.Status == RequestStatus.PENDING))
+            Queue(r.LecturerUserId, $"V08:REQ:{r.Id:N}",
+                $"Sinh viên {StudentName(r)} gửi yêu cầu hướng dẫn đề tài: {TopicName(r)}.");
+
+        foreach (var e in events)
+        {
+            if (e.EntityId is not Guid requestId || !byRequest.TryGetValue(requestId, out var r)) continue;
+            var message = e.Action switch
+            {
+                "JOINT_APPLICATION_RESUBMITTED" => $"Sinh viên {StudentName(r)} đã gửi lại đề xuất: {TopicName(r)}.",
+                "JOINT_APPLICATION_REVISION_REQUIRED" => $"Giảng viên {LecturerName(r)} yêu cầu chỉnh sửa đề xuất: {TopicName(r)}.",
+                "LECTURER_OFFERED_SUPERVISION" => $"Giảng viên {LecturerName(r)} đã đồng ý hướng dẫn đề tài: {TopicName(r)}. Hãy xác nhận giảng viên.",
+                "LECTURER_REQUEST_REJECTED" => $"Giảng viên {LecturerName(r)} đã từ chối yêu cầu hướng dẫn đề tài: {TopicName(r)}.",
+                "LECTURER_REQUEST_CANCELLED" => $"Sinh viên {StudentName(r)} đã hủy yêu cầu hướng dẫn đề tài: {TopicName(r)}.",
+                _ => null
+            };
+            if (message is null) continue;
+            var recipient = e.Action is "JOINT_APPLICATION_RESUBMITTED" or "LECTURER_REQUEST_CANCELLED"
+                ? r.LecturerUserId : r.StudentUserId;
+            Queue(recipient, $"V08:REQEV:{e.Id:N}", message);
+        }
+        if (db.ChangeTracker.HasChanges()) await db.SaveChangesAsync(ct);
+    }
+
     public async Task RefreshAsync(CancellationToken ct)
     {
         await _singleFlight.WaitAsync(ct);
@@ -29,6 +103,9 @@ public sealed class V08NotificationEngine(IServiceScopeFactory scopeFactory, ILo
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<StudentProjectsDbContext>();
             var now = DateTimeOffset.UtcNow;
+            // V094_REQUEST_NOTIFICATIONS: requests exist BEFORE Projects, so this must run
+            // before the early return for accounts without a Project.
+            await RefreshRequestNotificationsAsync(db, now, ct);
             var today = TimeZoneInfo.ConvertTime(now, Vietnam).Date;
             var cutoff = now.AddDays(-14);
             var projects = await db.Projects.AsNoTracking()
@@ -101,6 +178,8 @@ public sealed class V08NotificationEngine(IServiceScopeFactory scopeFactory, ILo
                     var msg = a.Action switch {
                         "MILESTONE_PROPOSED" or "MILESTONE_PROPOSED_FROM_TEMPLATE" or "MILESTONE_PROPOSAL_RESUBMITTED"
                             => $"Sinh viên gửi đề xuất kế hoạch: {m.Title}.",
+                        "MILESTONE_DEADLINE_CHANGE_REQUESTED" =>
+                            $"Sinh viên đề nghị thay đổi ngày nộp Milestone '{m.Title}'. Vui lòng mở Milestone để xác nhận ngày mới nhất.",
                         "MILESTONE_PROPOSAL_CONFIRMED" => $"Giảng viên đã xác nhận kế hoạch: {m.Title}.",
                         "MILESTONE_PROPOSAL_CHANGES_REQUESTED" => $"Giảng viên yêu cầu sửa kế hoạch: {m.Title}.",
                         _ => null

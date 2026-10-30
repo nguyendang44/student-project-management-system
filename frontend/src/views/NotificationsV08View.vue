@@ -23,7 +23,7 @@ async function read(item: NotificationV08) {
 }
 function canOpen(item: NotificationV08): boolean {
   // Do not navigate to external URLs, even if a response is unexpectedly malformed.
-  return typeof item.targetUrl === 'string' && /^\/(milestones|progress|submissions|evaluations|guidance)\?/.test(item.targetUrl)
+  return typeof item.targetUrl === 'string' && /^\/(milestones|progress|submissions|evaluations|guidance|lecturer-requests|lecturer-confirmation|topic-registrations)\?/.test(item.targetUrl)
 }
 async function openNotification(item: NotificationV08) {
   if (!canOpen(item) || openingId.value) return

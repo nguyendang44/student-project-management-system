@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import ProjectMilestoneSummary from '../components/ProjectMilestoneSummary.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
@@ -38,6 +38,15 @@ const activePeriod = computed(() => selectedPeriod.value?.isOpen &&
 const publicTopics = computed(() => allTopics.value.filter(t => t.isRegistrationOpen &&
   (t.status === 'APPROVED' || t.status === 'PUBLISHED') && !t.reservedForStudentUserId))
 const originalTopic = computed(() => publicTopics.value.find(t => t.id === jointTopicId.value))
+const fixedTopicLecturerId = computed(() => originalTopic.value?.proposedByRole === 'Lecturer'
+  ? originalTopic.value.proposedByUserId : '')
+const availableLecturers = computed(() => capacities.value.filter(c =>
+  c.remaining > 0 && (!fixedTopicLecturerId.value || c.lecturerUserId === fixedTopicLecturerId.value)))
+const fixedTopicLecturer = computed(() => capacities.value.find(c => c.lecturerUserId === fixedTopicLecturerId.value))
+watch(fixedTopicLecturerId, (id, oldId) => {
+  if (id) jointLecturerId.value = id
+  else if (oldId) jointLecturerId.value = ''
+})
 const ownPendingProposals = computed(() => {
   const ids = new Set<string>()
   return requests.value.filter(r => r.isCombined && ['PENDING', 'OFFERED', 'REVISION_REQUIRED'].includes(r.status) &&
@@ -89,6 +98,9 @@ async function applyTopicFromLink() {
     } catch (e) { error.value = message(e); return }
   }
   jointTopicId.value = id
+  // Also enforce a fixed lecturer when the topic is selected via a deep link.
+  const topic = publicTopics.value.find(t => t.id === id)
+  if (topic?.proposedByRole === 'Lecturer') jointLecturerId.value = topic.proposedByUserId
 }
 watch(() => route.query.topicId, () => { void applyTopicFromLink() })
 // A lecturer selected in the capacity table is only preselected here.
@@ -98,7 +110,8 @@ function selectLecturerFromLink() {
   const lecturerId = route.query.lecturerId
   if (typeof lecturerId !== 'string' || !lecturerId) return
   const selected = capacities.value.find(c => c.lecturerUserId === lecturerId)
-  if (selected && selected.remaining > 0) {
+  if (selected && selected.remaining > 0 &&
+      (!fixedTopicLecturerId.value || lecturerId === fixedTopicLecturerId.value)) {
     jointLecturerId.value = lecturerId
   } else {
     error.value = 'Giảng viên được chọn hiện không còn suất hướng dẫn hoặc không khả dụng.'
@@ -114,6 +127,14 @@ function message(e: unknown) {
   return e instanceof HttpError ? (e.payload?.message || `API ${e.status}`)
     : e instanceof Error ? e.message : 'Không thể tải dữ liệu.'
 }
+// V094_REQUEST_DEEPLINKS: focus only a request visible to this account.
+async function focusRequestedRow() {
+  const id = route.query.requestId
+  if (typeof id !== 'string' || !requests.value.some(r => r.id === id)) return
+  await nextTick()
+  document.getElementById(`request-${id}`)?.scrollIntoView({ block: 'center' })
+}
+watch(() => route.query.requestId, () => { void focusRequestedRow() })
 async function load() {
   loading.value = true
   error.value = ''
@@ -152,7 +173,7 @@ async function load() {
     }
     if (props.moduleId === 'projects') projects.value = await supervisionApi.projects()
   } catch (e) { error.value = message(e) }
-  finally { loading.value = false }
+  finally { loading.value = false; void focusRequestedRow() }
 }
 async function saveCapacity() {
   error.value = ''; success.value = ''
@@ -189,6 +210,9 @@ function startRevision(item: LecturerRequestV06) {
 async function submitJoint() {
   if (!activePeriod.value || !periodId.value || !jointLecturerId.value) {
     error.value = !activePeriod.value ? 'Chưa có đợt đăng ký đang mở. Vui lòng chờ Admin mở đợt.' : 'Vui lòng chọn giảng viên hướng dẫn.'; return
+  }
+  if (fixedTopicLecturerId.value && jointLecturerId.value !== fixedTopicLecturerId.value) {
+    error.value = 'Đề tài do giảng viên tạo chỉ được đăng ký với chính giảng viên đó.'; return
   }
   const chosen = capacities.value.find(c => c.lecturerUserId === jointLecturerId.value)
   if (!chosen || chosen.remaining <= 0) { error.value = 'Giảng viên đã đủ số lượng hướng dẫn.'; return }
@@ -283,7 +307,7 @@ onMounted(() => void load())
   </article>
   <article v-if="moduleId === 'lecturerrequests' && role === 'Student'" class="panel user-editor">
     <h3>Đăng ký đề tài và chọn giảng viên cùng lúc</h3>
-    <p>Bạn có thể gửi yêu cầu đến nhiều giảng viên. Giảng viên đồng ý trước, sau đó bạn chọn một người để chốt đề tài và tạo Project.</p>
+    <p>Đề tài do giảng viên tạo chỉ đăng ký với chính giảng viên đó. Nếu tự đề xuất đề tài mới hoặc chọn đề tài do Admin tạo, bạn có thể gửi yêu cầu đến nhiều giảng viên.</p>
     <form class="user-form" @submit.prevent="submitJoint">
       <label>Đề tài
         <select v-model="jointTopicId">
@@ -293,11 +317,13 @@ onMounted(() => void load())
         </select>
       </label>
       <label>Giảng viên hướng dẫn
-        <select v-model="jointLecturerId" required>
+        <select v-model="jointLecturerId" :disabled="!!fixedTopicLecturerId" required>
           <option value="" disabled>Chọn giảng viên</option>
-          <option v-for="c in capacities.filter(c => c.remaining > 0)" :key="c.lecturerUserId" :value="c.lecturerUserId">{{c.lecturerName}} · Còn {{c.remaining}} chỗ</option>
+          <option v-if="fixedTopicLecturerId && fixedTopicLecturer && fixedTopicLecturer.remaining <= 0" :value="fixedTopicLecturerId">{{fixedTopicLecturer.lecturerName}} · Đã hết suất</option>
+          <option v-for="c in availableLecturers" :key="c.lecturerUserId" :value="c.lecturerUserId">{{c.lecturerName}} · Còn {{c.remaining}} chỗ</option>
         </select>
       </label>
+      <p v-if="fixedTopicLecturerId" class="secondary-cell">Đề tài này do giảng viên {{originalTopic?.proposedBy}} tạo. Chỉ được chọn giảng viên này làm người hướng dẫn.{{fixedTopicLecturer?.remaining === 0 ? ' Giảng viên đã hết suất, hiện không thể gửi đăng ký.' : ''}}</p>
       <p v-if="originalTopic" class="secondary-cell">Bản đề xuất riêng của bạn từ “{{originalTopic.title}}”. Bạn có thể sửa các ý bên dưới; đề tài gốc không thay đổi. Giảng viên sẽ nhận xét hoặc yêu cầu sửa trước khi đồng ý.</p>
       <details v-if="originalTopic"><summary>Xem nội dung đề tài gốc (chỉ xem)</summary>
         <p><strong>Tên:</strong> {{originalTopic.title}}</p>
@@ -315,7 +341,7 @@ onMounted(() => void load())
         <label>Công nghệ dự kiến<textarea v-model="jointDraft.proposedTechnology" required maxlength="1000" /></label>
       </template>
       <p v-if="!activePeriod" class="secondary-cell">Chưa có đợt đăng ký đang mở. Admin cần mở đợt trước khi sinh viên gửi yêu cầu.</p>
-      <button class="action-primary" type="submit" :disabled="loading || !activePeriod">Gửi yêu cầu đến giảng viên</button>
+      <button class="action-primary" type="submit" :disabled="loading || !activePeriod || (!!fixedTopicLecturerId && (!fixedTopicLecturer || fixedTopicLecturer.remaining <= 0))">Gửi yêu cầu đến giảng viên</button>
     </form>
   </article>
   <article v-if="moduleId === 'capacity'" class="panel users-panel">
@@ -339,7 +365,7 @@ onMounted(() => void load())
     <p>Chọn một người để xác nhận hướng dẫn chính thức. Chỉ khi bạn xác nhận, hệ thống mới khóa đề tài, tính một suất hướng dẫn và tạo Project. Lời đồng ý có thể hết chỗ nếu giảng viên nhận sinh viên khác trước.</p>
     <div class="table-scroller"><table><thead><tr><th>Giảng viên</th><th>Đề tài</th><th>Thao tác</th></tr></thead><tbody>
       <tr v-if="!offeredRequests.length"><td colspan="3" class="empty-cell">Chưa có giảng viên đồng ý nhận bạn.</td></tr>
-      <tr v-for="offer in offeredRequests" :key="offer.id">
+      <tr v-for="offer in offeredRequests" :key="offer.id" :id="'request-' + offer.id" :class="{ 'request-target-row': route.query.requestId === offer.id }">
         <td>{{offer.lecturerName}}</td><td>{{offer.draftTitle || offer.topicTitle}}</td>
         <td><button type="button" class="action-primary" :disabled="loading" @click="selectOffer(offer)">Xác nhận giảng viên này</button></td>
       </tr>
@@ -349,7 +375,7 @@ onMounted(() => void load())
     <h3>{{role === 'Lecturer' ? 'Yêu cầu gửi đến bạn' : 'Yêu cầu đăng ký giảng viên'}}</h3>
     <div class="table-scroller"><table><thead><tr><th>Đề tài</th><th>Sinh viên</th><th>Giảng viên</th><th>Đợt</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>
       <tr v-if="!requests.length"><td colspan="6" class="empty-cell">Chưa có yêu cầu đăng ký hướng dẫn.</td></tr>
-      <tr v-for="r in requests" :key="r.id"><td>{{r.isCombined ? (r.draftTitle || r.topicTitle) : r.topicTitle}}
+      <tr v-for="r in requests" :key="r.id" :id="'request-' + r.id" :class="{ 'request-target-row': route.query.requestId === r.id }"><td>{{r.isCombined ? (r.draftTitle || r.topicTitle) : r.topicTitle}}
           <details v-if="r.isCombined"><summary>Xem bản đề xuất sinh viên</summary>
             <p><strong>Đề tài gốc:</strong> {{r.topicTitle}}</p>
             <p><strong>Tên đề tài đề xuất:</strong> {{r.draftTitle}}</p>
@@ -379,3 +405,8 @@ onMounted(() => void load())
   </article>
   <ProjectMilestoneSummary v-if="moduleId === 'projects'" />
 </template>
+
+<style scoped>
+/* V094_REQUEST_DEEPLINKS */
+.request-target-row { background: #eaf3ff; outline: 2px solid #2563eb; outline-offset: -2px; }
+</style>

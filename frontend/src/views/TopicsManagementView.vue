@@ -31,7 +31,19 @@ const rejectionNotes = reactive<Record<string,string>>({})
 const total = ref(0), page = ref(1), search = ref('')
 const editor = ref<'none'|'create'|'edit'|'propose'>('none'), editedId = ref('')
 const values = reactive<TopicPayload>({title:'',description:'',objective:'',expectedContent:'',proposedTechnology:''})
-const periodForm = reactive({ name:'', startsAt:'', endsAt:'', isOpen:true })
+// V091_PERIOD_HOUR_ONLY: ngày tách riêng, giờ 24h từ 00 đến 23, không nhập phút.
+const periodHours = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0'))
+// V092_PERIOD_AUTO_NUMBER_TOMORROW_07: Tên đợt tự tăng; ngày bắt đầu mặc định ngày mai lúc 07:00.
+function periodTomorrowLocal(){
+  const now = new Date()
+  now.setDate(now.getDate() + 1)
+  return [now.getFullYear(), String(now.getMonth()+1).padStart(2,'0'), String(now.getDate()).padStart(2,'0')].join('-')
+}
+const nextPeriodName = computed(() => {
+  const ids = periods.value.map(p => p.name.trim()).filter(name => /^[0-9]+$/.test(name)).map(Number)
+  return String(Math.max(0, ...ids) + 1)
+})
+const periodForm = reactive({ startsDate:periodTomorrowLocal(), startsHour:'07', endsDate:'', endsHour:'', isOpen:true })
 const canManage = (t:Topic) => role.value === 'Admin' ||
  (role.value === 'Lecturer' && t.proposedByUserId === auth.currentUser?.userId) ||
  (role.value === 'Student' && t.proposedByUserId === auth.currentUser?.userId && ['DRAFT','REJECTED'].includes(t.status))
@@ -184,12 +196,30 @@ async function cancelRegistration(r:TopicRegistration){if(!window.confirm('Hủy
   busy.value=true;clearAlert();try{await topicregistrationsApi.cancel(r.id);success.value='Đã hủy yêu cầu đăng ký.';await reload()}catch(e){error.value=errMessage(e)}finally{busy.value=false}
 }
 async function createPeriod(){busy.value=true;clearAlert();try{
-  if(!periodForm.startsAt||!periodForm.endsAt){error.value='Chọn thời gian bắt đầu và kết thúc.';return}
-  await periodsApi.create({name:periodForm.name,startsAt:new Date(periodForm.startsAt).toISOString(),endsAt:new Date(periodForm.endsAt).toISOString(),isOpen:periodForm.isOpen})
-  Object.assign(periodForm,{name:'',startsAt:'',endsAt:'',isOpen:true});success.value='Đã tạo đợt đăng ký.';await reload()
+  const startsDate = periodForm.startsDate || periodTomorrowLocal()
+  const startsHour = periodForm.startsHour || '07'
+  if(!periodForm.endsDate||!periodForm.endsHour){error.value='Chọn ngày và giờ kết thúc.';return}
+  const start = new Date(`${startsDate}T${startsHour}:00:00`)
+  const end = new Date(`${periodForm.endsDate}T${periodForm.endsHour}:00:00`)
+  if(!Number.isFinite(start.getTime())||!Number.isFinite(end.getTime())){error.value='Ngày giờ không hợp lệ.';return}
+  if(end.getTime()<=start.getTime()){error.value='Thời điểm kết thúc phải sau thời điểm bắt đầu.';return}
+  // Lấy danh sách mới nhất để tránh đặt tên trùng do dữ liệu được tạo từ phiên khác.
+  periods.value=await periodsApi.list()
+  const name = nextPeriodName.value
+  await periodsApi.create({name,startsAt:start.toISOString(),endsAt:end.toISOString(),isOpen:periodForm.isOpen})
+  Object.assign(periodForm,{startsDate:periodTomorrowLocal(),startsHour:'07',endsDate:'',endsHour:'',isOpen:true})
+  await reload();success.value=`Đã tạo đợt đăng ký số ${name}.`
 }catch(e){error.value=errMessage(e)}finally{busy.value=false}}
 async function togglePeriod(p:RegistrationPeriod){busy.value=true;clearAlert();try{await periodsApi.setState(p.id,!p.isOpen);success.value='Đã cập nhật đợt đăng ký.';await reload()}catch(e){error.value=errMessage(e)}finally{busy.value=false}}
-function formatDate(iso:string){return new Date(iso).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' })}
+function formatDate(iso:string){
+  const value = new Date(iso)
+  if(!Number.isFinite(value.getTime())) return '—'
+  const hh = String(value.getHours()).padStart(2,'0')
+  const mm = String(value.getMinutes()).padStart(2,'0')
+  const date = new Intl.DateTimeFormat('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'}).format(value)
+  // Với đợt cũ có phút lẻ, giữ nguyên phút để không làm sai thông tin.
+  return mm==='00' ? `${hh} giờ ${date}` : `${hh}:${mm} ${date}`
+}
 watch(() => route.query.revisionId, () => { if (!busy.value) openRevisionFromLink() })
 watch(()=>props.moduleId,()=>{editor.value='none';void reload()})
 onMounted(()=>void reload())
@@ -276,7 +306,15 @@ onMounted(()=>void reload())
     </tbody></table></div>
   </article>
   <article v-if="moduleId==='periods'" class="panel users-panel"><h3>Đợt đăng ký</h3><div class="table-scroller"><table><thead><tr><th>Tên đợt</th><th>Bắt đầu</th><th>Kết thúc</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody><tr v-if="!periods.length"><td colspan="5" class="empty-cell">Chưa có đợt đăng ký.</td></tr><tr v-for="p in periods" :key="p.id"><td>{{p.name}}</td><td>{{formatDate(p.startsAt)}}</td><td>{{formatDate(p.endsAt)}}</td><td>{{p.isOpen?'Đang mở':'Đóng'}}</td><td><button class="action-secondary" type="button" @click="togglePeriod(p)">{{p.isOpen?'Đóng':'Mở'}}</button></td></tr></tbody></table></div>
-    <form class="user-form" @submit.prevent="createPeriod"><label>Tên đợt<input v-model.trim="periodForm.name" maxlength="200" required /></label><label>Bắt đầu<input v-model="periodForm.startsAt" type="datetime-local" required lang="en-GB" /></label><label>Kết thúc<input v-model="periodForm.endsAt" type="datetime-local" required lang="en-GB" /></label><label>Trạng thái<select v-model="periodForm.isOpen"><option :value="true">Mở</option><option :value="false">Đóng</option></select></label><button class="action-primary" :disabled="busy" type="submit">Tạo đợt</button></form>
+    <form class="user-form" @submit.prevent="createPeriod">
+      <label>Tên đợt (tự động)<input :value="nextPeriodName" type="text" readonly aria-label="Tên đợt tự động" /></label>
+      <label>Ngày bắt đầu<input v-model="periodForm.startsDate" type="date" /></label>
+      <label>Giờ bắt đầu (24h)<select v-model="periodForm.startsHour" required><option disabled value="">Chọn giờ</option><option v-for="h in periodHours" :key="'start-'+h" :value="h">{{h}} giờ</option></select></label>
+      <label>Ngày kết thúc<input v-model="periodForm.endsDate" type="date" required /></label>
+      <label>Giờ kết thúc (24h)<select v-model="periodForm.endsHour" required><option disabled value="">Chọn giờ</option><option v-for="h in periodHours" :key="'end-'+h" :value="h">{{h}} giờ</option></select></label>
+      <label>Trạng thái<select v-model="periodForm.isOpen"><option :value="true">Mở</option><option :value="false">Đóng</option></select></label>
+      <button class="action-primary" :disabled="busy" type="submit">Tạo đợt</button>
+    </form>
   </article>
   <article v-if="editor!=='none'" class="panel user-editor"><div class="panel-heading"><h3>{{editor==='edit'?'Chỉnh sửa đề tài':editor==='propose'?'Đề xuất đề tài':'Tạo đề tài'}}</h3><button class="action-secondary" type="button" @click="editor='none'">Đóng</button></div>
     <form class="user-form" @submit.prevent="saveTopic"><label>Tên đề tài<input v-model.trim="values.title" maxlength="300" required /></label><label>Mô tả<textarea v-model.trim="values.description" maxlength="4000" required /></label><label>Mục tiêu<textarea v-model.trim="values.objective" maxlength="2000" :required="editor==='propose'" /></label><label>Nội dung dự kiến<textarea v-model.trim="values.expectedContent" maxlength="2000" :required="editor==='propose'" /></label><label>Công nghệ dự kiến<input v-model.trim="values.proposedTechnology" maxlength="1000" :required="editor==='propose'" /></label><button class="action-primary" type="submit" :disabled="busy">{{busy?'Đang lưu...':'Lưu đề tài'}}</button></form>

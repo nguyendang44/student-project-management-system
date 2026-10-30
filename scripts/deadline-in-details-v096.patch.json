@@ -1,0 +1,20 @@
+{
+  "frontend/src/views/ProjectProgressV07View.vue": [
+    {
+      "from": "          <td>\n            <template v-if=\"deadlineEditingId === m.id\">\n              <label class=\"v095-deadline-editor\">Ngày nộp mới\n                <input v-model=\"deadlineDraft\" type=\"date\" :disabled=\"saving\" required />\n              </label>\n              <div class=\"v07-actions v095-deadline-actions\">\n                <button type=\"button\" :disabled=\"saving\" @click=\"saveDeadline(m)\">Lưu ngày</button>\n                <button type=\"button\" :disabled=\"saving\" @click=\"deadlineEditingId = ''; deadlineDraft = ''\">Hủy</button>\n              </div>\n              <p class=\"v07-muted\">{{m.proposalStatus === 'CONFIRMED' ? 'Đổi ngày sẽ yêu cầu giảng viên xác nhận lại và gửi thông báo.' : 'Kế hoạch chưa được xác nhận: đổi ngày không gửi thêm thông báo.'}}</p>\n            </template>\n            <template v-else>\n              <span>{{readableDeadline(m.deadlineAt)}}</span>\n              <button v-if=\"canStudentEditDeadline(m)\" class=\"v095-edit-date\" type=\"button\" :disabled=\"saving\" @click=\"beginDeadlineEdit(m)\">Sửa ngày</button>\n            </template>\n          </td><td>{{m.percentComplete}}%</td>",
+      "to": "          <td>{{readableDeadline(m.deadlineAt)}}</td><td>{{m.percentComplete}}%</td>"
+    },
+    {
+      "from": "    <p v-if=\"role === 'Student' && selected.proposalStatus === 'PENDING_REVIEW'\" class=\"v07-muted\">Kế hoạch đang chờ giảng viên xem xét. Bạn có thể sửa ngày nộp tại bảng trên mà không gửi thông báo lại; chưa thể cập nhật tiến độ hoặc nộp kết quả.</p>\n    <p v-if=\"role === 'Student' && selected.proposalStatus === 'CHANGES_REQUESTED'\" class=\"v07-muted\">Nhấn “Sửa kế hoạch và gửi lại” để chỉnh theo góp ý, sau đó gửi cho giảng viên.</p>\n    <form v-if=\"canLecturerReviewProposal\" class=\"v07-form\" @submit.prevent>",
+      "to": "    <p v-if=\"role === 'Student' && selected.proposalStatus === 'PENDING_REVIEW'\" class=\"v07-muted\">Kế hoạch đang chờ giảng viên xem xét. Bạn có thể sửa ngày nộp ở phần chi tiết bên dưới mà không gửi thông báo lại; chưa thể cập nhật tiến độ hoặc nộp kết quả.</p>\n    <p v-if=\"role === 'Student' && selected.proposalStatus === 'CHANGES_REQUESTED'\" class=\"v07-muted\">Nhấn “Sửa kế hoạch và gửi lại” để chỉnh theo góp ý, sau đó gửi cho giảng viên.</p>\n    <!-- V096_DEADLINE_IN_DETAILS: edit selected milestone only, not in the catalogue table. -->\n    <div v-if=\"canStudentEditDeadline(selected)\" class=\"v096-deadline-section\">\n      <div v-if=\"deadlineEditingId === selected.id\" class=\"v096-deadline-form\">\n        <label class=\"v095-deadline-editor\">Ngày nộp mới\n          <input v-model=\"deadlineDraft\" type=\"date\" :disabled=\"saving\" required />\n        </label>\n        <p class=\"v07-muted\">{{selected.proposalStatus === 'CONFIRMED' ? 'Đổi ngày sẽ yêu cầu giảng viên xác nhận lại và gửi thông báo.' : 'Kế hoạch chưa được xác nhận: đổi ngày không gửi thêm thông báo.'}}</p>\n        <div class=\"v07-actions v095-deadline-actions\">\n          <button type=\"button\" :disabled=\"saving\" @click=\"saveDeadline(selected)\">Lưu ngày</button>\n          <button type=\"button\" :disabled=\"saving\" @click=\"deadlineEditingId = ''; deadlineDraft = ''\">Hủy</button>\n        </div>\n      </div>\n      <button v-else type=\"button\" :disabled=\"saving\" @click=\"beginDeadlineEdit(selected)\">Sửa ngày</button>\n    </div>\n    <form v-if=\"canLecturerReviewProposal\" class=\"v07-form\" @submit.prevent>"
+    },
+    {
+      "from": "watch(selectedId, () => { showMilestoneForm.value = false; void loadHistory() })",
+      "to": "watch(selectedId, () => { showMilestoneForm.value = false; deadlineEditingId.value = ''; deadlineDraft.value = ''; void loadHistory() })"
+    },
+    {
+      "from": ".v095-edit-date { display: block; margin-top: 6px; font-size: .9em; }",
+      "to": ".v096-deadline-section { margin-top: 14px; }\n.v096-deadline-section button { width: fit-content; padding: 8px 13px; border-radius: 5px; cursor: pointer; }\n.v096-deadline-form { display: grid; gap: 8px; }"
+    }
+  ]
+}

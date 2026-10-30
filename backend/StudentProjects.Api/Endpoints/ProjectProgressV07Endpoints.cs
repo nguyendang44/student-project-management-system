@@ -21,6 +21,7 @@ public static class ProjectProgressV07Endpoints
         api.MapPost("/projects/{projectId:guid}/milestones", CreateMilestone);
         api.MapPost("/projects/{projectId:guid}/milestone-plan", CreateMilestonePlan);
         api.MapPut("/milestones/{id:guid}", UpdateMilestone);
+        api.MapPut("/milestones/{id:guid}/deadline", UpdateStudentDeadline); // V095_DEADLINE_CHANGE
         api.MapGet("/milestones/{id:guid}/history", History);
         api.MapPost("/milestones/{id:guid}/progress", UpdateProgress);
         api.MapPost("/milestones/{id:guid}/submit", Submit);
@@ -233,6 +234,48 @@ public static class ProjectProgressV07Endpoints
         return Results.Ok(new { item.Id });
     }
 
+    // V095_DEADLINE_CHANGE: allow the owning student to adjust the submission day.
+    // While the plan is pending, the original approval request remains valid and
+    // NO new lecturer notification is generated. Once approved, the new deadline
+    // must be approved again (one audit event = one new lecturer notification).
+    public sealed record StudentDeadlineInput(DateTimeOffset DeadlineAt);
+
+    private static async Task<IResult> UpdateStudentDeadline(Guid id, StudentDeadlineInput? req,
+        ClaimsPrincipal principal, StudentProjectsDbContext db, CancellationToken ct)
+    {
+        var item = await db.Milestones.FirstOrDefaultAsync(m => m.Id == id, ct);
+        if (item is null) return Results.NotFound();
+        var project = await db.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == item.ProjectId, ct);
+        if (project is null) return Results.NotFound();
+        if (!CanWrite(project, principal, "Student")) return Results.Forbid();
+        if (!Active(project) || item.Status is MilestoneStatus.SUBMITTED or MilestoneStatus.APPROVED)
+            return Conflict("Không được sửa ngày nộp khi Milestone đang chờ đánh giá, đã duyệt kết quả hoặc Project đã kết thúc.");
+        if (req is null || req.DeadlineAt == default)
+            return Invalid("Vui lòng chọn ngày nộp hợp lệ.");
+        var deadline = EndOfDeadlineDay(req.DeadlineAt);
+        if (deadline < item.StartAt)
+            return Invalid("Ngày nộp không thể trước ngày bắt đầu Milestone.");
+        // An unchanged calendar date must never trigger a new approval request.
+        if (deadline == EndOfDeadlineDay(item.DeadlineAt))
+            return Results.Ok(new { item.Id, item.DeadlineAt, item.ProposalStatus, Changed = false });
+
+        var requiresReapproval = item.ProposalStatus == "CONFIRMED";
+        item.DeadlineAt = deadline;
+        item.UpdatedAt = DateTimeOffset.UtcNow;
+        if (requiresReapproval)
+        {
+            item.ProposalStatus = "PENDING_REVIEW";
+            // The former lecturer feedback belongs to the previous plan version.
+            item.ProposalFeedback = null;
+        }
+        Audit(db, Actor(principal), requiresReapproval
+            ? "MILESTONE_DEADLINE_CHANGE_REQUESTED"
+            : "MILESTONE_DEADLINE_UPDATED_PENDING", "Milestone", id);
+        await db.SaveChangesAsync(ct);
+        return Results.Ok(new { item.Id, item.DeadlineAt, item.ProposalStatus,
+            Changed = true, RequiresReapproval = requiresReapproval });
+    }
+
     public sealed record ProposalReviewInput(bool IsConfirmed, string? Feedback);
     private static async Task<IResult> ReviewProposal(Guid id, ProposalReviewInput? req,
         ClaimsPrincipal principal, StudentProjectsDbContext db, CancellationToken ct)
@@ -242,8 +285,10 @@ public static class ProjectProgressV07Endpoints
         var project = await db.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == item.ProjectId, ct);
         if (project is null) return Results.NotFound();
         if (!CanWrite(project, principal, "Lecturer")) return Results.Forbid();
-        if (!Active(project) || !item.ProposedByStudent || item.ProposalStatus != "PENDING_REVIEW")
-            return Conflict("Chỉ được duyệt bản đề xuất Milestone đang chờ giảng viên xem xét.");
+        // A lecturer-created Milestone can also be awaiting confirmation of a
+        // deadline change proposed by the student; ProposedByStudent remains intact.
+        if (!Active(project) || item.ProposalStatus != "PENDING_REVIEW")
+            return Conflict("Chỉ được duyệt kế hoạch hoặc thay đổi ngày nộp đang chờ xác nhận.");
         if (req is null || Text(req.Feedback).Length > 2000 || (!req.IsConfirmed && Text(req.Feedback).Length == 0))
             return Invalid("Khi yêu cầu sửa cần ghi nhận xét (tối đa 2000 ký tự).");
         item.ProposalStatus = req.IsConfirmed ? "CONFIRMED" : "CHANGES_REQUESTED";
