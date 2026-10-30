@@ -72,6 +72,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     };
 });
 builder.Services.AddAuthorization();
+// V010_GITHUB_PUBLIC_INTEGRATION
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient<IGitHubPublicClient, GitHubPublicClient>(http =>
+{
+    http.BaseAddress = new Uri("https://api.github.com/");
+    http.Timeout = TimeSpan.FromSeconds(10);
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddSingleton<V08NotificationEngine>();
 builder.Services.AddHostedService<V08NotifierWorker>();
 var app = builder.Build();
@@ -94,6 +101,7 @@ app.MapAuthEndpoints();
 app.MapGlobalLecturerCapacityEndpoints();
 app.MapProjectProgressV07Endpoints();
 app.MapV08Endpoints();
+app.MapGitHubV10Endpoints();
 app.MapUserManagementEndpoints();
 app.MapSkeletonEndpoints();
 app.MapTopicEndpoints();

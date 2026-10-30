@@ -5,7 +5,8 @@ import { useAuthStore } from '../stores/auth'
 const moduleRoutes: RouteRecordRaw[] = modules.map((mod) => ({
   path: mod.path.slice(1), name: mod.id,
   // V080_AUTOMATION_GUIDANCE
-  component: mod.id === 'dashboard' ? () => import('../views/DashboardV08View.vue')
+  component: mod.id === 'github' ? () => import('../views/GitHubV10View.vue')
+    : mod.id === 'dashboard' ? () => import('../views/DashboardV08View.vue')
     : mod.id === 'notifications' ? () => import('../views/NotificationsV08View.vue')
     : mod.id === 'guidance' ? () => import('../views/GuidanceV08View.vue')
     : ['milestones', 'progress', 'submissions', 'evaluations'].includes(mod.id)

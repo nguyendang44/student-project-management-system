@@ -402,8 +402,11 @@ export const modules: ModuleSpec[] = [
       "Cập nhật"
     ],
     "endpoints": [
-      "GET /repositories",
-      "POST /repositories"
+      "GET /v10/projects/{projectId}/repositories",
+      "POST /v10/projects/{projectId}/repositories",
+      "GET /v10/repositories/{id}/commits",
+      "GET /v10/repositories/{id}/branches",
+      "DELETE /v10/repositories/{id}"
     ]
   },
   {
