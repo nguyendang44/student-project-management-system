@@ -1,12 +1,16 @@
 <script setup lang="ts">
+// v0.7.8: editable 8x6 Milestone templates.
+import MilestoneTemplatePlanner from '../components/MilestoneTemplatePlanner.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { HttpError } from '../api/client'
+import { sortMilestonesForDisplay } from '../features/progress/sortMilestones'
+// V0712_SORT_MILESTONES
 import { projectProgressApi, type ProjectV07, type MilestoneV07, type MilestoneForm, type ProgressHistory } from '../features/progress/projectProgress.api'
 
 const props = defineProps<{ moduleId: string }>()
-const route = useRoute()
+const route = useRoute() // V0804_NOTIFICATION_LINKS
 const auth = useAuthStore()
 const role = computed(() => auth.role)
 const projects = ref<ProjectV07[]>([])
@@ -20,8 +24,15 @@ const error = ref('')
 const success = ref('')
 const editing = ref(false)
 const showMilestoneForm = ref(false)
+// V078_MILESTONE_TEMPLATE_LIBRARY
+const showTemplatePlanner = ref(false)
 const emptyMilestone = (): MilestoneForm => ({title:'', description:'', startAt:'', deadlineAt:'', expectedResult:''})
 const milestoneForm = ref<MilestoneForm>(emptyMilestone())
+// V095_DEADLINE_CHANGE: independent date-only editor, no repeated approval notice while pending.
+const deadlineEditingId = ref('')
+const deadlineDraft = ref('')
+const canStudentEditDeadline = (m: MilestoneV07) =>
+  role.value === 'Student' && !!canWork.value && !['SUBMITTED','APPROVED'].includes(m.status)
 const percent = ref(0)
 const workDone = ref('')
 const note = ref('')
@@ -35,7 +46,7 @@ const canAddMilestone = computed(() => selectedProject.value && ['REGISTERED','I
 const canStudentUpdate = computed(() => role.value === 'Student' && canWork.value && selected.value && selected.value.proposalStatus === 'CONFIRMED' && !['SUBMITTED','APPROVED'].includes(selected.value.status))
 const canStudentSubmit = computed(() => role.value === 'Student' && canWork.value && selected.value && selected.value.proposalStatus === 'CONFIRMED' && selected.value.status !== 'APPROVED')
 const canStudentEditProposal = computed(() => role.value === 'Student' && canWork.value && selected.value?.proposedByStudent && selected.value.proposalStatus === 'CHANGES_REQUESTED')
-const canLecturerReviewProposal = computed(() => role.value === 'Lecturer' && canWork.value && selected.value?.proposedByStudent && selected.value.proposalStatus === 'PENDING_REVIEW')
+const canLecturerReviewProposal = computed(() => role.value === 'Lecturer' && canWork.value && selected.value?.proposalStatus === 'PENDING_REVIEW')
 const canLecturerReview = computed(() => role.value === 'Lecturer' && canWork.value && selected.value?.status === 'SUBMITTED')
 const canLecturerEdit = computed(() => role.value === 'Lecturer' && canWork.value && selected.value && !['SUBMITTED','APPROVED'].includes(selected.value.status))
 const isMilestonesPage = computed(() => props.moduleId === 'milestones')
@@ -77,11 +88,15 @@ async function loadProjects() {
   finally { loading.value = false }
 }
 async function loadMilestones() {
+  deadlineEditingId.value = ''; deadlineDraft.value = ''
+  showTemplatePlanner.value = false
   error.value = ''; success.value = ''; showMilestoneForm.value = false
   if (!projectId.value) { milestones.value = []; selectedId.value = ''; history.value = null; return }
   try {
-    milestones.value = await projectProgressApi.milestones(projectId.value)
-    if (!milestones.value.some(x => x.id === selectedId.value)) selectedId.value = milestones.value[0]?.id || ''
+    milestones.value = sortMilestonesForDisplay(await projectProgressApi.milestones(projectId.value))
+    const requestedMilestone = typeof route.query.milestoneId === 'string' ? route.query.milestoneId : ''
+    if (requestedMilestone && milestones.value.some(x => x.id === requestedMilestone)) selectedId.value = requestedMilestone
+    else if (!milestones.value.some(x => x.id === selectedId.value)) selectedId.value = milestones.value[0]?.id || ''
     await loadHistory()
   } catch(e) { error.value = errorText(e) }
 }
@@ -113,10 +128,19 @@ function reviewProposal(isConfirmed: boolean) {
   void run(() => projectProgressApi.proposalReview(selectedId.value,isConfirmed,proposalFeedback.value),
     isConfirmed ? 'Đã xác nhận kế hoạch Milestone và chuyển cho sinh viên thực hiện.' : 'Đã gửi góp ý để sinh viên sửa kế hoạch.')
 }
+async function onTemplatesApplied(count: number) {
+  showTemplatePlanner.value = false
+  await loadProjects()
+  success.value = role.value === 'Student'
+    ? `Đã gửi ${count} Milestone đề xuất để giảng viên xem xét.`
+    : `Đã tạo ${count} Milestone từ mẫu.`
+}
 function newMilestone() {
+  showTemplatePlanner.value = false
   editing.value = false; milestoneForm.value = emptyMilestone(); showMilestoneForm.value = true
 }
 function editMilestone() {
+  showTemplatePlanner.value = false
   if (!selected.value) return
   editing.value = true
   milestoneForm.value = {title:selected.value.title,description:selected.value.description || '',expectedResult:selected.value.expectedResult || '',
@@ -145,6 +169,35 @@ async function saveMilestone() {
       ? (role.value === 'Student' ? 'Đã sửa và gửi lại kế hoạch cho giảng viên.' : 'Đã cập nhật Milestone.')
       : (role.value === 'Student' ? 'Đã gửi đề xuất Milestone cho giảng viên.' : 'Đã tạo Milestone.'))
 }
+function beginDeadlineEdit(m: MilestoneV07) {
+  if (!canStudentEditDeadline(m)) return
+  deadlineEditingId.value = m.id
+  deadlineDraft.value = deadlineDate(m.deadlineAt)
+  showMilestoneForm.value = false
+}
+async function saveDeadline(m: MilestoneV07) {
+  if (!canStudentEditDeadline(m) || deadlineEditingId.value !== m.id || saving.value) return
+  const day = deadlineDraft.value
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) { error.value = 'Vui lòng chọn ngày nộp hợp lệ.'; return }
+  const deadline = new Date(`${day}T23:59:59.999+07:00`)
+  if (!Number.isFinite(deadline.getTime()) || deadlineDate(deadline.toISOString()) !== day) {
+    error.value = 'Ngày nộp không hợp lệ.'; return
+  }
+  saving.value = true; error.value = ''; success.value = ''
+  try {
+    const result = await projectProgressApi.updateDeadline(m.id, deadline.toISOString())
+    deadlineEditingId.value = ''; deadlineDraft.value = ''
+    await loadProjects()
+    success.value = !result.changed
+      ? 'Ngày nộp không thay đổi, không gửi thông báo mới.'
+      : result.requiresReapproval
+        ? 'Đã đề xuất ngày nộp mới. Milestone chờ giảng viên xác nhận lại và giảng viên nhận thông báo.'
+        : m.proposalStatus === 'CHANGES_REQUESTED'
+          ? 'Đã đổi ngày nộp. Kế hoạch vẫn cần sửa theo góp ý và gửi lại khi hoàn tất; chưa gửi thông báo mới.'
+          : 'Đã đổi ngày nộp. Kế hoạch vẫn đang chờ xác nhận, không gửi thông báo mới.'
+  } catch(e) { error.value = errorText(e) }
+  finally { saving.value = false }
+}
 function submitProgress() {
   if (!selected.value) return
   void run(() => projectProgressApi.progress(selectedId.value, percent.value, workDone.value, note.value), 'Đã cập nhật tiến độ.')
@@ -161,7 +214,10 @@ function review(isApproved: boolean) {
   void run(() => projectProgressApi.review(selectedId.value,isApproved,feedback.value), isApproved ? 'Đã phê duyệt Milestone.' : 'Đã gửi yêu cầu chỉnh sửa.')
 }
 watch(projectId, () => { void loadMilestones() })
-watch(selectedId, () => { showMilestoneForm.value = false; void loadHistory() })
+watch(selectedId, () => { showMilestoneForm.value = false; deadlineEditingId.value = ''; deadlineDraft.value = ''; void loadHistory() })
+watch(() => route.query.milestoneId, (id) => {
+  if (typeof id === 'string' && milestones.value.some(m => m.id === id)) selectedId.value = id
+})
 watch(() => route.query.projectId, (id) => {
   if (typeof id === 'string' && projects.value.some(p => p.id === id)) projectId.value = id
 })
@@ -202,6 +258,7 @@ onMounted(() => { void loadProjects() })
     <div class="v07-head">
       <h3>Milestones của Project</h3>
       <button v-if="['Lecturer','Student'].includes(role || '') && canAddMilestone" type="button" @click="newMilestone">{{role === 'Student' ? '+ Đề xuất Milestone' : '+ Tạo Milestone'}}</button>
+      <button v-if="['Lecturer','Student'].includes(role || '') && canAddMilestone" type="button" @click="showTemplatePlanner = !showTemplatePlanner; showMilestoneForm = false">{{role === 'Student' ? '+ Đề xuất theo mẫu' : '+ Tạo từ mẫu'}}</button>
     </div>
     <div class="table-scroller"><table class="v07-table">
       <thead><tr><th>Milestone</th><th>Deadline</th><th>Tiến độ</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
@@ -215,6 +272,10 @@ onMounted(() => { void loadProjects() })
         <tr v-if="!milestones.length"><td colspan="5" class="empty-cell">Chưa có Milestone. Giảng viên có thể tạo mốc hoặc sinh viên đề xuất kế hoạch mới.</td></tr>
       </tbody>
     </table></div>
+    <MilestoneTemplatePlanner v-if="showTemplatePlanner && canAddMilestone && ['Lecturer','Student'].includes(role || '')"
+      :project-id="projectId" :role="role === 'Student' ? 'Student' : 'Lecturer'"
+      :existing-titles="milestones.map(m => m.title)"
+      @applied="onTemplatesApplied" @close="showTemplatePlanner = false" />
     <form v-if="['Lecturer','Student'].includes(role || '') && showMilestoneForm" class="v07-form" @submit.prevent="saveMilestone">
       <h4>{{editing ? (role === 'Student' ? 'Sửa kế hoạch theo góp ý giảng viên' : 'Chỉnh sửa Milestone') : (role === 'Student' ? 'Đề xuất Milestone gửi giảng viên' : 'Tạo Milestone')}}</h4>
       <label>Tên Milestone <input v-model.trim="milestoneForm.title" required maxlength="300" /></label>
@@ -255,13 +316,27 @@ onMounted(() => { void loadProjects() })
       <span><strong>Trạng thái:</strong> {{statusName(selected.status)}}</span>
     </div>
     <p><strong>Kết quả cần đạt:</strong> {{selected.expectedResult || 'Chưa cập nhật'}}</p>
-    <p v-if="selected.proposedByStudent"><strong>Đề xuất của sinh viên:</strong> {{proposalStatusName(selected.proposalStatus)}}</p>
+    <p v-if="selected.proposedByStudent || selected.proposalStatus !== 'CONFIRMED'"><strong>Trạng thái kế hoạch:</strong> {{proposalStatusName(selected.proposalStatus)}}</p>
     <p v-if="selected.proposedByStudent && selected.proposalFeedback"><strong>Góp ý giảng viên:</strong> {{selected.proposalFeedback}}</p>
-    <p v-if="role === 'Student' && selected.proposalStatus === 'PENDING_REVIEW'" class="v07-muted">Kế hoạch đang chờ giảng viên xem xét. Bạn chưa thể cập nhật tiến độ hoặc nộp kết quả.</p>
+    <p v-if="role === 'Student' && selected.proposalStatus === 'PENDING_REVIEW'" class="v07-muted">Kế hoạch đang chờ giảng viên xem xét. Bạn có thể sửa ngày nộp ở phần chi tiết bên dưới mà không gửi thông báo lại; chưa thể cập nhật tiến độ hoặc nộp kết quả.</p>
     <p v-if="role === 'Student' && selected.proposalStatus === 'CHANGES_REQUESTED'" class="v07-muted">Nhấn “Sửa kế hoạch và gửi lại” để chỉnh theo góp ý, sau đó gửi cho giảng viên.</p>
+    <!-- V096_DEADLINE_IN_DETAILS: edit selected milestone only, not in the catalogue table. -->
+    <div v-if="canStudentEditDeadline(selected)" class="v096-deadline-section">
+      <div v-if="deadlineEditingId === selected.id" class="v096-deadline-form">
+        <label class="v095-deadline-editor">Ngày nộp mới
+          <input v-model="deadlineDraft" type="date" :disabled="saving" required />
+        </label>
+        <p class="v07-muted">{{selected.proposalStatus === 'CONFIRMED' ? 'Đổi ngày sẽ yêu cầu giảng viên xác nhận lại và gửi thông báo.' : 'Kế hoạch chưa được xác nhận: đổi ngày không gửi thêm thông báo.'}}</p>
+        <div class="v07-actions v095-deadline-actions">
+          <button type="button" :disabled="saving" @click="saveDeadline(selected)">Lưu ngày</button>
+          <button type="button" :disabled="saving" @click="deadlineEditingId = ''; deadlineDraft = ''">Hủy</button>
+        </div>
+      </div>
+      <button v-else type="button" :disabled="saving" @click="beginDeadlineEdit(selected)">Sửa ngày</button>
+    </div>
     <form v-if="canLecturerReviewProposal" class="v07-form" @submit.prevent>
-      <h4>Xem xét kế hoạch Milestone sinh viên đề xuất</h4>
-      <p class="v07-muted">Có thể bấm “Sửa thông tin mốc” để hiệu chỉnh trước khi xác nhận kế hoạch và gửi cho sinh viên thực hiện.</p>
+      <h4>Xác nhận kế hoạch hoặc ngày nộp Milestone</h4>
+      <p class="v07-muted">Nếu sinh viên đề xuất thay đổi deadline sau khi đã duyệt, hãy xác nhận lại ngày nộp mới. Bạn cũng có thể sửa thông tin trước khi xác nhận.</p>
       <label>Góp ý <textarea v-model.trim="proposalFeedback" rows="3" maxlength="2000" placeholder="Nhập nhận xét nếu yêu cầu sửa" /></label>
       <div class="v07-actions">
         <button type="button" :disabled="saving" @click="reviewProposal(true)">Xác nhận và gửi sinh viên thực hiện</button>
@@ -352,5 +427,11 @@ onMounted(() => { void loadProjects() })
 .v07-form button,.v07-head button,.v07-table button { width: fit-content; padding: 8px 13px; border-radius: 5px; cursor: pointer; }
 .v07-history > div { border-top: 1px solid #cbd5e1; padding: 12px 0; overflow-wrap: anywhere; }
 .v07-history p { padding: 8px 0; border-bottom: 1px solid #e2e8f0; overflow-wrap: anywhere; }
+.v095-deadline-editor { display: grid; gap: 5px; min-width: 155px; }
+.v095-deadline-editor input { padding: 6px 8px; border: 1px solid #94a3b8; border-radius: 5px; max-width: 190px; }
+.v095-deadline-actions { margin-top: 6px; gap: 5px; }
+.v096-deadline-section { margin-top: 14px; }
+.v096-deadline-section button { width: fit-content; padding: 8px 13px; border-radius: 5px; cursor: pointer; }
+.v096-deadline-form { display: grid; gap: 8px; }
 .v07-last-submission { border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px 14px; margin-top: 12px; overflow-wrap: anywhere; }
 </style>

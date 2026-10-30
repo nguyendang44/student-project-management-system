@@ -1,0 +1,141 @@
+<script setup lang="ts">
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router' // V0804_NOTIFICATION_LINKS
+import { useAuthStore } from '../stores/auth'
+import { v08Api, type ProjectOptionV08, type GuidanceV08 } from '../features/v08/v08.api'
+import { formatDateTimeV08 } from '../features/v08/v08DateTime' // V0802_AMPM_JOURNAL
+const auth = useAuthStore()
+const route = useRoute()
+const projects = ref<ProjectOptionV08[]>([])
+const projectId = ref('')
+const entries = ref<GuidanceV08[]>([])
+const error = ref('')
+const success = ref('')
+const busy = ref(false)
+// V0803_DEFAULT_CURRENT_MEETING_TIME: Reset the default to the time when the form is created.
+// Use browser-local components, matching the existing local-to-ISO submit conversion.
+const pad2 = (value: number): string => String(value).padStart(2, '0')
+const newForm = () => {
+  const now = new Date()
+  const hour24 = now.getHours()
+  return {
+    meetingDate: now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-' + pad2(now.getDate()),
+    meetingHour: pad2(hour24 % 12 || 12),
+    meetingMinute: pad2(now.getMinutes()),
+    meetingPeriod: (hour24 >= 12 ? 'PM' : 'AM') as 'AM' | 'PM',
+    summary: '', feedback: '', nextActions: ''
+  }
+}
+const form = ref(newForm())
+const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'))
+const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'))
+const selected = computed(() => projects.value.find(p => p.id === projectId.value))
+const fmt = formatDateTimeV08
+async function loadProjects() {
+  try {
+    projects.value = await v08Api.projects()
+    if (auth.role === 'Student' && projects.value.length === 1) projectId.value = projects.value[0].id
+    else {
+      const incoming = typeof route.query.projectId === 'string' ? route.query.projectId : ''
+      if (incoming && projects.value.some(p => p.id === incoming)) projectId.value = incoming
+      else if (!projects.value.some(p => p.id === projectId.value)) projectId.value = projects.value[0]?.id ?? ''
+    }
+  } catch(e) { error.value = e instanceof Error ? e.message : 'Không tải được Project.' }
+}
+async function load() {
+  if (!projectId.value) { entries.value = []; return }
+  try {
+    entries.value = await v08Api.guidance(projectId.value); error.value = ''
+    await focusNotifiedEntry()
+  }
+  catch(e) { error.value = e instanceof Error ? e.message : 'Không tải được nhật ký.' }
+}
+async function focusNotifiedEntry() {
+  const id = typeof route.query.entryId === 'string' ? route.query.entryId : ''
+  if (!id || !entries.value.some(entry => entry.id === id)) return
+  await nextTick()
+  document.getElementById('guidance-entry-' + id)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+async function save() {
+  const f = form.value
+  if (!projectId.value || !f.meetingDate || !f.summary.trim()) { error.value = 'Vui lòng nhập ngày gặp và nội dung báo cáo.'; return }
+  const h12 = Number(f.meetingHour)
+  const m = Number(f.meetingMinute)
+  if (!(h12 >= 1 && h12 <= 12) || !(m >= 0 && m <= 59)) { error.value = 'Giờ hoặc phút không hợp lệ.'; return }
+  const h24 = h12 % 12 + (f.meetingPeriod === 'PM' ? 12 : 0)
+  // Same local-time interpretation as the previous datetime-local input.
+  const dateTime = new Date(f.meetingDate + 'T' + String(h24).padStart(2, '0') + ':' + f.meetingMinute + ':00')
+  const ms = dateTime.getTime()
+  if (!Number.isFinite(ms) || dateTime.getFullYear() !== Number(f.meetingDate.slice(0, 4))
+      || dateTime.getMonth() + 1 !== Number(f.meetingDate.slice(5, 7))
+      || dateTime.getDate() !== Number(f.meetingDate.slice(8, 10))) {
+    error.value = 'Ngày giờ không hợp lệ.'; return
+  }
+  busy.value = true; error.value = '';success.value = ''
+  try {
+    await v08Api.createGuidance(projectId.value, { meetingAt: new Date(ms).toISOString(),
+      summary: form.value.summary, feedback: form.value.feedback, nextActions: form.value.nextActions })
+    form.value = newForm()
+    success.value = 'Đã ghi nhật ký. Giảng viên có thể xem và xác nhận.'
+    await load()
+  } catch(e) { error.value = e instanceof Error ? e.message : 'Không thể ghi nhật ký.' }
+  finally { busy.value = false }
+}
+async function confirm(id: string) {
+  busy.value = true;error.value='';success.value=''
+  try { await v08Api.confirmGuidance(id); success.value = 'Đã xác nhận nhật ký.'; await load() }
+  catch(e) { error.value = e instanceof Error ? e.message : 'Không thể xác nhận.' }
+  finally { busy.value=false }
+}
+watch(projectId,load)
+watch(() => route.query.projectId, id => {
+  if (typeof id === 'string' && projects.value.some(p => p.id === id)) projectId.value = id
+})
+watch(() => route.query.entryId, () => { void focusNotifiedEntry() })
+onMounted(loadProjects)
+</script>
+<template>
+  <section class="v08-journal">
+    <header><h2>Nhật ký hướng dẫn</h2><p>Ghi lại kết quả các buổi gặp trực tiếp hoặc trao đổi với giảng viên.</p></header>
+    <p v-if="error" role="alert" class="error">{{ error }}</p><p v-if="success" role="status" class="success">{{ success }}</p>
+    <div v-if="auth.role === 'Student' && projects.length === 1"><strong>Project của bạn:</strong> {{ selected?.topicTitle }} · {{ selected?.studentName }} · {{ selected?.lecturerName }}</div>
+    <label v-else>Chọn Project <select v-model="projectId"><option value="">-- Chọn Project --</option><option v-for="p in projects" :key="p.id" :value="p.id">{{ p.topicTitle }} · {{ p.studentName }} · {{ p.lecturerName }}</option></select></label>
+    <form v-if="projectId && auth.role !== 'Admin'" @submit.prevent="save">
+      <h3>Ghi nhật ký buổi hướng dẫn</h3>
+      <fieldset class="meeting-date-time">
+        <legend>Ngày giờ gặp</legend>
+        <div class="meeting-date-time-fields">
+          <label>Ngày <input type="date" required v-model="form.meetingDate" /></label>
+          <label>Giờ <select required v-model="form.meetingHour"><option v-for="h in hours" :key="h" :value="h">{{ h }}</option></select></label>
+          <label>Phút <select required v-model="form.meetingMinute"><option v-for="m in minutes" :key="m" :value="m">{{ m }}</option></select></label>
+          <label>AM / PM <select required v-model="form.meetingPeriod"><option value="AM">AM</option><option value="PM">PM</option></select></label>
+        </div>
+      </fieldset>
+      <label>Nội dung báo cáo <textarea required maxlength="4000" v-model="form.summary" rows="3" /></label>
+      <label>Nhận xét / góp ý <textarea maxlength="4000" v-model="form.feedback" rows="3" /></label>
+      <label>Công việc cần thực hiện tiếp <textarea maxlength="4000" v-model="form.nextActions" rows="3" /></label>
+      <button :disabled="busy" type="submit">Lưu nhật ký</button>
+    </form>
+    <h3>Lịch sử hướng dẫn</h3>
+    <button v-if="projectId" type="button" @click="load">Làm mới</button>
+    <p v-if="projectId && !entries.length">Chưa có nhật ký hướng dẫn.</p>
+    <article v-for="entry in entries" :key="entry.id" :id="'guidance-entry-' + entry.id"
+      :class="{ 'v08-notification-focus': route.query.entryId === entry.id }">
+      <div class="entry-head"><strong>{{ fmt(entry.meetingAt) }}</strong>
+        <span>{{ entry.lecturerConfirmedAt ? 'Đã được giảng viên xác nhận' : 'Chờ xác nhận' }}</span></div>
+      <p><strong>Báo cáo:</strong> {{ entry.summary }}</p>
+      <p><strong>Góp ý:</strong> {{ entry.feedback || 'Chưa ghi nhận' }}</p>
+      <p><strong>Việc tiếp theo:</strong> {{ entry.nextActions || 'Chưa ghi nhận' }}</p>
+      <button v-if="auth.role === 'Lecturer' && !entry.lecturerConfirmedAt" type="button" :disabled="busy" @click="confirm(entry.id)">Xác nhận nhật ký</button>
+    </article>
+  </section>
+</template>
+<style scoped>
+.v08-journal{background:#fff;border:1px solid #dae2ec;border-radius:12px;padding:20px}
+.v08-journal form{display:grid;gap:12px;padding:16px;border:1px solid #e2e8f0;border-radius:8px;margin:18px 0}
+.v08-journal label{display:grid;gap:5px}.v08-journal input,.v08-journal select,.v08-journal textarea{max-width:700px;width:100%;padding:9px;border:1px solid #b9c5d5;border-radius:6px}
+.v08-journal button {width:max-content;cursor:pointer}.v08-journal article{padding:16px 0;border-bottom:1px solid #e2e8f0}
+.meeting-date-time{border:0;margin:0;padding:0;min-width:0}.meeting-date-time legend{padding:0;margin-bottom:5px}.meeting-date-time-fields{display:grid;grid-template-columns:minmax(160px,2fr) repeat(3,minmax(78px,1fr));gap:10px;max-width:700px}.meeting-date-time-fields label{min-width:0}.meeting-date-time-fields input,.meeting-date-time-fields select{min-width:0;box-sizing:border-box}@media(max-width:540px){.meeting-date-time-fields{grid-template-columns:repeat(3,minmax(0,1fr))}.meeting-date-time-fields label:first-child{grid-column:1/-1}}
+.v08-notification-focus{background:#eff6ff;border-left:3px solid #2563eb;padding-left:12px!important;scroll-margin-top:90px}
+.entry-head{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}.entry-head span{color:#475569}.error{color:#b91c1c}.success{color:#166534}
+</style>

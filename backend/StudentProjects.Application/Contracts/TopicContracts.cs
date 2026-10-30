@@ -4,7 +4,8 @@ public sealed record TopicInput(string? Title, string? Description, string? Obje
     string? ExpectedContent, string? ProposedTechnology, bool? IsRegistrationOpen);
 public sealed record TopicItem(Guid Id, string Title, string Description, string? Objective,
     string? ExpectedContent, string? ProposedTechnology, Guid ProposedByUserId, string ProposedBy,
-    string Status, bool IsRegistrationOpen, DateTimeOffset CreatedAt, Guid? ReservedForStudentUserId, bool CanDelete);
+    string Status, bool IsRegistrationOpen, DateTimeOffset CreatedAt, Guid? ReservedForStudentUserId, bool CanDelete,
+    string ProposedByRole);
 public sealed record TopicPage(IReadOnlyList<TopicItem> Items, int Total, int Page, int PageSize);
 public sealed record RejectTopicRequest(string? Reason);
 public sealed record TopicTransitionItem(string FromStatus, string ToStatus, string? Reason, DateTimeOffset At);

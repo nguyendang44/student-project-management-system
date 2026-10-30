@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using StudentProjects.Api.Endpoints;
+using StudentProjects.Api.Services;
+// V080_AUTOMATION_GUIDANCE
 using StudentProjects.Api.Security;
 using StudentProjects.Domain.Entities;
 using StudentProjects.Infrastructure;
@@ -70,6 +72,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     };
 });
 builder.Services.AddAuthorization();
+// V010_GITHUB_PUBLIC_INTEGRATION
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient<IGitHubPublicClient, GitHubPublicClient>(http =>
+{
+    http.BaseAddress = new Uri("https://api.github.com/");
+    http.Timeout = TimeSpan.FromSeconds(10);
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+builder.Services.AddSingleton<V08NotificationEngine>();
+builder.Services.AddHostedService<V08NotifierWorker>();
 var app = builder.Build();
 // Fail fast in every environment if essential configuration is still missing.
 // Configuration is complete here, including WebApplicationFactory's test overrides.
@@ -89,6 +100,8 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "StudentPr
 app.MapAuthEndpoints();
 app.MapGlobalLecturerCapacityEndpoints();
 app.MapProjectProgressV07Endpoints();
+app.MapV08Endpoints();
+app.MapGitHubV10Endpoints();
 app.MapUserManagementEndpoints();
 app.MapSkeletonEndpoints();
 app.MapTopicEndpoints();

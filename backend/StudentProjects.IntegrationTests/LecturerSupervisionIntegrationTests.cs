@@ -320,6 +320,129 @@ public sealed class LecturerSupervisionIntegrationTests
     }
 
     [Fact]
+    public async Task LecturerCreatedTopic_IsLimitedToAuthor_WhileAdminTopicAllowsChoice()
+    {
+        using var app = new TestServer(); await app.Seed();
+        using var admin = await Login(app, "v06-admin@test.local");
+        using var lecturer = await Login(app, "v06-lecturer@test.local");
+        using var lecturer2 = await Login(app, "v06-lecturer2@test.local");
+        using var student = await Login(app, "v06-student@test.local");
+        var periodId = await Period(admin);
+        var creatorId = await UserId(app, "v06-lecturer@test.local");
+        var otherId = await UserId(app, "v06-lecturer2@test.local");
+        await SetMax(lecturer, periodId, 3);
+        await SetMax(lecturer2, periodId, 3);
+        var topicId = await GetId(await lecturer.PostAsJsonAsync("/api/v1/topics", new {
+            title = "Lecturer's own topic", description = "Public lecturer topic", objective = "Goal",
+            expectedContent = "Result", proposedTechnology = "C#" }));
+        Assert.Equal(HttpStatusCode.OK, (await lecturer.PatchAsJsonAsync(
+            $"/api/v1/topics/{topicId}/registration", new { isOpen = true })).StatusCode);
+        using (var shown = (await student.GetFromJsonAsync<JsonDocument>($"/api/v1/topics/{topicId}"))!)
+        {
+            Assert.Equal("Lecturer", shown.RootElement.GetProperty("proposedByRole").GetString());
+            Assert.Equal(creatorId, shown.RootElement.GetProperty("proposedByUserId").GetGuid());
+        }
+        Assert.Equal(HttpStatusCode.Conflict, (await student.PostAsJsonAsync(
+            "/api/v1/lecturer-requests/combined", new {
+                topicId, lecturerUserId = otherId, registrationPeriodId = periodId,
+                draft = JointDraft("Student revision") })).StatusCode);
+        var requestId = await Combined(student, topicId, creatorId, periodId);
+        Assert.Equal(HttpStatusCode.OK,
+            (await lecturer.PostAsync($"/api/v1/lecturer-requests/{requestId}/accept", null)).StatusCode);
+        await Choose(student, requestId);
+        using var projects = (await student.GetFromJsonAsync<JsonDocument>("/api/v1/projects"))!;
+        Assert.Equal(creatorId, projects.RootElement.EnumerateArray().Single()
+            .GetProperty("lecturerUserId").GetGuid());
+        // Admin-created topics still allow choosing any available lecturer.
+        using var student2 = await Login(app, "v06-student2@test.local");
+        var adminTopicId = await GetId(await admin.PostAsJsonAsync("/api/v1/topics", new {
+            title = "Admin topic", description = "Flexible supervision", objective = "Goal",
+            expectedContent = "Result", proposedTechnology = "Vue" }));
+        Assert.Equal(HttpStatusCode.OK, (await admin.PatchAsJsonAsync(
+            $"/api/v1/topics/{adminTopicId}/registration", new { isOpen = true })).StatusCode);
+        var adminRequestId = await Combined(student2, adminTopicId, otherId, periodId);
+        Assert.Equal(HttpStatusCode.OK,
+            (await lecturer2.PostAsync($"/api/v1/lecturer-requests/{adminRequestId}/accept", null)).StatusCode);
+        await Choose(student2, adminRequestId);
+        using var projects2 = (await student2.GetFromJsonAsync<JsonDocument>("/api/v1/projects"))!;
+        Assert.Equal(otherId, projects2.RootElement.EnumerateArray().Single()
+            .GetProperty("lecturerUserId").GetGuid());
+    }
+
+    [Fact]
+    public async Task LecturerCreatedTopic_RegistrationAndDirectSupervisorRequestMustUseAuthor()
+    {
+        using var app = new TestServer(); await app.Seed();
+        using var admin = await Login(app, "v06-admin@test.local");
+        using var lecturer = await Login(app, "v06-lecturer@test.local");
+        using var lecturer2 = await Login(app, "v06-lecturer2@test.local");
+        using var student = await Login(app, "v06-student@test.local");
+        var periodId = await Period(admin);
+        var creatorId = await UserId(app, "v06-lecturer@test.local");
+        var otherId = await UserId(app, "v06-lecturer2@test.local");
+        await SetMax(lecturer, periodId, 2);
+        await SetMax(lecturer2, periodId, 2);
+        var topicId = await GetId(await lecturer.PostAsJsonAsync("/api/v1/topics", new {
+            title = "Only my lecturer", description = "Created by a lecturer", objective = "Goal",
+            expectedContent = "Result", proposedTechnology = "C#" }));
+        Assert.Equal(HttpStatusCode.OK, (await lecturer.PatchAsJsonAsync(
+            $"/api/v1/topics/{topicId}/registration", new { isOpen = true })).StatusCode);
+        var registrationId = await GetId(await student.PostAsJsonAsync("/api/v1/topic-registrations",
+            new { topicId, registrationPeriodId = periodId }));
+        Assert.Equal(HttpStatusCode.Forbidden,
+            (await lecturer2.PostAsync($"/api/v1/topic-registrations/{registrationId}/accept", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK,
+            (await lecturer.PostAsync($"/api/v1/topic-registrations/{registrationId}/accept", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await student.PostAsJsonAsync(
+            "/api/v1/lecturer-requests", new {
+                topicId, lecturerUserId = otherId, registrationPeriodId = periodId })).StatusCode);
+        var acceptedRequest = await Submit(student, topicId, creatorId, periodId);
+        Assert.Equal(HttpStatusCode.OK,
+            (await lecturer.PostAsync($"/api/v1/lecturer-requests/{acceptedRequest}/accept", null)).StatusCode);
+    }
+
+    [Fact]
+    public async Task LecturerCreatedTopic_LegacyWrongOfferCannotBeConfirmed()
+    {
+        using var app = new TestServer(); await app.Seed();
+        using var admin = await Login(app, "v06-admin@test.local");
+        using var lecturer = await Login(app, "v06-lecturer@test.local");
+        using var lecturer2 = await Login(app, "v06-lecturer2@test.local");
+        using var student = await Login(app, "v06-student@test.local");
+        var periodId = await Period(admin);
+        var creatorId = await UserId(app, "v06-lecturer@test.local");
+        var otherId = await UserId(app, "v06-lecturer2@test.local");
+        await SetMax(lecturer, periodId, 3);
+        await SetMax(lecturer2, periodId, 3);
+        var topicId = await GetId(await lecturer.PostAsJsonAsync("/api/v1/topics", new {
+            title = "Author only", description = "Public lecturer topic", objective = "Goal",
+            expectedContent = "Result", proposedTechnology = "C#" }));
+        Assert.Equal(HttpStatusCode.OK, (await lecturer.PatchAsJsonAsync(
+            $"/api/v1/topics/{topicId}/registration", new { isOpen = true })).StatusCode);
+        var requestId = await Combined(student, topicId, creatorId, periodId);
+        // Simulate an invalid request created before this rule existed.
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<StudentProjectsDbContext>();
+            var request = await db.LecturerRequests.SingleAsync(r => r.Id == requestId);
+            request.LecturerUserId = otherId;
+            await db.SaveChangesAsync();
+        }
+        Assert.Equal(HttpStatusCode.Conflict,
+            (await lecturer2.PostAsync($"/api/v1/lecturer-requests/{requestId}/accept", null)).StatusCode);
+        // Re-create an invalid OFFERED status to ensure the last step also rejects it.
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<StudentProjectsDbContext>();
+            var request = await db.LecturerRequests.SingleAsync(r => r.Id == requestId);
+            request.Status = StudentProjects.Domain.Enums.RequestStatus.OFFERED;
+            await db.SaveChangesAsync();
+        }
+        Assert.Equal(HttpStatusCode.Conflict,
+            (await student.PostAsync($"/api/v1/lecturer-requests/{requestId}/select", null)).StatusCode);
+    }
+
+    [Fact]
     public async Task JointApplication_PublicTopicRevision_DoesNotModifyOtherStudentsTopic()
     {
         using var app = new TestServer(); await app.Seed();

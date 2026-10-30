@@ -13,6 +13,7 @@ public static class SkeletonEndpoints
             module, useCases = useCases.Split(',', StringSplitOptions.TrimEntries), nextStep = "Implement application service, access/ownership checks, persistence and tests."
         }, statusCode: StatusCodes.Status501NotImplemented);
 
+    // V010_GITHUB_STUBS_REMOVED
     public static void MapSkeletonEndpoints(this IEndpointRouteBuilder app)
     {
         var api = app.MapGroup("/api/v1");
@@ -27,8 +28,6 @@ public static class SkeletonEndpoints
         api.MapPost("/submissions", () => Pending("submissions", "UC-23,UC-24,UC-25")).RequireAuthorization(policy => policy.RequireRole("Student"));
         api.MapGet("/evaluations", () => Pending("evaluations", "UC-24,UC-25,UC-26")).RequireAuthorization(policy => policy.RequireRole("Lecturer","Admin"));
         api.MapPost("/evaluations", () => Pending("evaluations", "UC-24,UC-25,UC-26")).RequireAuthorization(policy => policy.RequireRole("Lecturer"));
-        api.MapGet("/repositories", () => Pending("github", "UC-27,UC-28")).RequireAuthorization(policy => policy.RequireRole("Student","Lecturer","Admin"));
-        api.MapPost("/repositories", () => Pending("github", "UC-27,UC-28")).RequireAuthorization(policy => policy.RequireRole("Student"));
         api.MapGet("/ai-analysis", () => Pending("ai", "UC-29,UC-30")).RequireAuthorization(policy => policy.RequireRole("Student","Lecturer","Admin"));
         api.MapPost("/ai-analysis", () => Pending("ai", "UC-29,UC-30")).RequireAuthorization(policy => policy.RequireRole("Student","Lecturer"));
         api.MapGet("/notifications", () => Pending("notifications", "UC-31,UC-32")).RequireAuthorization(policy => policy.RequireRole("Student","Lecturer","Admin"));
@@ -42,7 +41,6 @@ public static class SkeletonEndpoints
         api.MapPost("/milestones/{id:guid}/approve", () => Pending("milestones", "UC-25")).RequireAuthorization(policy => policy.RequireRole("Lecturer"));
         api.MapPost("/milestones/{id:guid}/request-revision", () => Pending("milestones", "UC-24")).RequireAuthorization(policy => policy.RequireRole("Lecturer"));
         api.MapGet("/projects/{id:guid}/milestones", () => Pending("milestones", "UC-21")).RequireAuthorization(policy => policy.RequireRole("Student","Lecturer","Admin"));
-        api.MapGet("/repositories/{id:guid}/commits", () => Pending("github", "UC-28")).RequireAuthorization(policy => policy.RequireRole("Student","Lecturer","Admin"));
         api.MapGet("/notifications/{id:guid}", () => Pending("notifications", "UC-31")).RequireAuthorization(policy => policy.RequireRole("Student","Lecturer","Admin"));
         api.MapGet("/audit-log/{id:guid}", () => Pending("audit", "UC-43")).RequireAuthorization(policy => policy.RequireRole("Admin"));
         api.MapGet("/system-errors/{id:guid}", () => Pending("errors", "UC-39")).RequireAuthorization(policy => policy.RequireRole("Admin"));

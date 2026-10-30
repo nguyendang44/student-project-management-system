@@ -3,6 +3,8 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { RouterLink } from 'vue-router'
 import { HttpError } from '../api/client'
+import { sortMilestonesForDisplay } from '../features/progress/sortMilestones'
+// V0712_SORT_MILESTONES
 import { projectProgressApi, type ProjectV07, type MilestoneV07 } from '../features/progress/projectProgress.api'
 
 const auth = useAuthStore()
@@ -48,7 +50,7 @@ async function loadMilestones(id: string) {
   error.value = ''
   try {
     const data = await projectProgressApi.milestones(id)
-    if (projectId.value === id) milestones.value = data
+    if (projectId.value === id) milestones.value = sortMilestonesForDisplay(data)
   } catch (e) {
     if (projectId.value === id) error.value = errorText(e)
   } finally { if (projectId.value === id) loadingMilestones.value = false }

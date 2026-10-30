@@ -11,4 +11,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- V090_SECURITY_PKCS: patched 2026-10 advisories; do not suppress NU1902/NU1903 -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+  </ItemGroup>
 </Project>

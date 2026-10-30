@@ -75,6 +75,14 @@ public static class LecturerSupervisionEndpoints
             ? db.Topics.FromSqlInterpolated($"SELECT * FROM [Topics] WITH (UPDLOCK, HOLDLOCK) WHERE [Id] = {topicId}").SingleOrDefaultAsync(ct)
             : db.Topics.FindAsync([topicId], ct).AsTask();
 
+    // Lecturer-authored topics are tied to their author, regardless of whether
+    // the student submits a revised personal draft. Admin/student topics remain flexible.
+    private static async Task<bool> WrongSupervisorForLecturerTopic(StudentProjectsDbContext db,
+        Topic topic, Guid requestedLecturerId, CancellationToken ct) =>
+        topic.ProposedByUserId != requestedLecturerId &&
+        await db.Users.AsNoTracking().AnyAsync(u => u.Id == topic.ProposedByUserId &&
+            u.RoleId == RoleIds.Lecturer, ct);
+
     private static async Task<bool> StudentOwnsTopic(StudentProjectsDbContext db, Guid studentId, Guid topicId, Guid periodId, CancellationToken ct)
     {
         var topic = await db.Topics.AsNoTracking().SingleOrDefaultAsync(t => t.Id == topicId, ct);
@@ -192,6 +200,10 @@ public static class LecturerSupervisionEndpoints
             p.StartsAt <= now && p.EndsAt > now, ct)) return Conflict("Registration period is not currently open.");
         if (!await StudentOwnsTopic(db, actor, body.TopicId, body.RegistrationPeriodId, ct))
             return Conflict("Student must own the selected topic before requesting a supervisor.");
+        var registeredTopic = await db.Topics.AsNoTracking().SingleOrDefaultAsync(t => t.Id == body.TopicId, ct);
+        if (registeredTopic is null) return Results.NotFound();
+        if (await WrongSupervisorForLecturerTopic(db, registeredTopic, body.LecturerUserId, ct))
+            return Conflict("A lecturer-created topic can only be supervised by its author.");
         if (await db.Projects.AnyAsync(p => p.StudentUserId == actor && p.Status != ProjectStatus.CANCELLED, ct) ||
             await db.LecturerRequests.AnyAsync(r => r.StudentUserId == actor && r.Status == RequestStatus.ACCEPTED, ct))
             return Conflict("Student already has an accepted supervisor.");
@@ -266,6 +278,8 @@ public static class LecturerSupervisionEndpoints
         {
             topic = (await LockTopic(db, body.TopicId.Value, ct))!;
             if (topic is null) return Results.NotFound();
+            if (await WrongSupervisorForLecturerTopic(db, topic, body.LecturerUserId, ct))
+                return Conflict("A lecturer-created topic can only be supervised by its author.");
             var ownUnassignedProposal = topic.ProposedByUserId == actor &&
                 topic.Status == TopicStatus.PENDING_APPROVAL &&
                 await db.LecturerRequests.AnyAsync(r => r.TopicId == topic.Id && r.StudentUserId == actor &&
@@ -446,6 +460,8 @@ public static class LecturerSupervisionEndpoints
             return Conflict("Student no longer owns the topic.");
         var topic = await db.Topics.AsNoTracking().SingleOrDefaultAsync(t => t.Id == request.TopicId, ct);
         if (topic is null) return Results.NotFound();
+        if (await WrongSupervisorForLecturerTopic(db, topic, lecturerId, ct))
+            return Conflict("A lecturer-created topic can only be supervised by its author.");
         if (request.IsCombined && !(topic.ProposedByUserId == request.StudentUserId &&
             topic.Status == TopicStatus.PENDING_APPROVAL) &&
             !((topic.Status == TopicStatus.APPROVED || topic.Status == TopicStatus.PUBLISHED) &&
@@ -481,6 +497,8 @@ public static class LecturerSupervisionEndpoints
         if (occupied >= maxStudents) return Conflict("Lecturer has reached their global supervision limit.");
         var topic = await LockTopic(db, request.TopicId, ct);
         if (topic is null) return Results.NotFound();
+        if (await WrongSupervisorForLecturerTopic(db, topic, lecturerId, ct))
+            return Conflict("A lecturer-created topic can only be supervised by its author.");
         var ownsTopic = await StudentOwnsTopic(db, request.StudentUserId, request.TopicId, request.RegistrationPeriodId, ct);
         if (!request.IsCombined && !ownsTopic) return Conflict("Student no longer owns this topic.");
         if (request.IsCombined)

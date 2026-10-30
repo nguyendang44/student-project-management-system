@@ -16,6 +16,7 @@ export type ModuleId =
   | 'github'
   | 'ai'
   | 'notifications'
+  | 'guidance' // // V080_AUTOMATION_GUIDANCE
   | 'statistics'
   | 'reports'
   | 'users'
@@ -37,6 +38,9 @@ export interface ModuleSpec {
   endpoints: string[]
 }
 export const modules: ModuleSpec[] = [
+  { id: 'guidance', path: '/guidance', group: 'Dự án',
+    title: 'Nhật ký hướng dẫn', description: 'Lịch sử các buổi gặp và xác nhận của giảng viên',
+    roles: ['Student','Lecturer','Admin'], requirements: 'v0.8', useCases: [], columns: [], endpoints: ['GET /v08/projects/{id}/guidance'] },
   {
     "id": "dashboard",
     "path": "/dashboard",
@@ -398,8 +402,11 @@ export const modules: ModuleSpec[] = [
       "Cập nhật"
     ],
     "endpoints": [
-      "GET /repositories",
-      "POST /repositories"
+      "GET /v10/projects/{projectId}/repositories",
+      "POST /v10/projects/{projectId}/repositories",
+      "GET /v10/repositories/{id}/commits",
+      "GET /v10/repositories/{id}/branches",
+      "DELETE /v10/repositories/{id}"
     ]
   },
   {
