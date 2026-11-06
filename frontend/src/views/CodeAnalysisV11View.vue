@@ -171,6 +171,7 @@ onUnmounted(stopPolling)
     <header>
       <small>GitHub · v0.11</small>
       <h2>AI Code Analysis</h2>
+      <p><RouterLink to="/git-progress">Phân tích tiến độ Git giữa hai commit →</RouterLink></p>
       <p>Phân tích tham khảo theo commit SHA. Nhận xét AI không phải điểm số hay kết luận cuối cùng.</p>
     </header>
 

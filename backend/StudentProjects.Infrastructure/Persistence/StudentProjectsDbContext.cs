@@ -28,6 +28,7 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
     public DbSet<RepositoryLink> Repositories => Set<RepositoryLink>();
     public DbSet<CodeAnalysisReport> CodeAnalysisReports => Set<CodeAnalysisReport>();
     public DbSet<CodeAnalysisRun> CodeAnalysisRuns => Set<CodeAnalysisRun>();
+    public DbSet<GitProgressRun> GitProgressRuns => Set<GitProgressRun>();
     public DbSet<CodeAnalysisFinding> CodeAnalysisFindings => Set<CodeAnalysisFinding>();
     public DbSet<CodeAnalysisReview> CodeAnalysisReviews => Set<CodeAnalysisReview>();
 
@@ -242,6 +243,23 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
             e.HasOne<RepositoryLink>().WithMany().HasForeignKey(x => x.RepositoryLinkId).OnDelete(DeleteBehavior.NoAction);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.RequestedByUserId).OnDelete(DeleteBehavior.NoAction);
             e.HasIndex(x => new { x.RepositoryLinkId, x.CommitSha, x.Scope, x.ModelName }).IsUnique();
+            e.HasIndex(x => new { x.ProjectId, x.CreatedAt });
+        });
+        // V011_GIT_PROGRESS: separate table; CodeAnalysisRuns and prior migrations unchanged.
+        modelBuilder.Entity<GitProgressRun>(e =>
+        {
+            e.Property(x => x.BaseSha).HasMaxLength(40).IsRequired();
+            e.Property(x => x.HeadSha).HasMaxLength(40).IsRequired();
+            e.Property(x => x.ModelName).HasMaxLength(100).IsRequired();
+            e.Property(x => x.Status).HasMaxLength(24).IsRequired();
+            e.Property(x => x.Summary).HasMaxLength(4000);
+            e.Property(x => x.ErrorMessage).HasMaxLength(1000);
+            e.Property(x => x.FilesJson).HasColumnType("nvarchar(max)").IsRequired();
+            e.Property(x => x.EvidenceJson).HasColumnType("nvarchar(max)").IsRequired();
+            e.HasOne<Project>().WithMany().HasForeignKey(x => x.ProjectId).OnDelete(DeleteBehavior.NoAction);
+            e.HasOne<RepositoryLink>().WithMany().HasForeignKey(x => x.RepositoryLinkId).OnDelete(DeleteBehavior.NoAction);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.RequestedByUserId).OnDelete(DeleteBehavior.NoAction);
+            e.HasIndex(x => new { x.RepositoryLinkId, x.BaseSha, x.HeadSha, x.ModelName }).IsUnique();
             e.HasIndex(x => new { x.ProjectId, x.CreatedAt });
         });
         modelBuilder.Entity<CodeAnalysisFinding>(e =>

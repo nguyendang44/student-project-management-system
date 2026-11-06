@@ -322,6 +322,97 @@ namespace StudentProjects.Infrastructure.Persistence.Migrations
                     b.ToTable("CodeAnalysisRuns");
                 });
 
+            modelBuilder.Entity("StudentProjects.Domain.Entities.GitProgressRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Additions")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BaseSha")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Deletions")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("EvidenceJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FilesJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("HeadSha")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("ModelName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("PartialCoverage")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RepositoryLinkId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SentFiles")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<int>("TotalCommits")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalFiles")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("ProjectId", "CreatedAt");
+
+                    b.HasIndex("RepositoryLinkId", "BaseSha", "HeadSha", "ModelName")
+                        .IsUnique();
+
+                    b.ToTable("GitProgressRuns");
+                });
+
             modelBuilder.Entity("StudentProjects.Domain.Entities.GuidanceSession", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1280,6 +1371,27 @@ namespace StudentProjects.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("StudentProjects.Domain.Entities.CodeAnalysisRun", b =>
+                {
+                    b.HasOne("StudentProjects.Domain.Entities.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("StudentProjects.Domain.Entities.RepositoryLink", null)
+                        .WithMany()
+                        .HasForeignKey("RepositoryLinkId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("StudentProjects.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("StudentProjects.Domain.Entities.GitProgressRun", b =>
                 {
                     b.HasOne("StudentProjects.Domain.Entities.Project", null)
                         .WithMany()

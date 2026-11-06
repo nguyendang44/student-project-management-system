@@ -6,6 +6,7 @@ const moduleRoutes: RouteRecordRaw[] = modules.map((mod) => ({
   path: mod.path.slice(1), name: mod.id,
   // V080_AUTOMATION_GUIDANCE
   component: mod.id === 'ai' ? () => import('../views/CodeAnalysisV11View.vue')
+  : mod.id === 'gitprogress' ? () => import('../views/GitProgressV11View.vue')
   : mod.id === 'github' ? () => import('../views/GitHubV10View.vue')
     : mod.id === 'dashboard' ? () => import('../views/DashboardV08View.vue')
     : mod.id === 'notifications' ? () => import('../views/NotificationsV08View.vue')
@@ -27,7 +28,8 @@ const router = createRouter({
     { path: '/login', component: () => import('../views/LoginView.vue'), meta: { title: 'Đăng nhập' } },
     { path: '/', component: AppLayout, children: [{ path: '', redirect: '/dashboard' },
       { path: 'profile', component: () => import('../views/OwnProfileView.vue'),
-        meta: { title: 'Hồ sơ của tôi', allowedRoles: ['Student', 'Lecturer'] } }, ...moduleRoutes] },
+        meta: { title: 'Hồ sơ của tôi', allowedRoles: ['Student', 'Lecturer'] } },
+       ...moduleRoutes] },
     { path: '/:pathMatch(.*)*', component: () => import('../views/NotFoundView.vue') },
   ],
 })

@@ -25,7 +25,7 @@ onMounted(load)
     <h3>Deadline trong 7 ngày tới</h3>
     <p v-if="!data.upcoming.length">Không có Milestone sắp đến hạn.</p>
     <ul v-else><li v-for="m in data.upcoming" :key="m.id"><strong>{{ m.title }}</strong> · {{ fmt(m.deadlineAt) }} <RouterLink :to="`/milestones?projectId=${m.projectId}`">Xem Milestone</RouterLink></li></ul>
-    <p><RouterLink to="/notifications">Xem thông báo</RouterLink> · <RouterLink to="/guidance">Nhật ký hướng dẫn</RouterLink></p>
+    <p><RouterLink to="/notifications">Xem thông báo</RouterLink> · <RouterLink to="/guidance">Nhật ký hướng dẫn</RouterLink> · <RouterLink to="/git-progress">Phân tích tiến độ Git</RouterLink></p>
   </template></section>
 </template>
 <style scoped>

@@ -15,6 +15,7 @@ export type ModuleId =
   | 'evaluations'
   | 'github'
   | 'ai'
+  | 'gitprogress'
   | 'notifications'
   | 'guidance' // // V080_AUTOMATION_GUIDANCE
   | 'statistics'
@@ -434,6 +435,22 @@ export const modules: ModuleSpec[] = [
     "endpoints": [
       "GET /ai-analysis",
       "POST /ai-analysis"
+    ]
+  },
+  {
+    "id": "gitprogress",
+    "path": "/git-progress",
+    "group": "Tích hợp",
+    "title": "Phân tích tiến độ Git",
+    "description": "So sánh hai commit và tổng hợp công việc có bằng chứng từ Git diff",
+    "roles": ["Student", "Lecturer", "Admin"],
+    "requirements": "v0.11 Git Progress Analysis",
+    "useCases": [],
+    "columns": ["Dự án", "Commit cũ", "Commit mới", "Báo cáo"],
+    "endpoints": [
+      "POST /api/v1/v11/repositories/{id}/progress",
+      "GET /api/v1/v11/repositories/{id}/progress",
+      "GET /api/v1/v11/progress/{id}"
     ]
   },
   {

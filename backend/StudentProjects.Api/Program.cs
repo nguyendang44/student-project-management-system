@@ -97,6 +97,18 @@ builder.Services.AddHttpClient<AiCodeReviewClient>(client =>
     client.Timeout = TimeSpan.FromMinutes(10);
 }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddHostedService<CodeAnalysisWorker>();
+// V011_GIT_PROGRESS: immutable GitHub compare SHAs, local Ollama and persisted worker results.
+builder.Services.AddHttpClient<GitHubProgressClient>(client =>
+{
+    client.BaseAddress = new Uri("https://api.github.com/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+builder.Services.AddHttpClient<AiGitProgressClient>(client =>
+{
+    client.BaseAddress = new Uri("http://127.0.0.1:11434/");
+    client.Timeout = TimeSpan.FromMinutes(10);
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+builder.Services.AddHostedService<GitProgressWorker>();
 
 builder.Services.AddSingleton<V08NotificationEngine>();
 builder.Services.AddHostedService<V08NotifierWorker>();
@@ -122,6 +134,7 @@ app.MapProjectProgressV07Endpoints();
 app.MapV08Endpoints();
 app.MapGitHubV10Endpoints();
 app.MapCodeAnalysisV11Endpoints();
+app.MapGitProgressV11Endpoints();
 app.MapUserManagementEndpoints();
 app.MapSkeletonEndpoints();
 app.MapTopicEndpoints();
