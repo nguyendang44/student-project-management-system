@@ -90,17 +90,27 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
             // Feature facts are derived from the GitHub diff, independently of the
             // Ollama 10-file sample. Keep old JSON history compatible, no SQL migration.
             var features = GitProgressFeatureSynthesis.Extract(diff.Files);
-            var aiVerified = ai.RuleBasedFallback ? 0 : ai.Items.Count;
-            var observations = features.Select(f => new
+            // Optional AI explanation is separate from and cannot replace verified facts.
+            // A failing/slow model must not erase the deterministic progress report.
+            IReadOnlyList<ProgressFeatureExplanation> explanations = [];
+            if (features.Count > 0)
+            {
+                try
                 {
-                    file = f.Citations[0].File,
-                    area = f.Area,
-                    title = f.Title,
-                    evidence = f.Citations[0].Evidence,
-                    description = f.Description,
-                    citations = f.Citations.Select(c => new { file = c.File, evidence = c.Evidence }).ToArray(),
-                    source = "feature-rule"
-                }).Cast<object>().ToList();
+                    explanations = await services.GetRequiredService<AiGitProgressClient>()
+                        .ExplainFeaturesAsync(features, ct);
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+                catch (Exception ex)
+                {
+                    logger.LogWarning("Git progress {RunId}: AI explanation unavailable ({Reason})",
+                        id, ex.GetType().Name);
+                }
+            }
+            var aiVerified = ai.RuleBasedFallback ? 0 : ai.Items.Count;
+            // One persisted work item per verified Git feature. AI explanation is
+            // optional CHILD content, never a second work item or a second citation.
+            var observations = GitProgressFeatureReport.Build(features, explanations).ToList();
             // Show genuinely verified AI comments separately. Suppress the old
             // one-line fallback whenever grouped feature observations exist.
             if (aiVerified > 0 || features.Count == 0)
@@ -114,11 +124,14 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
             run.EvidenceJson = JsonSerializer.Serialize(observations);
             run.Summary = GitProgressEvidencePolicy.ComposeSummary(diff, ai.SentFiles, aiVerified);
             if (features.Count > 0)
-                run.Summary += $" Báo cáo tổng hợp {features.Count} nhóm công việc bằng quy tắc từ các dòng Git diff có thể đối chiếu, không phải nhận xét Ollama; không xác nhận chức năng đã chạy.";
+                run.Summary += $" Tổng hợp {features.Count} nhóm công việc từ Git diff theo quy tắc; " +
+                    (explanations.Count > 0
+                        ? $"{explanations.Count} nhóm có thêm diễn giải tham khảo của Ollama."
+                        : "không có diễn giải AI bổ sung đủ căn cứ.");
             else if (ai.RuleBasedFallback)
-                run.Summary += " Ollama không tạo nhận xét đạt bộ lọc; hệ thống chỉ có thể trình bày những dòng diff được trích xuất theo quy tắc.";
-            logger.LogInformation("Git progress {RunId}: groupedFeatures={Features}, verifiedAi={AiVerified}",
-                id, features.Count, aiVerified);
+                run.Summary += " Chưa xác định được nhóm chức năng từ diff; xem danh sách file thay đổi để đối chiếu.";
+            logger.LogInformation("Git progress {RunId}: groupedFeatures={Features}, verifiedAi={AiVerified}, aiFeatureExplanations={Explained}",
+                id, features.Count, aiVerified, explanations.Count);
             run.Status = "COMPLETED";
             run.CompletedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(ct);

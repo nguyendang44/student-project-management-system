@@ -60,7 +60,7 @@ public sealed class GitProgressGroundedFallbackV34Tests
         Assert.Single(result.Items);
         Assert.Contains("POST /progress", result.Items[0].Description);
         Assert.Equal(1, result.Diagnostics!.Boilerplate);
-        Assert.Equal("qwen2.5-coder:7b|gp-features-v3.5", client.AnalysisKey);
+        Assert.Equal("qwen2.5-coder:7b|gp-purpose-v3.7", client.AnalysisKey);
     }
 
     [Fact]

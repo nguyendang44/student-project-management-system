@@ -74,7 +74,7 @@ public sealed class GitProgressEvidenceIdTests
         Assert.Equal(file.Path, evidence.File);
         Assert.Equal("+app.MapGet(\"/health\", () => \"ok\");", evidence.Evidence);
         Assert.Contains("L1", responder.LastPrompt);
-        Assert.Contains("|gp-features-v3.5", client.AnalysisKey);
+        Assert.Contains("|gp-purpose-v3.7", client.AnalysisKey);
         Assert.Equal("qwen2.5-coder:7b", client.Model);
     }
 

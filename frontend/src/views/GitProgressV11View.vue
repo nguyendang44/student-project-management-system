@@ -32,18 +32,44 @@ const ready = computed(() => !!repositoryId.value && canRun.value && shaOkay(bas
 const selected = computed(() => repos.value.find(r => r.id === repositoryId.value))
 const files = computed<GitProgressFile[]>(() => parseArray<GitProgressFile>(active.value?.filesJson))
 const evidence = computed<GitProgressEvidence[]>(() => parseArray<GitProgressEvidence>(active.value?.evidenceJson))
+// v3.7 stores the optional explanation inside the same rule-derived fact.
+// v3.6 history stored each AI explanation as a separate row; join old rows by
+// verified area/title/file for display without changing the historical JSON.
+type DisplayWork = { item: GitProgressEvidence; explanation: string | null }
+const workItems = computed<DisplayWork[]>(() => {
+  const rows = evidence.value
+  const oldExplainers = rows.filter(x => x.source === 'ollama-feature')
+  const featureFacts = rows.filter(x => x.source === 'feature-rule')
+  const primary = featureFacts.length > 0 ? featureFacts : rows.filter(x => x.source !== 'ollama-feature')
+  return primary.map(item => {
+    let explanation = item.aiExplanation?.trim() || null
+    if (!explanation && item.source === 'feature-rule') {
+      const related = oldExplainers.find(x =>
+        x.area === item.area && x.file === item.file &&
+        x.title === `AI diễn giải: ${item.title || ''}`)
+      explanation = related?.description?.trim() || null
+    }
+    return { item, explanation }
+  })
+})
 const evidenceGroups = computed(() => {
-  const groups = new Map<string, GitProgressEvidence[]>()
-  for (const item of evidence.value) {
-    // v2 history remains readable: older rows have no `area` property.
-    const area = item.area || areaFromPath(item.file)
+  const groups = new Map<string, DisplayWork[]>()
+  for (const row of workItems.value) {
+    const area = row.item.area || areaFromPath(row.item.file)
     if (!groups.has(area)) groups.set(area, [])
-    groups.get(area)!.push(item)
+    groups.get(area)!.push(row)
   }
   const order = ['API', 'AI/Backend', 'Frontend', 'Kiểm thử', 'CSDL', 'Backend khác']
   return Array.from(groups, ([area, items]) => ({ area, items }))
-    .sort((a, b) => order.indexOf(a.area) - order.indexOf(b.area))
+    .sort((a, b) => {
+      const x = order.indexOf(a.area), y = order.indexOf(b.area)
+      return (x < 0 ? 99 : x) - (y < 0 ? 99 : y)
+    })
 })
+const groupedFeatureCount = computed(() => workItems.value.filter(x => x.item.source === 'feature-rule').length)
+const supplemental = computed(() => groupedFeatureCount.value > 0
+  ? evidence.value.filter(x => x.source !== 'feature-rule' && x.source !== 'ollama-feature') : [])
+const explanationCount = computed(() => workItems.value.filter(x => x.explanation && x.item.source === 'feature-rule').length)
 function areaFromPath(path: string): string {
   if (/IntegrationTests\/|\/tests\/|\.spec\.ts$/i.test(path)) return 'Kiểm thử'
   if (path.startsWith('frontend/')) return 'Frontend'
@@ -204,26 +230,36 @@ onUnmounted(stopPolling)
               <span v-if="active.partialCoverage">Phạm vi GitHub trả về có thể chưa đầy đủ.</span>
             </p>
             <p v-if="compareLink()"><a :href="compareLink()" target="_blank" rel="noopener noreferrer">Xem đối chiếu gốc trên GitHub</a></p>
-            <h4>Những công việc được nhận diện từ thay đổi mã nguồn ({{ evidence.length }})</h4>
-            <p class="hint">Mỗi nhóm chỉ chứng minh sự thay đổi trong Git diff. Phần kiểm thử là mã test được bổ sung, không xác nhận các test đã chạy thành công.</p>
-            <p v-if="!evidence.length">Không đủ bằng chứng để tổng hợp chức năng trong các đoạn diff hiện có. Đây không phải kết luận rằng sinh viên chưa làm việc.</p>
+            <h4>Những công việc được nhận diện từ thay đổi mã nguồn ({{ groupedFeatureCount || workItems.length }})</h4>
+            <p class="hint">Bằng chứng Git chỉ xác nhận mã đã thay đổi, không xác nhận hành vi chạy thực tế. Diễn giải AI chỉ là nội dung tham khảo gắn với nhóm đã đối chiếu.</p>
+            <p v-if="groupedFeatureCount" class="hint">{{ groupedFeatureCount }} nhóm công việc; {{ explanationCount }} nhóm có diễn giải AI bổ sung.</p>
+            <p v-if="!workItems.length">Không có nhận xét đủ bằng chứng trong phạm vi diff đã chọn; không có nghĩa sinh viên chưa làm việc.</p>
             <section v-for="group in evidenceGroups" :key="group.area" class="evidence-group">
-              <h5>{{ group.area }} · {{ group.items.length }} nhóm/nhận xét</h5>
-              <article v-for="(item, i) in group.items" :key="i" class="evidence">
-                <b v-if="item.title">{{ item.title }}</b>
-                <p>{{ item.description }}</p>
-                <div v-if="item.source === 'feature-rule' && item.citations?.length" class="gp-citations">
-                  <div v-for="(citation, j) in item.citations" :key="j" class="gp-citation">
+              <h5>{{ group.area }} · {{ group.items.length }} {{ groupedFeatureCount ? 'nhóm công việc' : 'nhận xét' }}</h5>
+              <article v-for="(row, i) in group.items" :key="row.item.factId || i" class="evidence">
+                <b v-if="row.item.title">{{ row.item.title }}</b>
+                <p>{{ row.item.description }}</p>
+                <div v-if="row.item.citations?.length" class="gp-citations">
+                  <div v-for="(citation, j) in row.item.citations" :key="j" class="gp-citation">
                     <small>{{ citation.file }}</small>
                     <pre>{{ citation.evidence }}</pre>
                   </div>
                 </div>
-                <template v-else><b>{{ item.file }}</b><pre>{{ item.evidence }}</pre></template>
-                <small v-if="item.source === 'feature-rule'">Tổng hợp theo quy tắc từ các dòng diff đã lọc; không phải nhận xét AI. Cần đối chiếu hành vi thực tế.</small>
-                <small v-else-if="item.source === 'diff-rule'">Đối chiếu theo quy tắc từ dòng Git diff; không phải nhận xét AI, không chứng minh chức năng đã chạy.</small>
-                <small v-else>Nhận xét AI dựa trên dòng diff; cần giảng viên đối chiếu, không chứng minh code chạy thành công.</small>
+                <template v-else><b>{{ row.item.file }}</b><pre>{{ row.item.evidence }}</pre></template>
+                <div v-if="row.explanation" class="gp-ai-note">
+                  <strong>Ý nghĩa do AI diễn giải (tham khảo)</strong>
+                  <p>{{ row.explanation }}</p>
+                </div>
               </article>
             </section>
+            <details v-if="supplemental.length" class="gp-supplemental">
+              <summary>Nhận xét bổ sung từ diff ({{ supplemental.length }}, không tính vào số nhóm công việc)</summary>
+              <article v-for="(extra, j) in supplemental" :key="j" class="evidence">
+                <p>{{ extra.description }}</p>
+                <small>{{ extra.file }}</small>
+                <pre>{{ extra.evidence }}</pre>
+              </article>
+            </details>
             <details>
               <summary>Danh sách file thay đổi ({{ files.length }})</summary>
               <div v-for="f in files" :key="f.path" class="file-line">
@@ -262,6 +298,9 @@ button.secondary { background: #475569; }
 .evidence-group { margin-top: 1rem; }
 .evidence-group h5 { margin: .6rem 0; font-size: 1rem; }
 .evidence { border-top: 1px solid #cbd5e1; padding-top: .8rem; margin-top: .8rem; }
+.gp-ai-note { border-left: 3px solid #64748b; padding: .55rem .85rem; margin: .7rem 0; background: rgba(100,116,139,.06); border-radius: 0 6px 6px 0; }
+.gp-ai-note strong { font-size: .9rem; }
+.gp-ai-note p { margin: .4rem 0 0; }
 .evidence pre { white-space: pre-wrap; overflow-wrap: anywhere; background: rgba(100,116,139,.09); padding: .7rem; border-radius: 6px; }
 .gp-citations { display: grid; gap: .45rem; }
 .gp-citation small { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; color: var(--text-muted,#64748b); }

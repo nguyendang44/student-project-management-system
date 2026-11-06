@@ -28,7 +28,9 @@ export interface GitProgressEvidence {
   title?: string | null
   citations?: GitProgressEvidenceCitation[] | null
   description: string
-  source?: 'ollama' | 'diff-rule' | 'feature-rule'
+  factId?: string
+  aiExplanation?: string | null
+  source?: 'ollama' | 'diff-rule' | 'feature-rule' | 'ollama-feature'
 }
 export interface GitProgressRun extends GitProgressRunListItem {
   projectId: string
