@@ -24,7 +24,13 @@ builder.Services.AddSingleton<TokenService>();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.AddPolicy("auth-login", http => RateLimitPartition.GetFixedWindowLimiter(
+    options.AddPolicy("analysis-start", http => RateLimitPartition.GetFixedWindowLimiter(
+    partitionKey: http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+    factory: _ => new FixedWindowRateLimiterOptions
+    {
+        PermitLimit = 8, Window = TimeSpan.FromHours(1), QueueLimit = 0, AutoReplenishment = true
+    }));
+options.AddPolicy("auth-login", http => RateLimitPartition.GetFixedWindowLimiter(
         partitionKey: http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         factory: _ => new FixedWindowRateLimiterOptions
         {
@@ -79,6 +85,19 @@ builder.Services.AddHttpClient<IGitHubPublicClient, GitHubPublicClient>(http =>
     http.BaseAddress = new Uri("https://api.github.com/");
     http.Timeout = TimeSpan.FromSeconds(10);
 }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+// V011_AI_CODE_ANALYSIS: public GitHub source snapshot, structured AI review, DB worker.
+builder.Services.AddHttpClient<GitHubSnapshotClient>(client =>
+{
+    client.BaseAddress = new Uri("https://api.github.com/");
+    client.Timeout = TimeSpan.FromSeconds(20);
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+builder.Services.AddHttpClient<AiCodeReviewClient>(client =>
+{
+    client.BaseAddress = new Uri("http://127.0.0.1:11434/");
+    client.Timeout = TimeSpan.FromMinutes(10);
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+builder.Services.AddHostedService<CodeAnalysisWorker>();
+
 builder.Services.AddSingleton<V08NotificationEngine>();
 builder.Services.AddHostedService<V08NotifierWorker>();
 var app = builder.Build();
@@ -102,6 +121,7 @@ app.MapGlobalLecturerCapacityEndpoints();
 app.MapProjectProgressV07Endpoints();
 app.MapV08Endpoints();
 app.MapGitHubV10Endpoints();
+app.MapCodeAnalysisV11Endpoints();
 app.MapUserManagementEndpoints();
 app.MapSkeletonEndpoints();
 app.MapTopicEndpoints();

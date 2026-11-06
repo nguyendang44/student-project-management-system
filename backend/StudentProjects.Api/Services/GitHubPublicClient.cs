@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 
 namespace StudentProjects.Api.Services;
 
@@ -27,7 +28,7 @@ public interface IGitHubPublicClient
     Task<IReadOnlyList<string>> GetBranchesAsync(string owner, string repo, CancellationToken ct);
 }
 
-public sealed class GitHubPublicClient(HttpClient http, IMemoryCache cache) : IGitHubPublicClient
+public sealed class GitHubPublicClient(HttpClient http, IMemoryCache cache, IConfiguration config) : IGitHubPublicClient
 {
     private static readonly TimeSpan CacheLifetime = TimeSpan.FromSeconds(90);
 
@@ -112,6 +113,11 @@ public sealed class GitHubPublicClient(HttpClient http, IMemoryCache cache) : IG
             request.Headers.UserAgent.Add(new ProductInfoHeaderValue("StudentProjects", "0.10"));
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
             request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
+            // Reuse the same server-side, read-only GitHub PAT as v0.11 snapshot requests.
+            // Never expose this token to the Vue frontend or commit it to Git.
+            var token = config["GitHub:Token"];
+            if (!string.IsNullOrWhiteSpace(token))
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
             if (response.StatusCode == HttpStatusCode.NotFound)
                 throw new GitHubAccessException(422, "REPOSITORY_UNAVAILABLE", "Không tìm thấy repository public. Kiểm tra URL hoặc quyền riêng tư trên GitHub.");

@@ -101,6 +101,60 @@ namespace StudentProjects.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("StudentProjects.Domain.Entities.CodeAnalysisFinding", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Evidence")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<string>("Explanation")
+                        .IsRequired()
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("LineNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Recommendation")
+                        .IsRequired()
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RunId", "Fingerprint");
+
+                    b.ToTable("CodeAnalysisFindings");
+                });
+
             modelBuilder.Entity("StudentProjects.Domain.Entities.CodeAnalysisReport", b =>
                 {
                     b.Property<Guid>("Id")
@@ -152,6 +206,168 @@ namespace StudentProjects.Infrastructure.Persistence.Migrations
                     b.HasIndex("ProjectId", "CreatedAt");
 
                     b.ToTable("CodeAnalysisReports", t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
+            modelBuilder.Entity("StudentProjects.Domain.Entities.CodeAnalysisReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("LecturerUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LecturerUserId");
+
+                    b.HasIndex("RunId", "CreatedAt");
+
+                    b.ToTable("CodeAnalysisReviews");
+                });
+
+            modelBuilder.Entity("StudentProjects.Domain.Entities.CodeAnalysisRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AnalyzedPathsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Branch")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CommitSha")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DevelopmentWork")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ModelName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RepositoryLinkId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("SkippedFiles")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("ProjectId", "CreatedAt");
+
+                    b.HasIndex("RepositoryLinkId", "CommitSha", "Scope", "ModelName")
+                        .IsUnique();
+
+                    b.ToTable("CodeAnalysisRuns");
+                });
+
+            modelBuilder.Entity("StudentProjects.Domain.Entities.GuidanceSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Feedback")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<DateTimeOffset?>("LecturerConfirmedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("MeetingAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("NextActions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("ProjectId", "MeetingAt");
+
+                    b.ToTable("GuidanceSessions", t =>
                         {
                             t.ExcludeFromMigrations();
                         });
@@ -238,6 +454,29 @@ namespace StudentProjects.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<string>("DraftDescription")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("DraftExpectedContent")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("DraftObjective")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("DraftProposedTechnology")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("DraftTitle")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool>("IsCombined")
+                        .HasColumnType("bit");
+
                     b.Property<Guid>("LecturerUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -266,11 +505,21 @@ namespace StudentProjects.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("RegistrationPeriodId");
 
+                    b.HasIndex("StudentUserId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_LecturerRequests_OneAcceptedPerStudent")
+                        .HasFilter("[Status] = 'ACCEPTED'");
+
                     b.HasIndex("TopicId");
 
                     b.HasIndex("LecturerUserId", "RegistrationPeriodId", "Status");
 
                     b.HasIndex("StudentUserId", "RegistrationPeriodId", "Status");
+
+                    b.HasIndex("StudentUserId", "LecturerUserId", "TopicId", "RegistrationPeriodId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_LecturerRequests_OnePendingPerStudentLecturerTopicPeriod")
+                        .HasFilter("[Status] = 'PENDING'");
 
                     b.ToTable("LecturerRequests", t =>
                         {
@@ -303,6 +552,18 @@ namespace StudentProjects.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("ProjectId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ProposalFeedback")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("ProposalStatus")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<bool>("ProposedByStudent")
+                        .HasColumnType("bit");
 
                     b.Property<DateTimeOffset>("StartAt")
                         .HasColumnType("datetimeoffset");
@@ -504,7 +765,15 @@ namespace StudentProjects.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("RegistrationPeriodId");
 
-                    b.HasIndex("TopicId");
+                    b.HasIndex("StudentUserId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Projects_OneActiveProjectPerStudent")
+                        .HasFilter("[Status] <> 'CANCELLED'");
+
+                    b.HasIndex("TopicId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Projects_OneActiveProjectPerTopic")
+                        .HasFilter("[Status] <> 'CANCELLED'");
 
                     b.HasIndex("StudentUserId", "RegistrationPeriodId");
 
@@ -864,7 +1133,7 @@ namespace StudentProjects.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("TopicId");
 
-                    b.HasIndex("StudentUserId", "RegistrationPeriodId")
+                    b.HasIndex("StudentUserId", "TopicId")
                         .IsUnique()
                         .HasFilter("[Status] IN ('PENDING','ACCEPTED')");
 
@@ -971,6 +1240,15 @@ namespace StudentProjects.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction);
                 });
 
+            modelBuilder.Entity("StudentProjects.Domain.Entities.CodeAnalysisFinding", b =>
+                {
+                    b.HasOne("StudentProjects.Domain.Entities.CodeAnalysisRun", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("StudentProjects.Domain.Entities.CodeAnalysisReport", b =>
                 {
                     b.HasOne("StudentProjects.Domain.Entities.Project", null)
@@ -982,6 +1260,57 @@ namespace StudentProjects.Infrastructure.Persistence.Migrations
                     b.HasOne("StudentProjects.Domain.Entities.RepositoryLink", null)
                         .WithMany()
                         .HasForeignKey("RepositoryLinkId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("StudentProjects.Domain.Entities.CodeAnalysisReview", b =>
+                {
+                    b.HasOne("StudentProjects.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("LecturerUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("StudentProjects.Domain.Entities.CodeAnalysisRun", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("StudentProjects.Domain.Entities.CodeAnalysisRun", b =>
+                {
+                    b.HasOne("StudentProjects.Domain.Entities.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("StudentProjects.Domain.Entities.RepositoryLink", null)
+                        .WithMany()
+                        .HasForeignKey("RepositoryLinkId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("StudentProjects.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("StudentProjects.Domain.Entities.GuidanceSession", b =>
+                {
+                    b.HasOne("StudentProjects.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("StudentProjects.Domain.Entities.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });

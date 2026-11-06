@@ -27,6 +27,11 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
     public DbSet<ProjectEvaluation> ProjectEvaluations => Set<ProjectEvaluation>();
     public DbSet<RepositoryLink> Repositories => Set<RepositoryLink>();
     public DbSet<CodeAnalysisReport> CodeAnalysisReports => Set<CodeAnalysisReport>();
+    public DbSet<CodeAnalysisRun> CodeAnalysisRuns => Set<CodeAnalysisRun>();
+    public DbSet<CodeAnalysisFinding> CodeAnalysisFindings => Set<CodeAnalysisFinding>();
+    public DbSet<CodeAnalysisReview> CodeAnalysisReviews => Set<CodeAnalysisReview>();
+
+
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<GuidanceSession> GuidanceSessions => Set<GuidanceSession>(); // // V080_AUTOMATION_GUIDANCE
     public DbSet<AutomationRun> AutomationRuns => Set<AutomationRun>();
@@ -220,6 +225,43 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
             e.Property(x => x.DefaultBranch).HasMaxLength(200);
             e.HasOne<Project>().WithMany().HasForeignKey(x => x.ProjectId).OnDelete(onDelete);
             e.HasIndex(x => x.ProjectId);
+        });
+
+                // V011_AI_CODE_ANALYSIS: new tables; keep v0.10 entities and migrations intact.
+        modelBuilder.Entity<CodeAnalysisRun>(e =>
+        {
+            e.Property(x => x.Branch).HasMaxLength(200).IsRequired();
+            e.Property(x => x.CommitSha).HasMaxLength(40).IsRequired();
+            e.Property(x => x.Scope).HasMaxLength(30).IsRequired();
+            e.Property(x => x.ModelName).HasMaxLength(100).IsRequired();
+            e.Property(x => x.Status).HasMaxLength(24).IsRequired();
+            e.Property(x => x.Summary).HasMaxLength(4000);
+            e.Property(x => x.DevelopmentWork).HasMaxLength(4000);
+            e.Property(x => x.ErrorMessage).HasMaxLength(1000);
+            e.HasOne<Project>().WithMany().HasForeignKey(x => x.ProjectId).OnDelete(DeleteBehavior.NoAction);
+            e.HasOne<RepositoryLink>().WithMany().HasForeignKey(x => x.RepositoryLinkId).OnDelete(DeleteBehavior.NoAction);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.RequestedByUserId).OnDelete(DeleteBehavior.NoAction);
+            e.HasIndex(x => new { x.RepositoryLinkId, x.CommitSha, x.Scope, x.ModelName }).IsUnique();
+            e.HasIndex(x => new { x.ProjectId, x.CreatedAt });
+        });
+        modelBuilder.Entity<CodeAnalysisFinding>(e =>
+        {
+            e.Property(x => x.Category).HasMaxLength(40).IsRequired();
+            e.Property(x => x.Severity).HasMaxLength(16).IsRequired();
+            e.Property(x => x.FilePath).HasMaxLength(1000).IsRequired();
+            e.Property(x => x.Evidence).HasMaxLength(400).IsRequired();
+            e.Property(x => x.Explanation).HasMaxLength(3000).IsRequired();
+            e.Property(x => x.Recommendation).HasMaxLength(3000).IsRequired();
+            e.Property(x => x.Fingerprint).HasMaxLength(64).IsRequired();
+            e.HasOne<CodeAnalysisRun>().WithMany().HasForeignKey(x => x.RunId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.RunId, x.Fingerprint });
+        });
+        modelBuilder.Entity<CodeAnalysisReview>(e =>
+        {
+            e.Property(x => x.Comment).HasMaxLength(2000).IsRequired();
+            e.HasOne<CodeAnalysisRun>().WithMany().HasForeignKey(x => x.RunId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.LecturerUserId).OnDelete(DeleteBehavior.NoAction);
+            e.HasIndex(x => new { x.RunId, x.CreatedAt });
         });
 
         modelBuilder.Entity<CodeAnalysisReport>(e =>
