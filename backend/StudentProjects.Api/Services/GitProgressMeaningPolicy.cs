@@ -73,6 +73,19 @@ public static class GitProgressMeaningPolicy
         return true;
     }
 
+    // These exact calls in integration-test setup only prove fixture/database
+    // preparation, not a student-facing behavior. Never apply this filter to
+    // production code; SaveChangesAsync there may be a real feature change.
+    // Match only standalone awaited calls, so assertions/behavior on the same
+    // line never disappear. The restriction to test file paths is essential.
+    private static readonly Regex TestDbSetupCall = new(
+        @"(?i)^\s*await\s+(?:[A-Za-z_]\w*\.)*(?:EnsureCreatedAsync|EnsureDeletedAsync|MigrateAsync|SaveChangesAsync)\s*\([^;]*\)\s*;?$",
+        RegexOptions.Compiled);
+
+    public static bool IsLowValueTestSetupLine(string path, string raw) =>
+        AreaForPath(path) == "Kiểm thử" && raw.Length >= 2 &&
+        (raw[0] == '+' || raw[0] == '-') && TestDbSetupCall.IsMatch(raw[1..].Trim());
+
     private static int LineScore(string line)
     {
         var text = line[1..];
@@ -102,10 +115,15 @@ public static class GitProgressMeaningPolicy
     /// <summary>Important source lines from a diff, not just the first 24 comments/declarations.</summary>
     public static IReadOnlyList<string> MeaningfulLines(ProgressFile file, int limit = 14)
     {
-        if (Generated(file.Path) || !CodeFile(file.Path) || !GitProgressEvidencePolicy.SafePath(file.Path)) return [];
+        // Only active source and test trees participate in code-change analysis.
+        // Tooling/archived scripts still count in raw GitHub diff statistics.
+        if (!(file.Path.StartsWith("backend/", StringComparison.OrdinalIgnoreCase) ||
+              file.Path.StartsWith("frontend/src/", StringComparison.OrdinalIgnoreCase)) ||
+            Generated(file.Path) || !CodeFile(file.Path) ||
+            !GitProgressEvidencePolicy.SafePath(file.Path)) return [];
         return GitProgressEvidencePolicy.EvidenceLines(file)
             .Select((line, index) => new { line, index, score = LineScore(line) })
-            .Where(x => IsFunctionalLine(x.line))
+            .Where(x => IsFunctionalLine(x.line) && !IsLowValueTestSetupLine(file.Path, x.line))
             .OrderByDescending(x => x.score)
             .ThenBy(x => x.index)
             .Take(limit)
@@ -143,7 +161,7 @@ public static class GitProgressMeaningPolicy
         int UnknownId, int UnsentFile, int UnsentLine, int NonFunctionalLine,
         int WeakDescription, int Duplicate, int Eligible,
         int InvalidLength = 0, int UnsupportedClaim = 0, int Boilerplate = 0,
-        int MissingAction = 0);
+        int MissingAction = 0, int TestSetupOnly = 0);
 
     /// <summary>
     /// Count the FIRST reason each parsed AI candidate would be rejected.
@@ -174,6 +192,7 @@ public static class GitProgressMeaningPolicy
         var unsupportedClaim = 0;
         var boilerplate = 0;
         var missingAction = 0;
+        var testSetupOnly = 0;
         foreach (var candidate in selections.Take(18))
         {
             if (!index.TryGetValue(candidate.EvidenceId, out var reference))
@@ -194,6 +213,11 @@ public static class GitProgressMeaningPolicy
             if (!IsFunctionalLine(reference.Evidence))
             {
                 nonFunctionalLine++;
+                continue;
+            }
+            if (IsLowValueTestSetupLine(reference.File, reference.Evidence))
+            {
+                testSetupOnly++;
                 continue;
             }
             var issue = CheckDescription(candidate.Description);
@@ -220,7 +244,7 @@ public static class GitProgressMeaningPolicy
         }
         return new RejectionDiagnostics(unknownId, unsentFile, unsentLine,
             nonFunctionalLine, weakDescription, duplicate, eligible,
-            invalidLength, unsupportedClaim, boilerplate, missingAction);
+            invalidLength, unsupportedClaim, boilerplate, missingAction, testSetupOnly);
     }
 
     // The old v3 keyword list rejected every observation from some valid Ollama
@@ -292,6 +316,7 @@ public static class GitProgressMeaningPolicy
                 !allowed.TryGetValue(reference.File, out var changed) ||
                 !changed.Contains(reference.Evidence) ||
                 !IsFunctionalLine(reference.Evidence) ||
+                IsLowValueTestSetupLine(reference.File, reference.Evidence) ||
                 !UsefulDescription(candidate.Description)) continue;
             if (valid.Any(v => v.File == reference.File && (v.Evidence == reference.Evidence ||
                 v.Description.Equals(candidate.Description, StringComparison.OrdinalIgnoreCase)))) continue;

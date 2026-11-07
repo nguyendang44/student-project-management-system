@@ -52,19 +52,26 @@ public sealed class GitHubProgressClient(HttpClient http, IConfiguration config)
         if (files.ValueKind != JsonValueKind.Array)
             throw new AnalysisInputException("GitHub không trả danh sách file thay đổi.");
         var parsed = new List<ProgressFile>();
+        var rawAdditions = 0;
+        var rawDeletions = 0;
         foreach (var item in files.EnumerateArray())
         {
             var name = item.GetProperty("filename").GetString() ?? "";
             var kind = item.GetProperty("status").GetString() ?? "modified";
-            if (!GitProgressEvidencePolicy.SafePath(name)) continue;
             var added = item.TryGetProperty("additions", out var a) ? a.GetInt32() : 0;
             var removed = item.TryGetProperty("deletions", out var d) ? d.GetInt32() : 0;
+            // Git stats must include every file returned by GitHub, including backups.
+            rawAdditions = checked(rawAdditions + added);
+            rawDeletions = checked(rawDeletions + removed);
+            // Unsafe/archived paths may affect Git totals but must not reach AI or filesJson.
+            if (!GitProgressEvidencePolicy.SafePath(name)) continue;
             var patch = item.TryGetProperty("patch", out var p) && p.ValueKind == JsonValueKind.String
                 ? p.GetString() : null;
             parsed.Add(new ProgressFile(name, kind, added, removed, patch));
         }
-        // The GitHub compare response is paginated/capped; never claim full coverage when at its cap.
+        // Only API response caps imply possible incompleteness. Screening is NOT truncation.
         return new ProgressDiff(baseSha.ToLowerInvariant(), headSha.ToLowerInvariant(), ahead,
-            parsed, files.GetArrayLength() >= 300 || ahead > 100 || parsed.Count != files.GetArrayLength());
+            parsed, files.GetArrayLength() >= 300 || ahead > 100,
+            files.GetArrayLength(), rawAdditions, rawDeletions);
     }
 }

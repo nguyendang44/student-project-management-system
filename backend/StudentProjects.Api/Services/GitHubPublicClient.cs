@@ -67,9 +67,10 @@ public sealed class GitHubPublicClient(HttpClient http, IMemoryCache cache, ICon
             var commits = new List<GitHubCommitInfo>();
             if (document.RootElement.ValueKind != JsonValueKind.Array)
                 throw new GitHubAccessException(502, "GITHUB_INVALID_RESPONSE", "GitHub trả về danh sách commit không hợp lệ.");
-            foreach (var item in document.RootElement.EnumerateArray())
+            foreach (var item in document.RootElement.EnumerateArray().Take(20))
             {
                 var sha = item.GetProperty("sha").GetString() ?? "";
+                if (!GitProgressEvidencePolicy.IsSha(sha)) continue;
                 var commit = item.GetProperty("commit");
                 var message = commit.GetProperty("message").GetString() ?? "";
                 if (message.Length > 1000) message = message[..1000];

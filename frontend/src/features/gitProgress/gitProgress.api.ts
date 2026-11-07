@@ -32,6 +32,33 @@ export interface GitProgressEvidence {
   aiExplanation?: string | null
   source?: 'ollama' | 'diff-rule' | 'feature-rule' | 'ollama-feature'
 }
+export interface GitProgressRejectionDiagnostics {
+  unknownId: number
+  unsentFile: number
+  unsentLine: number
+  nonFunctionalLine: number
+  weakDescription: number
+  duplicate: number
+  eligible: number
+  invalidLength: number
+  unsupportedClaim: number
+  boilerplate: number
+  missingAction: number
+  testSetupOnly: number
+}
+export interface GitProgressAiDiagnostics {
+  sentFiles: number
+  modelItems: number
+  parsedCandidates: number
+  verified: number
+  ruleFallbackItems: number
+  rejections: GitProgressRejectionDiagnostics
+  featureGroups: number
+  explanationModelItems: number
+  explanationCandidates: number
+  explanationAccepted: number
+  explanationStatus: 'no-feature-groups' | 'not-requested' | 'empty' | 'invalid-items' | 'filtered' | 'accepted' | 'error'
+}
 export interface GitProgressRun extends GitProgressRunListItem {
   projectId: string
   repositoryLinkId: string
@@ -42,6 +69,7 @@ export interface GitProgressRun extends GitProgressRunListItem {
   summary: string
   filesJson: string
   evidenceJson: string
+  aiDiagnostics?: GitProgressAiDiagnostics | null
   errorMessage: string | null
   repositoryUrl: string | null
 }

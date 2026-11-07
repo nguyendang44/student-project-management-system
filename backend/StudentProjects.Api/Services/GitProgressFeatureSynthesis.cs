@@ -34,6 +34,9 @@ public static class GitProgressFeatureSynthesis
     public static IReadOnlyList<ProgressFeatureFact> Extract(IReadOnlyList<ProgressFile> files)
     {
         var lines = files
+            // "scripts/v010-backups/.../frontend/..." is not the active frontend.
+            .Where(f => f.Path.StartsWith("backend/", StringComparison.OrdinalIgnoreCase) ||
+                        f.Path.StartsWith("frontend/src/", StringComparison.OrdinalIgnoreCase))
             .Where(f => !string.IsNullOrWhiteSpace(f.Patch) && GitProgressEvidencePolicy.SafePath(f.Path))
             .Where(f => !f.Path.EndsWith(".Designer.cs", StringComparison.OrdinalIgnoreCase) &&
                         !f.Path.EndsWith("ModelSnapshot.cs", StringComparison.OrdinalIgnoreCase))
@@ -145,7 +148,8 @@ public static class GitProgressFeatureSynthesis
                                             x.File.EndsWith(".api.ts", StringComparison.OrdinalIgnoreCase) &&
                                             (x.Text.Contains("request<", StringComparison.Ordinal) ||
                                              x.Text.Contains("request(", StringComparison.Ordinal)));
-        var router = lines.FirstOrDefault(x => x.File.EndsWith("/router.ts", StringComparison.OrdinalIgnoreCase) &&
+        var router = lines.FirstOrDefault(x => x.File.StartsWith("frontend/src/", StringComparison.OrdinalIgnoreCase) &&
+                                               x.File.EndsWith("/router.ts", StringComparison.OrdinalIgnoreCase) &&
                                                x.Text.Contains("path:", StringComparison.Ordinal));
         if (ui is null && api is null && router is null) return;
         var citations = new List<ProgressFeatureCitation>();
@@ -206,6 +210,22 @@ public static class GitProgressFeatureSynthesis
         }
     }
 
+    // A helper (SeedAsync, Setup, DisposeAsync) is NOT a test case. Prefer a
+    // behavior-named [Fact]/[Theory] method; those names are often available in
+    // Git's added lines even when the attribute was unchanged and is absent.
+    private static bool IsBehaviorTestMethod(string name)
+    {
+        string[] helpers = ["Seed", "SetUp", "Setup", "Initialize", "Cleanup", "TearDown",
+            "Dispose", "Arrange", "Prepare", "Build", "CreateFixture", "Configure", "Reset"];
+        if (helpers.Any(h => name.StartsWith(h, StringComparison.OrdinalIgnoreCase))) return false;
+        if (name.Contains('_')) return true;
+        string[] prefixes = ["Should", "When", "Given", "Can", "Cannot", "Rejects", "Reject",
+            "Allows", "Allow", "Returns", "Return", "Prevents", "Prevent", "Fails",
+            "Throws", "Validates", "Verify", "Verifies", "Tests", "Test"];
+        return prefixes.Any(p => name.StartsWith(p, StringComparison.OrdinalIgnoreCase)) ||
+            name.EndsWith("Test", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static void AddTests(IReadOnlyList<SafeLine> lines, List<ProgressFeatureFact> result)
     {
         var files = lines.Where(Testing).GroupBy(x => x.File, StringComparer.Ordinal)
@@ -214,24 +234,32 @@ public static class GitProgressFeatureSynthesis
         var names = new List<string>();
         foreach (var file in files)
         {
-            var method = file.Select(x => new { x, match = TestMethod.Match(x.Text[1..]) })
-                .FirstOrDefault(x => x.match.Success);
-            var assertion = file.FirstOrDefault(x => x.Text.Contains("Assert.", StringComparison.Ordinal));
-            if (method is null && assertion is null) continue;
-            if (method is not null)
-            {
-                citations.Add(method.x.Citation);
-                names.Add(method.match.Groups["name"].Value);
-            }
+            var entries = file.ToArray();
+            var methods = entries.Select((line, index) => new
+                {
+                    line, index, match = TestMethod.Match(line.Text[1..])
+                })
+                .Where(x => x.match.Success).ToArray();
+            var testCase = methods
+                .FirstOrDefault(x => IsBehaviorTestMethod(x.match.Groups["name"].Value));
+            if (testCase is null) continue; // No evidence of a changed behavioral test.
+            var testName = testCase.match.Groups["name"].Value;
+            citations.Add(testCase.line.Citation);
+            names.Add(testName);
+            // Cite an assertion belonging to this changed test, not a login
+            // assertion from SeedAsync or another unrelated setup method.
+            var nextMethodIndex = methods.Where(m => m.index > testCase.index)
+                .Select(m => m.index).DefaultIfEmpty(entries.Length).Min();
+            var assertion = entries.Skip(testCase.index + 1)
+                .Take(nextMethodIndex - testCase.index - 1)
+                .FirstOrDefault(x => x.Text.Contains("Assert.", StringComparison.Ordinal));
             if (assertion is not null) citations.Add(assertion.Citation);
             if (names.Count >= 2 || citations.Count >= 4) break;
         }
-        if (citations.Count == 0) return;
-        var description = names.Count > 0
-            ? "Bổ sung mã kiểm thử, trong đó có các phương thức " + string.Join(", ", names) +
-              "; đây là sự thay đổi của test, không phải bằng chứng API production mới hoặc test đã pass."
-            : "Bổ sung các phép Assert trong mã kiểm thử; chưa có bằng chứng việc chạy test đã thành công.";
-        result.Add(new ProgressFeatureFact("Kiểm thử", "Bổ sung kiểm thử tự động", description,
+        if (names.Count == 0) return;
+        result.Add(new ProgressFeatureFact("Kiểm thử", "Bổ sung kiểm thử tự động",
+            "Bổ sung mã kiểm thử hành vi, trong đó có các phương thức " + string.Join(", ", names) +
+            "; đây là thay đổi của test, không phải bằng chứng API production mới hoặc test đã pass.",
             Distinct(citations, 4)));
     }
 

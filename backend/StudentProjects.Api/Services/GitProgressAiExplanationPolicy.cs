@@ -18,6 +18,25 @@ public static class GitProgressAiExplanationPolicy
     private static readonly Regex GenericPurpose = new(
         @"(?i)(?:nâng cao|cải thiện|tối ưu).{0,30}(?:hệ thống|trải nghiệm|hiệu quả|chất lượng)",
         RegexOptions.Compiled);
+    // A statement such as "Để tạo các endpoint ..." only restates the edit.
+    // If it starts with a construction verb, require an actual user/processing flow.
+    private static readonly Regex ConstructionOnly = new(
+        @"(?i)^\s*(?:để|nhằm)\s+(?:tạo|bổ\s+sung|thêm|khai\s+báo|thiết\s+lập|xây\s+dựng)\b",
+        RegexOptions.Compiled);
+    private static readonly Regex Actor = new(
+        @"(?i)(?:frontend|giao\s+diện|người\s+dùng|sinh\s+viên|giảng\s+viên|client|worker|backend)",
+        RegexOptions.Compiled);
+    private static readonly Regex RealInteraction = new(
+        @"(?i)(?:gửi\s+yêu\s+cầu|khởi\s+tạo\s+(?:lần|yêu\s+cầu)|xem\s+lịch\s+sử|tra\s+cứu|truy\s+vấn|so\s+sánh|đối\s+chiếu|hiển\s+thị|lựa\s+chọn|theo\s+dõi|lưu\s+kết\s+quả)",
+        RegexOptions.Compiled);
+    private static readonly Regex RequestFlow = new(
+        @"(?i)(?:nhận|tiếp\s+nhận|gửi|khởi\s+tạo|xử\s+lý)\s+yêu\s+cầu\s+phân\s+tích",
+        RegexOptions.Compiled);
+    private static readonly Regex AnalysisRun = new(
+        @"(?i)(?:lần|lượt|phiên|đợt)\s+(?:chạy\s+)?phân\s+tích|lần\s+chạy|yêu\s+cầu\s+phân\s+tích",
+        RegexOptions.Compiled);
+    private static readonly Regex Findings = new(@"(?i)phát\s+hiện|vấn\s+đề\s+(?:trong\s+)?mã", RegexOptions.Compiled);
+    private static readonly Regex Reviews = new(@"(?i)nhận\s+xét|đánh\s+giá", RegexOptions.Compiled);
     private static readonly Regex DuplicateWord = new(
         @"(?i)\b(?<word>[\p{L}]{3,})\s+\k<word>\b", RegexOptions.Compiled);
     private static readonly Regex PurposeAction = new(
@@ -62,10 +81,42 @@ public static class GitProgressAiExplanationPolicy
         return true;
     }
 
+    private static bool HasConcreteBusinessOutcome(string explanation, ProgressFeatureFact fact)
+    {
+        // An explanation must add a real user action or distinguishable data flow,
+        // not simply say "create API" / "create database structure".
+        var actorFlow = Actor.IsMatch(explanation) && RealInteraction.IsMatch(explanation);
+        var requestFlow = RequestFlow.IsMatch(explanation);
+        if (ConstructionOnly.IsMatch(explanation) && !actorFlow && !requestFlow) return false;
+
+        if (string.Equals(fact.Area, "API", StringComparison.OrdinalIgnoreCase))
+            return actorFlow || requestFlow;
+
+        if (string.Equals(fact.Area, "CSDL", StringComparison.OrdinalIgnoreCase))
+        {
+            // Where the diff proves three separately named data sets, require
+            // an explanation of at least two of their distinct responsibilities.
+            // A generic "store reports" claim contributes nothing new.
+            var grounded = fact.Description + " " + string.Join(" ", fact.Citations.Select(c => c.Evidence));
+            if (grounded.Contains("CodeAnalysisRuns", StringComparison.OrdinalIgnoreCase) &&
+                grounded.Contains("CodeAnalysisFindings", StringComparison.OrdinalIgnoreCase) &&
+                grounded.Contains("CodeAnalysisReviews", StringComparison.OrdinalIgnoreCase))
+            {
+                var roles = (AnalysisRun.IsMatch(explanation) ? 1 : 0) +
+                    (Findings.IsMatch(explanation) ? 1 : 0) +
+                    (Reviews.IsMatch(explanation) ? 1 : 0);
+                return roles >= 2;
+            }
+            return actorFlow;
+        }
+        return true;
+    }
+
     public static bool HasAdditionalPurpose(string explanation, ProgressFeatureFact fact)
     {
         if (!Purpose.IsMatch(explanation) || !PurposeAction.IsMatch(explanation) ||
-            GenericPurpose.IsMatch(explanation) || DuplicateWord.IsMatch(explanation)) return false;
+            GenericPurpose.IsMatch(explanation) || DuplicateWord.IsMatch(explanation) ||
+            !HasConcreteBusinessOutcome(explanation, fact)) return false;
         var known = Word.Matches(Fold(fact.Title + " " + fact.Description))
             .Cast<Match>().Select(m => m.Value).Where(w => !Common.Contains(w))
             .ToHashSet(StringComparer.Ordinal);

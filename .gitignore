@@ -15,3 +15,12 @@ dist/
 *.sqlite
 coverage/
 .DS_Store
+
+# Archive/debug files and obsolete incremental upgrade payloads
+*.bak
+scripts/*-backups/
+scripts/backups-*/
+v011-git-progress-*/
+git-progress*.log
+build-error-*.txt
+qa-*-results/

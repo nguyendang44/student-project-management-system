@@ -74,7 +74,7 @@ public sealed class GitProgressEvidenceIdTests
         Assert.Equal(file.Path, evidence.File);
         Assert.Equal("+app.MapGet(\"/health\", () => \"ok\");", evidence.Evidence);
         Assert.Contains("L1", responder.LastPrompt);
-        Assert.Contains("|gp-purpose-v3.7", client.AnalysisKey);
+        Assert.Contains("|gp-diag-v3.9.3", client.AnalysisKey);
         Assert.Equal("qwen2.5-coder:7b", client.Model);
     }
 
@@ -83,7 +83,10 @@ public sealed class GitProgressEvidenceIdTests
     {
         var client = new AiGitProgressClient(new HttpClient(new OllamaHandler("L404"))
         { BaseAddress = new Uri("http://127.0.0.1:11434/") }, new ConfigurationBuilder().Build());
-        var file = new ProgressFile("src/x.cs", "added", 1, 0, "+public void Run() {};");
+        var file = new ProgressFile(
+            "backend/StudentProjects.Api/Services/X.cs",
+            "added", 1, 0,
+            "+public void Run() {};");
         var result = await client.AnalyzeAsync(
             new ProgressDiff(new string('a', 40), new string('b', 40), 1, [file], false),
             CancellationToken.None);

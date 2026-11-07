@@ -49,6 +49,7 @@ public static class GitProgressGroundedFallback
             if (!allowed.TryGetValue(reference.File, out var changed) ||
                 !changed.Contains(reference.Evidence) ||
                 !GitProgressMeaningPolicy.IsFunctionalLine(reference.Evidence) ||
+                GitProgressMeaningPolicy.IsLowValueTestSetupLine(reference.File, reference.Evidence) ||
                 !TryDescribe(reference.File, reference.Evidence, out var description) ||
                 !GitProgressMeaningPolicy.UsefulDescription(description)) continue;
             if (candidates.Any(e => e.File == reference.File && e.Evidence == reference.Evidence)) continue;

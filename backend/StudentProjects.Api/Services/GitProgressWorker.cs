@@ -73,15 +73,17 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
                     diagnostics.NonFunctionalLine, diagnostics.WeakDescription,
                     diagnostics.Duplicate, diagnostics.Eligible);
                 logger.LogInformation(
-                    "Git progress {RunId}: weakDescription reasons invalidLength={InvalidLength}, " +
-                    "unsupportedClaim={UnsupportedClaim}, boilerplate={Boilerplate}, missingAction={MissingAction}",
+                    "Git progress {RunId}: rejection details invalidLength={InvalidLength}, " +
+                    "unsupportedClaim={UnsupportedClaim}, boilerplate={Boilerplate}, missingAction={MissingAction}, testSetupOnly={TestSetupOnly}",
                     id, diagnostics.InvalidLength, diagnostics.UnsupportedClaim,
-                    diagnostics.Boilerplate, diagnostics.MissingAction);
+                    diagnostics.Boilerplate, diagnostics.MissingAction, diagnostics.TestSetupOnly);
             }
             run.TotalCommits = diff.AheadBy;
-            run.TotalFiles = diff.Files.Count;
-            run.Additions = diff.Files.Sum(f => f.Additions);
-            run.Deletions = diff.Files.Sum(f => f.Deletions);
+            // Persist GitHub's unfiltered comparison totals. The safe subset remains
+            // in FilesJson and is the only set used for source evidence.
+            run.TotalFiles = diff.RawFileCount;
+            run.Additions = diff.RawAdditions;
+            run.Deletions = diff.RawDeletions;
             run.SentFiles = ai.SentFiles;
             run.PartialCoverage = diff.PartialCoverage;
             // Persist metadata and screened citations, never raw Git patches / secrets.
@@ -93,16 +95,26 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
             // Optional AI explanation is separate from and cannot replace verified facts.
             // A failing/slow model must not erase the deterministic progress report.
             IReadOnlyList<ProgressFeatureExplanation> explanations = [];
+            var explanationStatus = features.Count == 0 ? "no-feature-groups" : "not-requested";
+            var explanationModelItems = 0;
+            var explanationCandidates = 0;
             if (features.Count > 0)
             {
                 try
                 {
-                    explanations = await services.GetRequiredService<AiGitProgressClient>()
-                        .ExplainFeaturesAsync(features, ct);
+                    var explanationResult = await services.GetRequiredService<AiGitProgressClient>()
+                        .ExplainFeaturesWithDiagnosticsAsync(features, ct);
+                    explanations = explanationResult.Items;
+                    explanationModelItems = explanationResult.RawItems;
+                    explanationCandidates = explanationResult.ParsedItems;
+                    explanationStatus = explanations.Count > 0 ? "accepted" :
+                        explanationModelItems == 0 ? "empty" :
+                        explanationCandidates == 0 ? "invalid-items" : "filtered";
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
                 catch (Exception ex)
                 {
+                    explanationStatus = "error";
                     logger.LogWarning("Git progress {RunId}: AI explanation unavailable ({Reason})",
                         id, ex.GetType().Name);
                 }
@@ -121,7 +133,16 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
                     description = f.Description, citations = (object?)null,
                     source = ai.RuleBasedFallback ? "diff-rule" : "ollama"
                 }));
-            run.EvidenceJson = JsonSerializer.Serialize(observations);
+            // Store ONLY aggregate diagnostic counters as a private metadata row in
+            // EvidenceJson. GET strips it before returning normal work items. This
+            // needs no migration and never persists Ollama text or diff snippets.
+            var reportDiagnostics = new ProgressReportDiagnostics(
+                ai.SentFiles, ai.RawItemCount, ai.CandidateCount, aiVerified,
+                ai.RuleBasedFallback ? ai.Items.Count : 0,
+                ai.Diagnostics ?? new GitProgressMeaningPolicy.RejectionDiagnostics(0, 0, 0, 0, 0, 0, 0),
+                features.Count, explanationModelItems, explanationCandidates,
+                explanations.Count, explanationStatus);
+            run.EvidenceJson = GitProgressDiagnostics.Write(observations, reportDiagnostics);
             run.Summary = GitProgressEvidencePolicy.ComposeSummary(diff, ai.SentFiles, aiVerified);
             if (features.Count > 0)
                 run.Summary += $" Tổng hợp {features.Count} nhóm công việc từ Git diff theo quy tắc; " +

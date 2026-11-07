@@ -106,7 +106,9 @@ public static class GitProgressV11Endpoints
             .Select(x => x.RepositoryUrl).FirstOrDefaultAsync(ct);
         return Results.Ok(new { run.Id, run.ProjectId, run.RepositoryLinkId, run.BaseSha, run.HeadSha,
             run.ModelName, run.Status, run.TotalCommits, run.TotalFiles, run.Additions, run.Deletions,
-            run.SentFiles, run.PartialCoverage, run.Summary, run.FilesJson, run.EvidenceJson,
+            run.SentFiles, run.PartialCoverage, run.Summary, run.FilesJson,
+            evidenceJson = GitProgressDiagnostics.PublicEvidence(run.EvidenceJson),
+            aiDiagnostics = GitProgressDiagnostics.Read(run.EvidenceJson),
             run.ErrorMessage, run.CreatedAt, run.StartedAt, run.CompletedAt, repositoryUrl = url });
     }
 }
