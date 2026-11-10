@@ -46,6 +46,8 @@ const rejectionLabels: { key: keyof GitProgressAiDiagnostics['rejections']; labe
   { key: 'unsentLine', label: 'Dòng mã không khớp diff đã gửi' },
   { key: 'nonFunctionalLine', label: 'Dòng mã không mô tả hành vi' },
   { key: 'testSetupOnly', label: 'Chỉ chuẩn bị dữ liệu kiểm thử' },
+  { key: 'groupedTestDetail', label: 'Đã gộp vào nhóm kiểm thử hành vi' },
+  { key: 'groupedFeatureDetail', label: 'Bằng chứng đã nằm trong nhóm công việc chính' },
   { key: 'invalidLength', label: 'Mô tả quá ngắn hoặc quá dài' },
   { key: 'unsupportedClaim', label: 'Kết luận thiếu bằng chứng' },
   { key: 'boilerplate', label: 'Mô tả chung chung hoặc lặp ý' },

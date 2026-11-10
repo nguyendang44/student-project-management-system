@@ -138,10 +138,12 @@ public sealed class GitProgressMeaningfulTests
         var result = await client.AnalyzeAsync(diff, CancellationToken.None);
         Assert.Equal(2, result.SentFiles);
         Assert.Equal(1, result.CandidateCount);
-        Assert.Single(result.Items);
+        // This route is already a citation in the deterministic API group.
+        Assert.Empty(result.Items);
+        Assert.Equal(1, result.Diagnostics?.GroupedFeatureDetail);
         Assert.Contains("\"area\":\"Frontend\"", handler.Prompt);
         Assert.Contains("\"area\":\"API\"", handler.Prompt);
-        Assert.Equal("qwen2.5-coder:7b|gp-diag-v3.9.3", client.AnalysisKey);
+        Assert.Equal("qwen2.5-coder:7b|gp-actions-v3.9.7", client.AnalysisKey);
     }
 
     [Fact]

@@ -246,21 +246,50 @@ public static class GitProgressFeatureSynthesis
             var testName = testCase.match.Groups["name"].Value;
             citations.Add(testCase.line.Citation);
             names.Add(testName);
-            // Cite an assertion belonging to this changed test, not a login
-            // assertion from SeedAsync or another unrelated setup method.
+            // Associate request + HTTP assertion with the nearest preceding
+            // ADDED behavior-named test method in the sampled diff. A diff alone
+            // cannot prove the full original method boundaries or runtime behavior.
+            // Lone Assert.Equal/PostAsJsonAsync snippets are not extra work items.
             var nextMethodIndex = methods.Where(m => m.index > testCase.index)
                 .Select(m => m.index).DefaultIfEmpty(entries.Length).Min();
-            var assertion = entries.Skip(testCase.index + 1)
-                .Take(nextMethodIndex - testCase.index - 1)
-                .FirstOrDefault(x => x.Text.Contains("Assert.", StringComparison.Ordinal));
+            var body = entries.Skip(testCase.index + 1)
+                .Take(nextMethodIndex - testCase.index - 1).ToArray();
+            var request = body.FirstOrDefault(x =>
+                x.Text.Contains("PostAsJsonAsync(", StringComparison.Ordinal) ||
+                x.Text.Contains("GetAsync(", StringComparison.Ordinal) ||
+                x.Text.Contains("PutAsJsonAsync(", StringComparison.Ordinal) ||
+                x.Text.Contains("DeleteAsync(", StringComparison.Ordinal));
+            var assertion = body.FirstOrDefault(x =>
+                x.Text.Contains("HttpStatusCode.", StringComparison.Ordinal) &&
+                x.Text.Contains("Assert.", StringComparison.Ordinal) &&
+                !GitProgressMeaningPolicy.IsLowValueTestSetupLine(x.File, x.Text))
+                ?? body.FirstOrDefault(x =>
+                    x.Text.Contains("Assert.", StringComparison.Ordinal) &&
+                    !GitProgressMeaningPolicy.IsLowValueTestSetupLine(x.File, x.Text));
+            if (request is not null) citations.Add(request.Citation);
             if (assertion is not null) citations.Add(assertion.Citation);
-            if (names.Count >= 2 || citations.Count >= 4) break;
+            if (names.Count >= 2 || citations.Count >= 6) break;
         }
         if (names.Count == 0) return;
+        // A group may cite a request and its assertion, but must NEVER claim
+        // they executed successfully. Only mention the status seen in a cited line.
+        var requestKinds = citations.Where(c => c.Evidence.Contains("AsJsonAsync(", StringComparison.Ordinal) ||
+                c.Evidence.Contains("GetAsync(", StringComparison.Ordinal) ||
+                c.Evidence.Contains("DeleteAsync(", StringComparison.Ordinal))
+            .Select(c => c.Evidence.Contains("PostAsJsonAsync(", StringComparison.Ordinal) ? "POST" :
+                c.Evidence.Contains("PutAsJsonAsync(", StringComparison.Ordinal) ? "PUT" :
+                c.Evidence.Contains("DeleteAsync(", StringComparison.Ordinal) ? "DELETE" : "GET")
+            .Distinct().ToArray();
+        var statusNames = new[] { "Created", "Unauthorized", "Forbidden", "BadRequest", "NotFound", "OK", "NoContent" }
+            .Where(status => citations.Any(c => c.Evidence.Contains("HttpStatusCode." + status, StringComparison.Ordinal)))
+            .ToArray();
+        var detail = requestKinds.Length > 0 && statusNames.Length > 0
+            ? $"; có dòng gửi yêu cầu {string.Join("/", requestKinds)} và assertion đối chiếu HTTP {string.Join("/", statusNames)}"
+            : "";
         result.Add(new ProgressFeatureFact("Kiểm thử", "Bổ sung kiểm thử tự động",
             "Bổ sung mã kiểm thử hành vi, trong đó có các phương thức " + string.Join(", ", names) +
-            "; đây là thay đổi của test, không phải bằng chứng API production mới hoặc test đã pass.",
-            Distinct(citations, 4)));
+            detail + "; đây là thay đổi của test, không phải bằng chứng API production mới hay xác nhận kiểm thử đã chạy thành công.",
+            Distinct(citations, 6)));
     }
 
     private static string FileName(string path) => path.Split('/')[^1];

@@ -16,7 +16,9 @@ public static class GitProgressAiExplanationPolicy
         @"(?i)(?:\bđể\b|\bnhằm\b|\bgiúp\b|\bhỗ\s+trợ\b|\bphục\s+vụ\b|\bcho\s+phép\b|\btạo\s+điểm\b)",
         RegexOptions.Compiled);
     private static readonly Regex GenericPurpose = new(
-        @"(?i)(?:nâng cao|cải thiện|tối ưu).{0,30}(?:hệ thống|trải nghiệm|hiệu quả|chất lượng)",
+        @"(?i)(?:(?:nâng cao|cải thiện|tối ưu).{0,30}(?:hệ thống|trải nghiệm|hiệu quả|chất lượng)|" +
+        @"các\s+thao\s+tác\s+trên\s+giao\s+diện|liên\s+quan\s+đến\s+việc|" +
+        @"kết\s+nối\s+với\s+API\s+backend|không\s+liên\s+quan\s+đến\s+API\s+production)",
         RegexOptions.Compiled);
     // A statement such as "Để tạo các endpoint ..." only restates the edit.
     // If it starts with a construction verb, require an actual user/processing flow.
@@ -27,7 +29,7 @@ public static class GitProgressAiExplanationPolicy
         @"(?i)(?:frontend|giao\s+diện|người\s+dùng|sinh\s+viên|giảng\s+viên|client|worker|backend)",
         RegexOptions.Compiled);
     private static readonly Regex RealInteraction = new(
-        @"(?i)(?:gửi\s+yêu\s+cầu|khởi\s+tạo\s+(?:lần|yêu\s+cầu)|xem\s+lịch\s+sử|tra\s+cứu|truy\s+vấn|so\s+sánh|đối\s+chiếu|hiển\s+thị|lựa\s+chọn|theo\s+dõi|lưu\s+kết\s+quả)",
+        @"(?i)(?:gửi\s+yêu\s+cầu|khởi\s+tạo\s+(?:lần|yêu\s+cầu)|xem\s+lịch\s+sử|tra\s+cứu|truy\s+vấn|so\s+sánh|đối\s+chiếu|hiển\s+thị|lựa\s+chọn|theo\s+dõi|lưu\s+kết\s+quả|liên\s+kết|gỡ\s+liên\s+kết|cập\s+nhật|đổi\s+hạn|chọn\s+ngày)",
         RegexOptions.Compiled);
     private static readonly Regex RequestFlow = new(
         @"(?i)(?:nhận|tiếp\s+nhận|gửi|khởi\s+tạo|xử\s+lý)\s+yêu\s+cầu\s+phân\s+tích",
@@ -40,7 +42,7 @@ public static class GitProgressAiExplanationPolicy
     private static readonly Regex DuplicateWord = new(
         @"(?i)\b(?<word>[\p{L}]{3,})\s+\k<word>\b", RegexOptions.Compiled);
     private static readonly Regex PurposeAction = new(
-        @"(?i)(?:tiếp nhận|nhận yêu cầu|gửi yêu cầu|tra cứu|truy vấn|xem lịch sử|so sánh|đối chiếu|lưu|hiển thị|chọn|ghi nhận|xử lý|gọi|phân tích|kiểm tra|kết nối|điều hướng|truy cập)",
+        @"(?i)(?:tiếp nhận|nhận yêu cầu|gửi yêu cầu|tra cứu|truy vấn|xem lịch sử|so sánh|đối chiếu|lưu|hiển thị|chọn|ghi nhận|xử lý|gọi|phân tích|kiểm tra|kết nối|điều hướng|truy cập|liên kết|gỡ liên kết|cập nhật|đổi hạn)",
         RegexOptions.Compiled);
     private static readonly Regex Word = new(@"[a-z0-9]{3,}", RegexOptions.Compiled);
     private static readonly HashSet<string> Common = new(StringComparer.Ordinal)
@@ -123,7 +125,17 @@ public static class GitProgressAiExplanationPolicy
         var additional = Word.Matches(Fold(explanation))
             .Cast<Match>().Select(m => m.Value).Where(w => !Common.Contains(w) && !known.Contains(w))
             .Distinct(StringComparer.Ordinal).Count();
-        return additional >= 3;
+        // Two genuinely new words can still express a specific date control's
+        // purpose (e.g. "chọn thời điểm") when the SAME frontend feature cites
+        // an ADDED date input/field. Keep the general >=3 rule for other facts.
+        // ConsistentWithCitedEvidence performs the independent claim check.
+        var actualEdits = string.Join(" ", fact.Citations
+            .Where(c => c.Evidence.StartsWith('+') &&
+                        !c.Evidence.StartsWith("+++", StringComparison.Ordinal))
+            .Select(c => c.Evidence));
+        var anchoredDateControl = string.Equals(fact.Area, "Frontend", StringComparison.OrdinalIgnoreCase) &&
+            DatePurpose.IsMatch(explanation) && ExplicitDateInput.IsMatch(actualEdits);
+        return additional >= 3 || (additional >= 2 && anchoredDateControl);
     }
 
     private static string Fold(string text)
@@ -136,6 +148,67 @@ public static class GitProgressAiExplanationPolicy
             result.Append(ch is 'đ' or 'Đ' ? 'd' : char.ToLowerInvariant(ch));
         }
         return result.ToString();
+    }
+
+    // Route tokens in GitHub diffs are often plural (repositories, commits) while
+    // natural Vietnamese explanations say repository/commit. Recognize just these
+    // regular English plural forms; this never permits a *new* slash route, which
+    // is guarded separately above.
+    private static bool MentionsVerifiedTerm(string explanation, string term)
+    {
+        if (explanation.Contains(term, StringComparison.OrdinalIgnoreCase)) return true;
+        if (term.Length > 6 && term.EndsWith("ies", StringComparison.OrdinalIgnoreCase))
+            return explanation.Contains(term[..^3] + "y", StringComparison.OrdinalIgnoreCase);
+        if (term.Length > 5 && term.EndsWith('s') && !term.EndsWith("ss", StringComparison.OrdinalIgnoreCase))
+            return explanation.Contains(term[..^1], StringComparison.OrdinalIgnoreCase);
+        return false;
+    }
+
+    // Critical factual anchors cannot be justified merely by matching broad words
+    // such as "frontend" or "test". They must occur in this feature's EXACT
+    // changed citations (not another feature from the same commit).
+    private static readonly Regex DatePurpose = new(
+        @"(?i)(?:trường\s+ngày|ngày\s+(?:bắt\s+đầu|kết\s+thúc|hạn)|thời\s+điểm\s+(?:bắt\s+đầu|kết\s+thúc)|đợt\s+đăng\s+ký|hạn\s+chót|\b(?:startsDate|endsDate|deadline|registrationPeriod)\b)",
+        RegexOptions.Compiled);
+    private static readonly Regex DateEvidence = new(
+        @"(?i)(?:startsDate|endsDate|deadline|registrationPeriod|registration-period|dueDate|dueAt|DateOnly|DateTime|type=""date""|v-model[^\r\n]{0,100}date|\bdate\b)",
+        RegexOptions.Compiled);
+    // More specific than DateEvidence: a generic DateTime reference is not
+    // enough to justify relaxing the purpose-word threshold.
+    private static readonly Regex ExplicitDateInput = new(
+        @"(?i)(?:\b(?:startsDate|endsDate|deadline|dueDate|dueAt)\b|type=""date"")",
+        RegexOptions.Compiled);
+    private static readonly Regex AnonymousPurpose = new(
+        @"(?i)(?:không\s+xác\s+thực|chưa\s+đăng\s+nhập|không\s+đăng\s+nhập|người\s+dùng\s+ẩn\s+danh|\banonymous\b)",
+        RegexOptions.Compiled);
+    private static readonly Regex AnonymousEvidence = new(
+        @"(?i)(?:anonymous|unauthorized|unauthenticated|withoutauthentication|without_auth)",
+        RegexOptions.Compiled);
+    private static readonly Regex SpecificStatus = new(
+        @"(?i)\b(?:Unauthorized|Forbidden|Created|NotFound|BadRequest|NoContent|HttpStatusCode\.OK)\b",
+        RegexOptions.Compiled);
+
+    private static bool ConsistentWithCitedEvidence(string explanation, ProgressFeatureFact fact)
+    {
+        var cited = string.Join(" ", fact.Citations
+            .Where(c => c.Evidence.StartsWith('+') && !c.Evidence.StartsWith("+++", StringComparison.Ordinal))
+            .Select(c => c.Evidence));
+        // Descriptions or arbitrary source files must not license a fact that
+        // was not actually in the citations of THIS group.
+        if (DatePurpose.IsMatch(explanation) && !DateEvidence.IsMatch(cited)) return false;
+        if (AnonymousPurpose.IsMatch(explanation) && !AnonymousEvidence.IsMatch(cited)) return false;
+        foreach (Match status in SpecificStatus.Matches(explanation))
+        {
+            var name = status.Value.StartsWith("HttpStatusCode.", StringComparison.OrdinalIgnoreCase)
+                ? status.Value["HttpStatusCode.".Length..] : status.Value;
+            // HTTP response status must be explicitly observable in the cited
+            // lines; "cannot_access" alone does not prove HTTP Unauthorized.
+            if (!Regex.IsMatch(cited, @"(?i)\b(?:HttpStatusCode\.|StatusCodes\.Status\d{3})?" +
+                    Regex.Escape(name) + @"\b")) return false;
+        }
+        // Language about permission boundaries is permitted when named tests
+        // describe those boundaries, but specific HTTP codes still need evidence.
+        return true;
     }
 
     public static IReadOnlyList<ProgressFeatureExplanation> Screen(
@@ -165,11 +238,12 @@ public static class GitProgressAiExplanationPolicy
             // purpose. Require a concrete, relevant outcome and NEW content beyond
             // the deterministic feature description. New route/API names are still
             // forbidden by the citation guard above.
-            if (!HasAdditionalPurpose(explanation, fact)) continue;
+            if (!HasAdditionalPurpose(explanation, fact) ||
+                !ConsistentWithCitedEvidence(explanation, fact)) continue;
             // Explanations must still discuss the specific work item, not generic praise.
             var terms = Tokens.Matches(supported).Cast<Match>().Select(m => m.Value)
                 .Where(t => !StopWords.Contains(t)).Distinct(StringComparer.OrdinalIgnoreCase);
-            if (!terms.Any(t => explanation.Contains(t, StringComparison.OrdinalIgnoreCase))) continue;
+            if (!terms.Any(t => MentionsVerifiedTerm(explanation, t))) continue;
             used.Add(candidate.FactId);
             found.Add(new ProgressFeatureExplanation(candidate.FactId, explanation));
             if (found.Count >= 7) break;

@@ -45,6 +45,8 @@ export interface GitProgressRejectionDiagnostics {
   boilerplate: number
   missingAction: number
   testSetupOnly: number
+  groupedTestDetail?: number
+  groupedFeatureDetail?: number
 }
 export interface GitProgressAiDiagnostics {
   sentFiles: number

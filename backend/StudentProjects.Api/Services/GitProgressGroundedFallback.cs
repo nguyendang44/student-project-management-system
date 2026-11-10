@@ -23,7 +23,7 @@ public static class GitProgressGroundedFallback
     private static readonly Regex Test = new(
         @"\bAssert\.(?<method>[A-Za-z_]\w*)\s*\(", RegexOptions.Compiled);
     private static readonly Regex Click = new(
-        "@click=\"(?<action>[A-Za-z_][A-Za-z_0-9.]*)\"", RegexOptions.Compiled);
+        @"@click=""(?<action>[A-Za-z_][A-Za-z_0-9.]*)(?<arguments>\([^""]{0,100}\))?""", RegexOptions.Compiled);
     private static readonly Regex Model = new(
         "v-model(?:\\.[a-z]+)*=\"(?<field>[A-Za-z_][A-Za-z_0-9.]*)\"", RegexOptions.Compiled);
     private static readonly Regex Router = new(
@@ -50,7 +50,7 @@ public static class GitProgressGroundedFallback
                 !changed.Contains(reference.Evidence) ||
                 !GitProgressMeaningPolicy.IsFunctionalLine(reference.Evidence) ||
                 GitProgressMeaningPolicy.IsLowValueTestSetupLine(reference.File, reference.Evidence) ||
-                !TryDescribe(reference.File, reference.Evidence, out var description) ||
+                !TryDescribeAddedLine(reference.File, reference.Evidence, out var description) ||
                 !GitProgressMeaningPolicy.UsefulDescription(description)) continue;
             if (candidates.Any(e => e.File == reference.File && e.Evidence == reference.Evidence)) continue;
             candidates.Add(new ProgressEvidence(reference.File, reference.Evidence, description));
@@ -71,7 +71,9 @@ public static class GitProgressGroundedFallback
         return result;
     }
 
-    private static bool TryDescribe(string file, string evidence, out string description)
+    // Exposed for conservative English -> Vietnamese presentation normalization.
+    // It never processes a removed line, foreign path or unvalidated model claim.
+    public static bool TryDescribeAddedLine(string file, string evidence, out string description)
     {
         description = "";
         // Removed lines show code that no longer exists. Do not describe them
@@ -96,7 +98,9 @@ public static class GitProgressGroundedFallback
         else if ((match = Test.Match(text)).Success && file.Contains("IntegrationTests/", StringComparison.OrdinalIgnoreCase))
             description = $"Bổ sung phép kiểm tra Assert.{match.Groups["method"].Value} trong mã kiểm thử.";
         else if (file.StartsWith("frontend/", StringComparison.OrdinalIgnoreCase) && (match = Click.Match(text)).Success)
-            description = $"Bổ sung sự kiện nhấn gọi {match.Groups["action"].Value} trên giao diện.";
+            description = text.Contains("Gỡ liên kết", StringComparison.OrdinalIgnoreCase)
+                ? $"Bổ sung nút Gỡ liên kết gọi {match.Groups["action"].Value}{match.Groups["arguments"].Value} khi nhấn."
+                : $"Bổ sung sự kiện nhấn gọi {match.Groups["action"].Value}{match.Groups["arguments"].Value} trên giao diện.";
         else if (file.StartsWith("frontend/", StringComparison.OrdinalIgnoreCase) && (match = Model.Match(text)).Success)
             description = $"Bổ sung liên kết biểu mẫu v-model với {match.Groups["field"].Value} trên giao diện.";
         else if (file.StartsWith("frontend/", StringComparison.OrdinalIgnoreCase) && (match = Router.Match(text)).Success)

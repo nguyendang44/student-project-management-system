@@ -13,9 +13,24 @@ public static class GitProgressMeaningPolicy
     private static readonly Regex UnsupportedClaim = new(
         @"(?i)(đã hoàn thành|hoàn thiện toàn bộ|đã chạy thành công|đảm bảo (?:an toàn|bảo mật|đúng)|không còn lỗi|đã fix hoàn toàn|tests? (?:have )?passed|fully implemented|production.ready|security is proven)",
         RegexOptions.Compiled);
+    // Reject statements that *only* describe declarations/snippets. The old
+    // unanchored regex also rejected useful sentences such as "Bổ sung route ...
+    // được khai báo ..." simply because they contained "được khai báo".
     private static readonly Regex EmptyObservation = new(
-        @"(?i)(the (?:code )?snippet|the class .* is defined|(?:class|record|interface) .* is (?:defined|declared)|has a private|a sealed record|xml (?:comment|summary)|được (?:định nghĩa|khai báo)|khai báo (?:lớp|class)|chỉ là (?:comment|khai báo)|đoạn (?:mã|code) (?:này|trên)|phần (?:comment|chú thích)|tên (?:lớp|biến|class))",
+        @"(?i)^\s*(?:(?:the (?:code )?snippet\b(?:\s+is\b|\s+shows?\s+(?:only|a summary)\b))|" +
+        @"(?:the )?(?:class|record|interface)\s+.+?\s+is\s+(?:defined|declared)\b|" +
+        @"(?:has a private|a sealed record|xml (?:comment|summary))\b|" +
+        @"(?:được (?:định nghĩa|khai báo)|khai báo (?:lớp|class)|chỉ là (?:comment|khai báo)|" +
+        @"phần (?:comment|chú thích)|tên (?:lớp|biến|class))\b|" +
+        @"đoạn (?:mã|code) (?:này|trên)\s+(?:chỉ\s+|là\s+))",
         RegexOptions.Compiled);
+    // A named HTTP route is a specific claim. It must be present VERBATIM in
+    // the line cited by evidenceId; a real ID alone must not justify a fake API.
+    private static readonly Regex RouteMention = new(@"/[A-Za-z0-9_{}:/.-]{2,}", RegexOptions.Compiled);
+    public static bool HasUncitedRoute(string description, string citedLine) =>
+        RouteMention.Matches(description).Cast<Match>().Any(route =>
+            !citedLine.Contains(route.Value, StringComparison.OrdinalIgnoreCase));
+
     private static readonly string[] ActionWords = [
         "thêm", "bổ sung", "tạo ", "đăng ký", "xử lý", "ghi ", "lưu ", "gọi ",
         "kiểm tra", "tích hợp", "hiển thị", "cập nhật", "liên kết", "đọc ",
@@ -82,9 +97,18 @@ public static class GitProgressMeaningPolicy
         @"(?i)^\s*await\s+(?:[A-Za-z_]\w*\.)*(?:EnsureCreatedAsync|EnsureDeletedAsync|MigrateAsync|SaveChangesAsync)\s*\([^;]*\)\s*;?$",
         RegexOptions.Compiled);
 
+    // An OK login assertion in an unrelated integration-test setup only checks
+    // whether the test client was authenticated. Keep authorization/negative
+    // behavior assertions (Unauthorized, Forbidden, Created) and production code.
+    private static readonly Regex TestLoginSetupAssertion = new(
+        @"(?i)^\s*Assert\.Equal\s*\(\s*HttpStatusCode\.OK\s*,\s*login\.StatusCode\s*\)\s*;?$",
+        RegexOptions.Compiled);
+
     public static bool IsLowValueTestSetupLine(string path, string raw) =>
         AreaForPath(path) == "Kiểm thử" && raw.Length >= 2 &&
-        (raw[0] == '+' || raw[0] == '-') && TestDbSetupCall.IsMatch(raw[1..].Trim());
+        (raw[0] == '+' || raw[0] == '-') &&
+        (TestDbSetupCall.IsMatch(raw[1..].Trim()) ||
+         TestLoginSetupAssertion.IsMatch(raw[1..].Trim()));
 
     private static int LineScore(string line)
     {
@@ -123,7 +147,10 @@ public static class GitProgressMeaningPolicy
             !GitProgressEvidencePolicy.SafePath(file.Path)) return [];
         return GitProgressEvidencePolicy.EvidenceLines(file)
             .Select((line, index) => new { line, index, score = LineScore(line) })
-            .Where(x => IsFunctionalLine(x.line) && !IsLowValueTestSetupLine(file.Path, x.line))
+            // A removed line is not evidence of a newly implemented feature.
+            // Git totals still count deletions; AI samples only additions.
+            .Where(x => x.line.StartsWith('+') && IsFunctionalLine(x.line) &&
+                !IsLowValueTestSetupLine(file.Path, x.line))
             .OrderByDescending(x => x.score)
             .ThenBy(x => x.index)
             .Take(limit)
@@ -161,7 +188,8 @@ public static class GitProgressMeaningPolicy
         int UnknownId, int UnsentFile, int UnsentLine, int NonFunctionalLine,
         int WeakDescription, int Duplicate, int Eligible,
         int InvalidLength = 0, int UnsupportedClaim = 0, int Boilerplate = 0,
-        int MissingAction = 0, int TestSetupOnly = 0);
+        int MissingAction = 0, int TestSetupOnly = 0, int GroupedTestDetail = 0,
+        int GroupedFeatureDetail = 0);
 
     /// <summary>
     /// Count the FIRST reason each parsed AI candidate would be rejected.
@@ -210,8 +238,9 @@ public static class GitProgressMeaningPolicy
                 unsentLine++;
                 continue;
             }
-            if (!IsFunctionalLine(reference.Evidence))
+            if (!reference.Evidence.StartsWith('+') || !IsFunctionalLine(reference.Evidence))
             {
+                // Including old removed code as newly added work is not a valid citation.
                 nonFunctionalLine++;
                 continue;
             }
@@ -220,7 +249,8 @@ public static class GitProgressMeaningPolicy
                 testSetupOnly++;
                 continue;
             }
-            var issue = CheckDescription(candidate.Description);
+            var issue = CheckEvidenceDescription(reference.File, reference.Evidence,
+                candidate.Description, out var vietnameseDescription);
             if (issue != DescriptionIssue.None)
             {
                 weakDescription++;
@@ -234,12 +264,12 @@ public static class GitProgressMeaningPolicy
                 continue;
             }
             if (valid.Any(v => v.File == reference.File && (v.Evidence == reference.Evidence ||
-                v.Description.Equals(candidate.Description, StringComparison.OrdinalIgnoreCase))))
+                v.Description.Equals(vietnameseDescription, StringComparison.OrdinalIgnoreCase))))
             {
                 duplicate++;
                 continue;
             }
-            valid.Add(new ProgressEvidence(reference.File, reference.Evidence, candidate.Description.Trim()));
+            valid.Add(new ProgressEvidence(reference.File, reference.Evidence, vietnameseDescription));
             eligible++;
         }
         return new RejectionDiagnostics(unknownId, unsentFile, unsentLine,
@@ -271,6 +301,90 @@ public static class GitProgressMeaningPolicy
         "ràng buộc", "đồng bộ", "kích hoạt", "đối chiếu"
     ];
 
+    // Ollama sometimes produces a noun phrase with an exact, verifiable route,
+    // handler or Vue binding but without a verb from our vocabulary. Only in
+    // these narrow cases do we let a REAL added line supply the action. The
+    // returned wording is deterministic and derived from that line, not AI prose.
+    // Never apply this shortcut to test fixtures, arbitrary async calls or
+    // technical assertions, which should belong to the test feature group.
+    private static readonly Regex AnchoredRoute = new(
+        @"\bMap(?<verb>Get|Post|Put|Delete|Patch)\s*\(\s*""(?<path>[^""]{1,100})""\s*,\s*(?<handler>[A-Za-z_]\w*)",
+        RegexOptions.Compiled);
+    private static readonly Regex AnchoredClick = new(
+        "@click=\"(?<handler>[A-Za-z_][A-Za-z_0-9.]*)(?:\\([^\"]{0,100}\\))?\"",
+        RegexOptions.Compiled);
+    private static readonly Regex AnchoredModel = new(
+        "v-model(?:\\.[a-z]+)*=\"(?<field>[A-Za-z_][A-Za-z_0-9.]*)\"",
+        RegexOptions.Compiled);
+    private static readonly Regex HttpVerbInDescription = new(
+        @"(?i)\b(?:GET|POST|PUT|PATCH|DELETE)\b", RegexOptions.Compiled);
+    private static readonly Regex ClaimingOtherRole = new(
+        @"(?i)\b(?:admin|administrator|lecturer|teacher|giảng\s+viên|quản\s+trị\s+viên)\b",
+        RegexOptions.Compiled);
+    private static readonly Regex StatusInDescription = new(
+        @"(?i)\b(?:Unauthorized|Forbidden|Created|NotFound|BadRequest|NoContent|HttpStatusCode\.OK)\b",
+        RegexOptions.Compiled);
+
+    private static bool TryDescribeMissingActionFromExactEvidence(
+        string path, string evidence, string description, out string vietnamese)
+    {
+        vietnamese = "";
+        if (CheckDescription(description) != DescriptionIssue.MissingAction ||
+            !evidence.StartsWith('+') ||
+            evidence.StartsWith("+++", StringComparison.Ordinal) ||
+            !IsFunctionalLine(evidence) || IsLowValueTestSetupLine(path, evidence) ||
+            AreaForPath(path) == "Kiểm thử" ||
+            HasUncitedRoute(description, evidence) ||
+            StatusInDescription.IsMatch(description) ||
+            ClaimingOtherRole.IsMatch(description)) return false;
+
+        var source = evidence[1..];
+        var route = AnchoredRoute.Match(source);
+        var click = AnchoredClick.Match(source);
+        var model = AnchoredModel.Match(source);
+        bool anchored = false;
+        if (route.Success && path.Contains("/Endpoints/", StringComparison.OrdinalIgnoreCase))
+        {
+            var verb = route.Groups["verb"].Value.ToUpperInvariant();
+            // The exact route MUST be written by the model. Merely repeating
+            // 'repository' or 'handler' is not an evidence-grounded action.
+            anchored = description.Contains(route.Groups["path"].Value, StringComparison.OrdinalIgnoreCase) &&
+                (!HttpVerbInDescription.IsMatch(description) ||
+                 HttpVerbInDescription.Matches(description).Cast<Match>()
+                    .All(m => m.Value.Equals(verb, StringComparison.OrdinalIgnoreCase)));
+        }
+        else if (path.StartsWith("frontend/src/", StringComparison.OrdinalIgnoreCase))
+        {
+            if (click.Success)
+                anchored = description.Contains(click.Groups["handler"].Value, StringComparison.OrdinalIgnoreCase);
+            else if (model.Success)
+                anchored = description.Contains(model.Groups["field"].Value, StringComparison.OrdinalIgnoreCase);
+        }
+        return anchored && GitProgressGroundedFallback.TryDescribeAddedLine(path, evidence, out vietnamese) &&
+            UsefulDescription(vietnamese);
+    }
+
+    // Shared by the actual screen and diagnostics; otherwise counts would
+    // disagree about whether a model-selected line qualified.
+    private static DescriptionIssue CheckEvidenceDescription(
+        string path, string evidence, string description, out string vietnamese)
+    {
+        vietnamese = "";
+        if (HasUncitedRoute(description, evidence))
+            return DescriptionIssue.UnsupportedClaim;
+        var issue = CheckDescription(description);
+        if (issue == DescriptionIssue.None)
+        {
+            if (TryNormalizeToVietnamese(path, evidence, description, out vietnamese))
+                return DescriptionIssue.None;
+            return DescriptionIssue.Boilerplate;
+        }
+        if (issue == DescriptionIssue.MissingAction &&
+            TryDescribeMissingActionFromExactEvidence(path, evidence, description, out vietnamese))
+            return DescriptionIssue.None;
+        return issue;
+    }
+
     // Diagnostic taxonomy only. The screening policy below stays identical to v3.2:
     // no widening of allowed evidence, wording, or unsupported claims.
     public enum DescriptionIssue { None, InvalidLength, UnsupportedClaim, Boilerplate, MissingAction }
@@ -291,6 +405,32 @@ public static class GitProgressMeaningPolicy
 
     public static bool UsefulDescription(string description) =>
         CheckDescription(description) == DescriptionIssue.None;
+
+    // Do not show an English Ollama narrative verbatim in a Vietnamese report.
+    // If it passed the semantic checks, normalize only by re-describing the exact
+    // cited ADDED line using deterministic rules. Never freely translate claims
+    // that might include information absent from that evidence.
+    private static readonly Regex VietnameseProgressStart = new(
+        @"(?i)^\s*(?:Bổ\s+sung|Thêm|Cập\s+nhật|Kiểm\s+tra|Kiểm\s+thử|" +
+        @"Xác\s+minh|Hiển\s+thị|Gọi|Đăng\s+ký|Tích\s+hợp|Liên\s+kết|" +
+        @"Giới\s+hạn|Đọc|Ghi\s+nhận|Tạo|Thiết\s+lập|Thực\s+hiện|" +
+        @"Truy\s+vấn|Xử\s+lý|Chọn|Đối\s+chiếu|Thay\s+đổi)\b",
+        RegexOptions.Compiled);
+
+    public static bool TryNormalizeToVietnamese(string path, string line,
+        string description, out string vietnamese)
+    {
+        vietnamese = description.Trim();
+        if (VietnameseProgressStart.IsMatch(vietnamese)) return true;
+        if (line.StartsWith('+') &&
+            GitProgressGroundedFallback.TryDescribeAddedLine(path, line, out var ruleDescription) &&
+            UsefulDescription(ruleDescription))
+        {
+            vietnamese = ruleDescription;
+            return true;
+        }
+        return false;
+    }
 
     /// <summary>
     /// Re-check a server-issued evidence ID against the exact excerpt actually sent;
@@ -315,12 +455,16 @@ public static class GitProgressMeaningPolicy
             if (!index.TryGetValue(candidate.EvidenceId, out var reference) ||
                 !allowed.TryGetValue(reference.File, out var changed) ||
                 !changed.Contains(reference.Evidence) ||
+                !reference.Evidence.StartsWith('+') ||
                 !IsFunctionalLine(reference.Evidence) ||
                 IsLowValueTestSetupLine(reference.File, reference.Evidence) ||
-                !UsefulDescription(candidate.Description)) continue;
+                CheckEvidenceDescription(reference.File, reference.Evidence,
+                    candidate.Description, out _) != DescriptionIssue.None) continue;
+            CheckEvidenceDescription(reference.File, reference.Evidence,
+                candidate.Description, out var vietnameseDescription);
             if (valid.Any(v => v.File == reference.File && (v.Evidence == reference.Evidence ||
-                v.Description.Equals(candidate.Description, StringComparison.OrdinalIgnoreCase)))) continue;
-            valid.Add(new ProgressEvidence(reference.File, reference.Evidence, candidate.Description.Trim()));
+                v.Description.Equals(vietnameseDescription, StringComparison.OrdinalIgnoreCase)))) continue;
+            valid.Add(new ProgressEvidence(reference.File, reference.Evidence, vietnameseDescription));
         }
         var selected = new List<ProgressEvidence>();
         // First pass: at most one finding from each present work area.

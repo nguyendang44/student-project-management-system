@@ -56,11 +56,13 @@ public sealed class GitProgressGroundedFallbackV34Tests
         var line = "+api.MapPost(\"/progress\", Start);";
         var result = await client.AnalyzeAsync(Diff(line), CancellationToken.None);
         Assert.Equal(1, result.CandidateCount);
-        Assert.True(result.RuleBasedFallback);
-        Assert.Single(result.Items);
-        Assert.Contains("POST /progress", result.Items[0].Description);
+        // The API route is already cited by the primary Git feature group;
+        // v3.9.7 no longer lists the fallback again as a separate work item.
+        Assert.False(result.RuleBasedFallback);
+        Assert.Empty(result.Items);
+        Assert.Single(GitProgressFeatureSynthesis.Extract(Diff(line).Files));
         Assert.Equal(1, result.Diagnostics!.Boilerplate);
-        Assert.Equal("qwen2.5-coder:7b|gp-diag-v3.9.3", client.AnalysisKey);
+        Assert.Equal("qwen2.5-coder:7b|gp-actions-v3.9.7", client.AnalysisKey);
     }
 
     [Fact]
@@ -69,8 +71,10 @@ public sealed class GitProgressGroundedFallbackV34Tests
         var handler = new StubOllama("Bổ sung route POST /progress để gửi yêu cầu đến handler Start.");
         var result = await Client(handler).AnalyzeAsync(Diff("+api.MapPost(\"/progress\", Start);"), CancellationToken.None);
         Assert.False(result.RuleBasedFallback);
-        Assert.Single(result.Items);
-        Assert.Equal("Bổ sung route POST /progress để gửi yêu cầu đến handler Start.", result.Items[0].Description);
+        Assert.Empty(result.Items);
+        Assert.Equal(1, result.Diagnostics?.GroupedFeatureDetail);
+        Assert.Equal(0, result.Diagnostics?.Eligible);
+        Assert.Single(GitProgressFeatureSynthesis.Extract(Diff("+api.MapPost(\"/progress\", Start);").Files));
     }
 
     [Fact]
