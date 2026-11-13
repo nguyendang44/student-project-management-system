@@ -24,3 +24,5 @@ v011-git-progress-*/
 git-progress*.log
 build-error-*.txt
 qa-*-results/
+
+/scripts/ai-benchmark/results/
