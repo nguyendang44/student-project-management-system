@@ -1,0 +1,26 @@
+{
+  "signature": "dacab784dce4c9a9db198692ca4ff37aaf80b25827923f2bfdb206d185766081",
+  "result": [
+    {
+      "groupId": "G-E0233-E0234",
+      "source": "comment-rule",
+      "category": "type_annotation",
+      "title": "Thay đổi chú thích kiểm tra kiểu",
+      "before": "        self.static_folder = static_folder  # type: ignore",
+      "after": "        self.static_folder = static_folder",
+      "description": "Phần mã ngoài chú thích trong nhóm này không đổi; không có căn cứ gọi đây là thêm hàm, thêm tham số hoặc sửa logic chạy.",
+      "beforeEvidenceIds": [
+        "E0233"
+      ],
+      "afterEvidenceIds": [
+        "E0234"
+      ],
+      "evidenceIds": [
+        "E0233",
+        "E0234"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    }
+  ]
+}

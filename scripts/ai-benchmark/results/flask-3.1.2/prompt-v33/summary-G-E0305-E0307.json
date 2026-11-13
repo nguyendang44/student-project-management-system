@@ -1,0 +1,44 @@
+{
+  "signature": "901b0accab1d32d890c8e9d7f8d3d00ea9efffd6e75f8720fa3dc774af65f709",
+  "result": [
+    {
+      "groupId": "G-E0305-E0307",
+      "category": "logic",
+      "title": "Thay đổi từ vòng lặp while sang vòng lặp for",
+      "description": "Đã thay đổi từ vòng lặp while sang vòng lặp for để duyệt qua danh sách `_new_contexts`. Không có thay đổi logic khác.",
+      "source": "ollama",
+      "before": "        while self._new_contexts:\n            cm = self._new_contexts.pop()",
+      "after": "        for cm in self._new_contexts:",
+      "beforeEvidenceIds": [
+        "E0305",
+        "E0306"
+      ],
+      "afterEvidenceIds": [
+        "E0307"
+      ],
+      "evidenceIds": [
+        "E0305",
+        "E0306",
+        "E0307"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0305-E0307",
+                "category": "logic",
+                "title": "Thay đổi từ vòng lặp while sang vòng lặp for",
+                "description": "Đã thay đổi từ vòng lặp while sang vòng lặp for để duyệt qua danh sách `_new_contexts`. Không có thay đổi logic khác."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "signature": "229f3c3133a796c711a811466b9e24e98d0e6eaa702ee5e1643a7b9816a5f47a",
+  "result": [
+    {
+      "groupId": "G-E0269-E0270",
+      "category": "documentation",
+      "title": "Thêm chú thích",
+      "description": "Chú thích đã được thêm vào trong docstring của lớp Environment.",
+      "source": "ollama",
+      "before": "    \"\"\"Works like a regular Jinja2 environment but has some additional",
+      "after": "    \"\"\"Works like a regular Jinja environment but has some additional",
+      "beforeEvidenceIds": [
+        "E0269"
+      ],
+      "afterEvidenceIds": [
+        "E0270"
+      ],
+      "evidenceIds": [
+        "E0269",
+        "E0270"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0269-E0270",
+                "category": "documentation",
+                "title": "Thêm chú thích",
+                "description": "Chú thích đã được thêm vào trong docstring của lớp Environment."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

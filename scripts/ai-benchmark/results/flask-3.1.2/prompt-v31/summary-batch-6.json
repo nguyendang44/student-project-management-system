@@ -1,0 +1,26 @@
+{
+  "signature": "dacab784dce4c9a9db198692ca4ff37aaf80b25827923f2bfdb206d185766081",
+  "result": [
+    {
+      "groupId": "G-E0197-E0198",
+      "source": "comment-rule",
+      "category": "type_annotation",
+      "title": "Thay đổi chú thích kiểm tra kiểu",
+      "before": "    def name(self) -> str:  # type: ignore",
+      "after": "    def name(self) -> str:",
+      "description": "Phần mã ngoài chú thích trong nhóm này không đổi; không có căn cứ gọi đây là thêm hàm, thêm tham số hoặc sửa logic chạy.",
+      "beforeEvidenceIds": [
+        "E0197"
+      ],
+      "afterEvidenceIds": [
+        "E0198"
+      ],
+      "evidenceIds": [
+        "E0197",
+        "E0198"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    }
+  ]
+}

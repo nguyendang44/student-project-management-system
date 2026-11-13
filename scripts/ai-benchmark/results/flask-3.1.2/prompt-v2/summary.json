@@ -1,0 +1,404 @@
+{
+  "signature": "d7f6da740d15c208302868fe8dc2a6fab5d6462bed1de885c01728812ade93b2",
+  "model": "qwen2.5-coder:7b",
+  "baseSha": "7fff56f5172c48b6f3aedf17ee14ef5c2533dfd1",
+  "headSha": "2c1b30d0503cfb064f1cb252e6614a06915a362a",
+  "items": [
+    {
+      "category": "logic",
+      "title": "Thêm mã vào hàm wrapper",
+      "before": "with ctx:  # type: ignore[union-attr]\n    return ctx.app.ensure_sync(f)(*args, **kwargs)  # type: ignore[union-attr]",
+      "after": "with ctx:\n    return ctx.app.ensure_sync(f)(*args, **kwargs)",
+      "description": "Đã thêm mã vào hàm wrapper để đảm bảo rằng hàm `f` được gọi trong ngữ cảnh request context.",
+      "beforeEvidenceIds": [
+        "E0010",
+        "E0011"
+      ],
+      "afterEvidenceIds": [
+        "E0011",
+        "E0012"
+      ],
+      "evidenceIds": [
+        "E0010",
+        "E0011",
+        "E0012"
+      ],
+      "citationValid": false,
+      "rejectionReason": "Dẫn nhầm phiên bản trước/sau"
+    },
+    {
+      "category": "logic",
+      "title": "Thêm biến _cv_app",
+      "before": "from .globals import _cv_request",
+      "after": "from .globals import _cv_app\nfrom .globals import _cv_request",
+      "description": "Đã thêm biến _cv_app từ module .globals.",
+      "beforeEvidenceIds": [
+        "E0030"
+      ],
+      "afterEvidenceIds": [
+        "E0029",
+        "E0030"
+      ],
+      "evidenceIds": [
+        "E0030",
+        "E0029"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    },
+    {
+      "category": "documentation",
+      "title": "Cập nhật tài liệu cho hàm stream_with_context",
+      "before": "Hàm không có tài liệu chi tiết.",
+      "after": "Hàm có tài liệu chi tiết hơn, giải thích rõ hơn về cách sử dụng và tác dụng của hàm.",
+      "description": "Tài liệu mới cung cấp thông tin chi tiết hơn về cách sử dụng hàm, bao gồm ví dụ về cách sử dụng nó như một decorator và như một wrapper. Nó cũng giải thích rõ hơn về cách giữ context của request, session và g.",
+      "beforeEvidenceIds": [
+        "E0046"
+      ],
+      "afterEvidenceIds": [
+        "E0051",
+        "E0057",
+        "E0059",
+        "E0064",
+        "E0078",
+        "E0080",
+        "E0085",
+        "E0095"
+      ],
+      "evidenceIds": [
+        "E0046",
+        "E0051",
+        "E0057",
+        "E0059",
+        "E0064",
+        "E0078",
+        "E0080",
+        "E0085",
+        "E0095"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    },
+    {
+      "category": "logic",
+      "title": "Cập nhật logic để giữ context của request",
+      "before": "Hàm không có logic để giữ context của request.",
+      "after": "Hàm đã được cập nhật để giữ context của request, bao gồm cả app context.",
+      "description": "Hàm mới đã được cập nhật để giữ context của request, bao gồm cả app context. Nó sử dụng `ContextVar` để đảm bảo rằng context của request và app được giữ cho đến khi generator chạy.",
+      "beforeEvidenceIds": [
+        "E0107"
+      ],
+      "afterEvidenceIds": [
+        "E0112",
+        "E0113",
+        "E0114",
+        "E0117",
+        "E0127",
+        "E0128",
+        "E0129",
+        "E0130",
+        "E0131",
+        "E0132",
+        "E0133",
+        "E0134"
+      ],
+      "evidenceIds": [
+        "E0107",
+        "E0112",
+        "E0113",
+        "E0114",
+        "E0117",
+        "E0127",
+        "E0128",
+        "E0129",
+        "E0130",
+        "E0131",
+        "E0132",
+        "E0133",
+        "E0134"
+      ],
+      "citationValid": false,
+      "rejectionReason": "Thiếu hoặc quá nhiều mã bằng chứng"
+    },
+    {
+      "category": "logic",
+      "title": "Giải thích thêm cho việc khởi động generator",
+      "before": "Không có giải thích thêm",
+      "after": "Giải thích thêm về cách thực hiện generator cho đến giá trị sentinel và đảm bảo ngữ cảnh được giữ lại trong trạng thái của generator.",
+      "description": "Đã thêm hai dòng giải thích để giải thích thêm về cách thực hiện generator cho đến giá trị sentinel và đảm bảo ngữ cảnh được giữ lại trong trạng thái của generator.",
+      "beforeEvidenceIds": [],
+      "afterEvidenceIds": [
+        "E0149",
+        "E0150",
+        "E0151"
+      ],
+      "evidenceIds": [
+        "E0149",
+        "E0150",
+        "E0151"
+      ],
+      "citationValid": false,
+      "rejectionReason": "Chưa dẫn code cũ bị thay đổi"
+    },
+    {
+      "category": "formatting",
+      "title": "Định dạng lại dòng return",
+      "before": "return wrapped_g  # type: ignore[return-value]",
+      "after": "return wrapped_g",
+      "description": "Đã định dạng lại dòng return để loại bỏ chú thích kiểu và giữ nguyên giá trị trả về.",
+      "beforeEvidenceIds": [
+        "E0154"
+      ],
+      "afterEvidenceIds": [
+        "E0155"
+      ],
+      "evidenceIds": [
+        "E0154",
+        "E0155"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    },
+    {
+      "category": "logic",
+      "title": "Thêm tham số `_root_path` vào hàm `_prepare_send_file_kwargs`",
+      "before": "kwargs.update(\n    environ=request.environ,\n    use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],\n    response_class=current_app.response_class,\n    _root_path=current_app.root_path,  # type: ignore\n    )",
+      "after": "kwargs.update(\n    environ=request.environ,\n    use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],\n    response_class=current_app.response_class,\n    _root_path=current_app.root_path,\n    )",
+      "description": "Đã thêm tham số `_root_path` vào hàm `_prepare_send_file_kwargs` và loại bỏ chỉ dẫn kiểu `# type: ignore`.",
+      "beforeEvidenceIds": [
+        "E0172"
+      ],
+      "afterEvidenceIds": [
+        "E0173"
+      ],
+      "evidenceIds": [
+        "E0172",
+        "E0173"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    },
+    {
+      "category": "type_annotation",
+      "title": "Cập nhật kiểu dữ liệu cho tham số `path_or_file` trong hàm `send_file`",
+      "before": "path_or_file: os.PathLike[t.AnyStr] | str | t.BinaryIO",
+      "after": "path_or_file: os.PathLike[t.AnyStr] | str | t.IO[bytes]",
+      "description": "Đã cập nhật kiểu dữ liệu cho tham số `path_or_file` trong hàm `send_file` từ `t.BinaryIO` sang `t.IO[bytes]`.",
+      "beforeEvidenceIds": [
+        "E0180"
+      ],
+      "afterEvidenceIds": [
+        "E0181"
+      ],
+      "evidenceIds": [
+        "E0180",
+        "E0181"
+      ],
+      "citationValid": false,
+      "rejectionReason": "Dẫn nhầm phiên bản trước/sau"
+    },
+    {
+      "category": "logic",
+      "title": "Thêm thuộc tính name cho lớp",
+      "before": "Không có thuộc tính name trong lớp",
+      "after": "Thêm thuộc tính name với kiểu trả về là str",
+      "description": "Đã thêm thuộc tính name vào lớp, không thay đổi logic hay cấu trúc khác.",
+      "beforeEvidenceIds": [],
+      "afterEvidenceIds": [
+        "E0197"
+      ],
+      "evidenceIds": [
+        "E0197"
+      ],
+      "citationValid": false,
+      "rejectionReason": "Dẫn nhầm phiên bản trước/sau"
+    },
+    {
+      "category": "documentation",
+      "title": "Thêm mô tả cho hàm create_global_jinja_loader",
+      "before": "E0215 REMOVED L524 |         \"\"\"Creates the loader for the Jinja2 environment.  Can be used to\nE0217 UNCHANGED L525 |         override just the loader and keeping the rest unchanged.  It's\nE0218 UNCHANGED L526 |         discouraged to override this function.  Instead one should override\nE0219 UNCHANGED L527 |         the :meth:`jinja_loader` function instead.\nE0220 UNCHANGED L528 | \nE0221 UNCHANGED L529 |         The global loader dispatches between the loaders of the application\nE0222 UNCHANGED L530 |         and the individual blueprints.\nE0223 UNCHANGED L531 | \nE0224 UNCHANGED L532 |         .. versionadded:: 0.7",
+      "after": "E0216 ADDED L524 |         \"\"\"Creates the loader for the Jinja environment.  Can be used to\nE0217 UNCHANGED L525 |         override just the loader and keeping the rest unchanged.  It's\nE0218 UNCHANGED L526 |         discouraged to override this function.  Instead one should override\nE0219 UNCHANGED L527 |         the :meth:`jinja_loader` function instead.\nE0220 UNCHANGED L528 | \nE0221 UNCHANGED L529 |         The global loader dispatches between the loaders of the application\nE0222 UNCHANGED L530 |         and the individual blueprints.\nE0223 UNCHANGED L531 | \nE0224 UNCHANGED L532 |         .. versionadded:: 0.7",
+      "description": "Đoạn mã đã được thêm vào để cung cấp mô tả chi tiết cho hàm `create_global_jinja_loader`. Mô tả này giải thích rằng hàm này tạo trình tải cho môi trường Jinja và cung cấp hướng dẫn về cách sử dụng và thay thế cho hàm này.",
+      "beforeEvidenceIds": [
+        "E0215"
+      ],
+      "afterEvidenceIds": [
+        "E0216"
+      ],
+      "evidenceIds": [
+        "E0215",
+        "E0216"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    },
+    {
+      "category": "logic",
+      "title": "Thêm thuộc tính static_folder",
+      "before": "self.static_folder = static_folder  # type: ignore",
+      "after": "self.static_folder = static_folder",
+      "description": "Đã thêm dòng code để gán giá trị cho thuộc tính static_folder.",
+      "beforeEvidenceIds": [
+        "E0233"
+      ],
+      "afterEvidenceIds": [
+        "E0234"
+      ],
+      "evidenceIds": [
+        "E0233",
+        "E0234"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    },
+    {
+      "category": "logic",
+      "title": "Phục hồi phương thức bị xóa",
+      "before": "__setitem__ = __delitem__ = clear = pop = popitem = update = setdefault = _fail  # type: ignore # noqa: B950\n",
+      "after": "__setitem__ = __delitem__ = clear = pop = popitem = update = setdefault = _fail  # noqa: B950\n",
+      "description": "Phương thức bị xóa đã được phục hồi.",
+      "beforeEvidenceIds": [
+        "E0251"
+      ],
+      "afterEvidenceIds": [
+        "E0252"
+      ],
+      "evidenceIds": [
+        "E0251",
+        "E0252"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    },
+    {
+      "category": "documentation",
+      "title": "Thêm mô tả cho lớp Environment",
+      "before": "class Environment(BaseEnvironment):",
+      "after": "class Environment(BaseEnvironment):\n    \"\"\"Works like a regular Jinja environment but has some additional\n    knowledge of how Flask's blueprint works so that it can prepend the\n    name of the blueprint to referenced templates if necessary.\n    \"\"\"",
+      "description": "Đã thêm mô tả chi tiết cho lớp Environment trong docstring.",
+      "beforeEvidenceIds": [
+        "E0268"
+      ],
+      "afterEvidenceIds": [
+        "E0270"
+      ],
+      "evidenceIds": [
+        "E0268",
+        "E0270"
+      ],
+      "citationValid": false,
+      "rejectionReason": "Chưa dẫn code cũ bị thay đổi"
+    },
+    {
+      "category": "logic",
+      "title": "Thêm phương thức json_dumps",
+      "before": "Không có phương thức json_dumps",
+      "after": "Phương thức json_dumps được thêm vào",
+      "description": "Phương thức json_dumps đã được thêm vào lớp EnvironBuilder để xử lý việc chuyển đổi đối tượng Python thành chuỗi JSON.",
+      "beforeEvidenceIds": [],
+      "afterEvidenceIds": [
+        "E0288"
+      ],
+      "evidenceIds": [
+        "E0288"
+      ],
+      "citationValid": false,
+      "rejectionReason": "Chưa dẫn code cũ bị thay đổi"
+    },
+    {
+      "category": "logic",
+      "title": "Thay đổi vòng lặp và làm sạch danh sách",
+      "before": "while self._new_contexts:",
+      "after": "for cm in self._new_contexts:",
+      "description": "Thay đổi từ vòng lặp while sang vòng lặp for để xử lý từng phần tử trong danh sách _new_contexts. Sau khi xử lý xong, gọi clear() để làm sạch danh sách.",
+      "beforeEvidenceIds": [
+        "E0305",
+        "E0306"
+      ],
+      "afterEvidenceIds": [
+        "E0307",
+        "E0310"
+      ],
+      "evidenceIds": [
+        "E0305",
+        "E0306",
+        "E0307",
+        "E0310"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    },
+    {
+      "category": "logic",
+      "title": "Thêm hàm kiểm tra cho view async",
+      "before": "Không có hàm kiểm tra cho view async",
+      "after": "Thêm hàm kiểm tra cho view async",
+      "description": "Đã thêm một hàm kiểm tra mới cho view async, bao gồm việc tạo một route async, ghi giá trị vào session, và kiểm tra phản hồi từ client.",
+      "beforeEvidenceIds": [],
+      "afterEvidenceIds": [
+        "E0327",
+        "E0328",
+        "E0329",
+        "E0330",
+        "E0331",
+        "E0332",
+        "E0333",
+        "E0334",
+        "E0335",
+        "E0336",
+        "E0337",
+        "E0338"
+      ],
+      "evidenceIds": [
+        "E0327",
+        "E0328",
+        "E0329",
+        "E0330",
+        "E0331",
+        "E0332",
+        "E0333",
+        "E0334",
+        "E0335",
+        "E0336",
+        "E0337",
+        "E0338"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    },
+    {
+      "category": "logic",
+      "title": "Thêm hàm kiểm tra session redirect",
+      "before": "Không có hàm kiểm tra session redirect.",
+      "after": "Đã thêm hàm kiểm tra session redirect với các thay đổi sau:",
+      "description": "Hàm mới `test_redirect_session` được thêm để kiểm tra việc chuyển hướng và lưu trữ session. Nó bao gồm các thay đổi sau:",
+      "beforeEvidenceIds": [],
+      "afterEvidenceIds": [
+        "E0368",
+        "E0369",
+        "E0375",
+        "E0376",
+        "E0379",
+        "E0382",
+        "E0383",
+        "E0399",
+        "E0400",
+        "E0401"
+      ],
+      "evidenceIds": [
+        "E0368",
+        "E0369",
+        "E0375",
+        "E0376",
+        "E0379",
+        "E0382",
+        "E0383",
+        "E0399",
+        "E0400",
+        "E0401"
+      ],
+      "citationValid": false,
+      "rejectionReason": "Chưa dẫn code cũ bị thay đổi"
+    }
+  ]
+}

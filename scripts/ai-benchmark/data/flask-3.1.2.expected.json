@@ -1,0 +1,95 @@
+{
+  "releaseNotesUrl": "https://github.com/pallets/flask/releases/tag/3.1.2",
+  "referenceFacts": [
+    {
+      "id": "R1",
+      "text": "Sửa stream_with_context để giữ app/request context đúng khi dùng trong async view.",
+      "file": "src/flask/helpers.py",
+      "anchors": [
+        "app_ctx = _cv_app.get()",
+        "with app_ctx, req_ctx:"
+      ]
+    },
+    {
+      "id": "R2",
+      "text": "Sửa thứ tự khôi phục context của test client để session cuối cùng đúng khi follow_redirects.",
+      "file": "src/flask/testing.py",
+      "anchors": [
+        "for cm in self._new_contexts:",
+        "self._new_contexts.clear()"
+      ]
+    },
+    {
+      "id": "R3",
+      "text": "Đổi type hint path_or_file của send_file từ t.BinaryIO sang t.IO[bytes].",
+      "file": "src/flask/helpers.py",
+      "anchors": [
+        "path_or_file: os.PathLike[t.AnyStr] | str | t.IO[bytes],"
+      ]
+    }
+  ],
+  "claims": [
+    {
+      "id": "C1",
+      "text": "Điều chỉnh stream_with_context để lưu app context và request context trước khi tiếp tục generator, rồi đẩy app context trước request context.",
+      "terms": [
+        "app_ctx",
+        "req_ctx",
+        "yield None"
+      ],
+      "expected": "SUPPORTED",
+      "reason": "Đoạn sửa trong generator lưu cả hai context rồi sử dụng with app_ctx, req_ctx."
+    },
+    {
+      "id": "C2",
+      "text": "Đổi type hint path_or_file của send_file thành t.IO[bytes] và đã đo được tốc độ gửi file tăng 30%.",
+      "terms": [
+        "path_or_file",
+        "send_file"
+      ],
+      "expected": "PARTIAL",
+      "reason": "Thay đổi kiểu có bằng chứng; không có kết quả đo tốc độ trong dữ liệu."
+    },
+    {
+      "id": "C3",
+      "text": "Trong FlaskClient.open, danh sách context được khôi phục bằng pop() từ cuối danh sách như phiên bản cũ, không thay đổi vòng lặp.",
+      "terms": [
+        "self._new_contexts",
+        "self._context_stack"
+      ],
+      "expected": "CONTRADICTED",
+      "reason": "Diff xóa while/pop và thay bằng for theo thứ tự danh sách, sau đó clear."
+    },
+    {
+      "id": "C4",
+      "text": "Toàn bộ test của dự án đã chạy và pass trên Windows sau bản sửa.",
+      "terms": [
+        "assert",
+        "test_async_view"
+      ],
+      "expected": "INSUFFICIENT",
+      "reason": "Có mã test nhưng không có log chạy test hay hệ điều hành của lần chạy."
+    },
+    {
+      "id": "C5",
+      "text": "Thêm test async view cho stream_with_context, có trường hợp đóng response chưa đọc stream và trường hợp đọc nội dung trả về.",
+      "terms": [
+        "test_async_view",
+        "client.get().close()",
+        "client.get().text"
+      ],
+      "expected": "SUPPORTED",
+      "reason": "tests/test_helpers.py có test mới và các thao tác tương ứng."
+    },
+    {
+      "id": "C6",
+      "text": "Type hint path_or_file của send_file được đổi từ t.BinaryIO sang t.IO[str].",
+      "terms": [
+        "path_or_file"
+      ],
+      "expected": "CONTRADICTED",
+      "reason": "Kiểu mới là t.IO[bytes], không phải t.IO[str]."
+    }
+  ],
+  "note": "Reference facts cover release-note highlights only; other code changes may also be valid. Expected labels are manually prepared fixtures, not model output."
+}

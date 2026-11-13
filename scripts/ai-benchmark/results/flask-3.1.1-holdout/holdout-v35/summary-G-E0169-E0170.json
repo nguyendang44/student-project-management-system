@@ -1,0 +1,42 @@
+{
+  "signature": "773f8a42d86d4085556196fc8e1d4bbbc2a960dafcc3fda8f135d82300138443",
+  "result": [
+    {
+      "groupId": "G-E0169-E0170",
+      "category": "type_annotation",
+      "title": "Đổi kiểu trả về của hàm invoke",
+      "description": "Trong nhóm thay đổi này, hàm `invoke` đã có kiểu trả về là `t.Any` trước đây. Sau khi thay đổi, kiểu trả về đã được cập nhật thành `Result`. Đây là một thay đổi về kiểu dữ liệu trả về của hàm, không liên quan đến logic thực thi của hàm.",
+      "source": "ollama",
+      "before": "    ) -> t.Any:",
+      "after": "    ) -> Result:",
+      "beforeEvidenceIds": [
+        "E0169"
+      ],
+      "afterEvidenceIds": [
+        "E0170"
+      ],
+      "evidenceIds": [
+        "E0169",
+        "E0170"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0169-E0170",
+                "category": "type_annotation",
+                "title": "Đổi kiểu trả về của hàm invoke",
+                "description": "Trong nhóm thay đổi này, hàm `invoke` đã có kiểu trả về là `t.Any` trước đây. Sau khi thay đổi, kiểu trả về đã được cập nhật thành `Result`. Đây là một thay đổi về kiểu dữ liệu trả về của hàm, không liên quan đến logic thực thi của hàm."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

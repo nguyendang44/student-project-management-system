@@ -1,0 +1,42 @@
+{
+  "signature": "61a7ed707b7b2ea71913e14d92027235ba471d830d94b854a648aa800f637023",
+  "result": [
+    {
+      "groupId": "G-E0342-E0343",
+      "category": "test",
+      "title": "Thay đổi tham số hàm",
+      "description": "Hàm `test_prefix_package_paths` đã bị chỉnh sửa, nhưng tham số `limit_loader` đã bị loại bỏ trong phiên bản mới.",
+      "source": "ollama",
+      "before": "    limit_loader, modules_tmp_path, modules_tmp_path_prefix, purge_module, site_packages",
+      "after": "    modules_tmp_path, modules_tmp_path_prefix, purge_module, site_packages",
+      "beforeEvidenceIds": [
+        "E0342"
+      ],
+      "afterEvidenceIds": [
+        "E0343"
+      ],
+      "evidenceIds": [
+        "E0342",
+        "E0343"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0342-E0343",
+                "category": "test",
+                "title": "Thay đổi tham số hàm",
+                "description": "Hàm `test_prefix_package_paths` đã bị chỉnh sửa, nhưng tham số `limit_loader` đã bị loại bỏ trong phiên bản mới."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "signature": "cfa7a3c7494b20b25bfee47d6a3a6ebc6d3899659978d5c691b21f744904cfce",
+  "result": {
+    "claimId": "C6.1",
+    "claimQuote": "Type hint path_or_file của send_file được đổi từ t.BinaryIO sang t.IO[str].",
+    "status": "CONTRADICTED",
+    "explanation": "Báo cáo khẳng định rằng type hint của path_or_file trong send_file được đổi từ t.BinaryIO sang t.IO[str]. Tuy nhiên, code mới chỉ thay đổi type hint từ t.BinaryIO sang t.IO[bytes], không phải t.IO[str]. Do đó, ý chính của báo cáo trái với code.",
+    "evidenceIds": [
+      "E0180"
+    ],
+    "originalEvidenceIds": [
+      "E0180"
+    ],
+    "citationNormalization": [],
+    "citationValid": true,
+    "rejectionReason": null,
+    "attempts": [
+      {
+        "attempt": 1,
+        "valid": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "signature": "d7f6da740d15c208302868fe8dc2a6fab5d6462bed1de885c01728812ade93b2",
+  "result": [
+    {
+      "category": "documentation",
+      "title": "Thêm mô tả cho hàm create_global_jinja_loader",
+      "before": "E0215 REMOVED L524 |         \"\"\"Creates the loader for the Jinja2 environment.  Can be used to\nE0217 UNCHANGED L525 |         override just the loader and keeping the rest unchanged.  It's\nE0218 UNCHANGED L526 |         discouraged to override this function.  Instead one should override\nE0219 UNCHANGED L527 |         the :meth:`jinja_loader` function instead.\nE0220 UNCHANGED L528 | \nE0221 UNCHANGED L529 |         The global loader dispatches between the loaders of the application\nE0222 UNCHANGED L530 |         and the individual blueprints.\nE0223 UNCHANGED L531 | \nE0224 UNCHANGED L532 |         .. versionadded:: 0.7",
+      "after": "E0216 ADDED L524 |         \"\"\"Creates the loader for the Jinja environment.  Can be used to\nE0217 UNCHANGED L525 |         override just the loader and keeping the rest unchanged.  It's\nE0218 UNCHANGED L526 |         discouraged to override this function.  Instead one should override\nE0219 UNCHANGED L527 |         the :meth:`jinja_loader` function instead.\nE0220 UNCHANGED L528 | \nE0221 UNCHANGED L529 |         The global loader dispatches between the loaders of the application\nE0222 UNCHANGED L530 |         and the individual blueprints.\nE0223 UNCHANGED L531 | \nE0224 UNCHANGED L532 |         .. versionadded:: 0.7",
+      "description": "Đoạn mã đã được thêm vào để cung cấp mô tả chi tiết cho hàm `create_global_jinja_loader`. Mô tả này giải thích rằng hàm này tạo trình tải cho môi trường Jinja và cung cấp hướng dẫn về cách sử dụng và thay thế cho hàm này.",
+      "beforeEvidenceIds": [
+        "E0215"
+      ],
+      "afterEvidenceIds": [
+        "E0216"
+      ],
+      "evidenceIds": [
+        "E0215",
+        "E0216"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    }
+  ]
+}

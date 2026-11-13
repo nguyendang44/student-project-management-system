@@ -17,7 +17,10 @@ public sealed record ProgressReportDiagnostics(
     int ExplanationModelItems,
     int ExplanationCandidates,
     int ExplanationAccepted,
-    string ExplanationStatus);
+    string ExplanationStatus,
+    string? ContextStatus = null,
+    int ContextExcerpts = 0,
+    int ContextFiles = 0);
 
 /// <summary>
 /// A private metadata element in the existing EvidenceJson array avoids a DB migration.

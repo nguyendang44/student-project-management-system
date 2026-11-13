@@ -1,0 +1,24 @@
+{
+  "signature": "d7f6da740d15c208302868fe8dc2a6fab5d6462bed1de885c01728812ade93b2",
+  "result": [
+    {
+      "category": "documentation",
+      "title": "Thêm mô tả cho lớp Environment",
+      "before": "class Environment(BaseEnvironment):",
+      "after": "class Environment(BaseEnvironment):\n    \"\"\"Works like a regular Jinja environment but has some additional\n    knowledge of how Flask's blueprint works so that it can prepend the\n    name of the blueprint to referenced templates if necessary.\n    \"\"\"",
+      "description": "Đã thêm mô tả chi tiết cho lớp Environment trong docstring.",
+      "beforeEvidenceIds": [
+        "E0268"
+      ],
+      "afterEvidenceIds": [
+        "E0270"
+      ],
+      "evidenceIds": [
+        "E0268",
+        "E0270"
+      ],
+      "citationValid": false,
+      "rejectionReason": "Chưa dẫn code cũ bị thay đổi"
+    }
+  ]
+}

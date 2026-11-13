@@ -1,0 +1,57 @@
+{
+  "signature": "edb2297e2f2cc2b03f856918428bd0a0f1ba252255504839b8c6305aad091afd",
+  "result": {
+    "claimId": "C6.1",
+    "claimQuote": "Type hint path_or_file của send_file được đổi từ t.BinaryIO sang t.IO[str].",
+    "status": "ERROR",
+    "explanation": "Không có phản hồi hợp lệ sau 3 lần thử. Chưa đánh giá ý này.",
+    "evidenceIds": [],
+    "citationValid": false,
+    "responseError": true,
+    "rejectionReason": "Dẫn mã không có trong phần code đã gửi",
+    "attempts": [
+      {
+        "attempt": 1,
+        "valid": false,
+        "error": "Dẫn mã không có trong phần code đã gửi",
+        "answer": {
+          "claimId": "C6.1",
+          "claimQuote": "Type hint path_or_file của send_file được đổi từ t.BinaryIO sang t.IO[str].",
+          "status": "CONTRADICTED",
+          "explanation": "Báo cáo khẳng định rằng type hint của path_or_file trong send_file được đổi từ t.BinaryIO sang t.IO[str]. Tuy nhiên, code mới chỉ thay đổi type hint từ t.BinaryIO sang t.IO[bytes], không phải t.IO[str]. Do đó, có sự trái ngược giữa báo cáo và code.",
+          "evidenceIds": [
+            "E0180 ADDED L408 |     path_or_file: os.PathLike[t.AnyStr] | str | t.IO[bytes],"
+          ]
+        }
+      },
+      {
+        "attempt": 2,
+        "valid": false,
+        "error": "Dẫn mã không có trong phần code đã gửi",
+        "answer": {
+          "claimId": "C6.1",
+          "claimQuote": "Type hint path_or_file của send_file được đổi từ t.BinaryIO sang t.IO[str].",
+          "status": "CONTRADICTED",
+          "explanation": "Báo cáo khẳng định rằng type hint của path_or_file trong send_file được đổi từ t.BinaryIO sang t.IO[str]. Tuy nhiên, code mới chỉ thay đổi type hint từ t.BinaryIO sang t.IO[bytes], không phải t.IO[str]. Do đó, có sự trái ngược giữa báo cáo và code.",
+          "evidenceIds": [
+            "E0180 ADDED L408 |     path_or_file: os.PathLike[t.AnyStr] | str | t.IO[bytes],"
+          ]
+        }
+      },
+      {
+        "attempt": 3,
+        "valid": false,
+        "error": "Dẫn mã không có trong phần code đã gửi",
+        "answer": {
+          "claimId": "C6.1",
+          "claimQuote": "Type hint path_or_file của send_file được đổi từ t.BinaryIO sang t.IO[str].",
+          "status": "CONTRADICTED",
+          "explanation": "Báo cáo khẳng định rằng type hint của path_or_file trong send_file được đổi từ t.BinaryIO sang t.IO[str]. Tuy nhiên, code mới chỉ thay đổi type hint từ t.BinaryIO sang t.IO[bytes], không phải t.IO[str]. Do đó, có sự trái ngược giữa báo cáo và code.",
+          "evidenceIds": [
+            "E0180 ADDED L408 |     path_or_file: os.PathLike[t.AnyStr] | str | t.IO[bytes],"
+          ]
+        }
+      }
+    ]
+  }
+}

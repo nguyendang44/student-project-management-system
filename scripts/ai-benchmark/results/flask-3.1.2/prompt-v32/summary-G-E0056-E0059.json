@@ -1,0 +1,46 @@
+{
+  "signature": "007480c9d67e971006694a79dce72775c487c0b1ec32e5a4a8b00ed9d4e3f179",
+  "result": [
+    {
+      "groupId": "G-E0056-E0059",
+      "category": "documentation",
+      "title": "Cập nhật tài liệu cho hàm stream_with_context",
+      "description": "Đã thêm mô tả chi tiết về chức năng của hàm stream_with_context và cách sử dụng nó như một decorator trên một hàm tạo.",
+      "source": "ollama",
+      "before": "    This function however can help you keep the context around for longer::",
+      "after": "    Use it as a decorator on a generator function:\n\n    .. code-block:: python",
+      "beforeEvidenceIds": [
+        "E0056"
+      ],
+      "afterEvidenceIds": [
+        "E0057",
+        "E0058",
+        "E0059"
+      ],
+      "evidenceIds": [
+        "E0056",
+        "E0057",
+        "E0058",
+        "E0059"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0056-E0059",
+                "category": "documentation",
+                "title": "Cập nhật tài liệu cho hàm stream_with_context",
+                "description": "Đã thêm mô tả chi tiết về chức năng của hàm stream_with_context và cách sử dụng nó như một decorator trên một hàm tạo."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

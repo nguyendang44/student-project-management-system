@@ -1,0 +1,1550 @@
+{
+  "claim": {
+    "id": "C2.2",
+    "text": "toàn bộ kiểm thử đã pass trên Windows.",
+    "originalText": "FlaskCliRunner.invoke đổi type hint trả về thành Result; toàn bộ kiểm thử đã pass trên Windows.",
+    "terms": [
+      "def invoke",
+      "Result"
+    ]
+  },
+  "packets": [
+    {
+      "file": "src/flask/testing.py",
+      "lines": [
+        {
+          "id": "E0161",
+          "kind": "context",
+          "beforeLine": 268,
+          "afterLine": 269,
+          "text": "    \"\"\"",
+          "structure": {
+            "before": {
+              "id": "E0161",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 268,
+              "text": "    \"\"\"",
+              "function": null,
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner",
+              "operations": []
+            },
+            "after": {
+              "id": "E0161",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 269,
+              "text": "    \"\"\"",
+              "function": null,
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner",
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0162",
+          "kind": "context",
+          "beforeLine": 269,
+          "afterLine": 270,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0162",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 269,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0162",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 270,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0163",
+          "kind": "context",
+          "beforeLine": 270,
+          "afterLine": 271,
+          "text": "    def __init__(self, app: Flask, **kwargs: t.Any) -> None:",
+          "structure": {
+            "before": {
+              "id": "E0163",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 270,
+              "text": "    def __init__(self, app: Flask, **kwargs: t.Any) -> None:",
+              "function": {
+                "name": "FlaskCliRunner.__init__",
+                "startLine": 270,
+                "endLine": 272,
+                "parameters": {
+                  "self": null,
+                  "app": "Flask",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0163",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 271,
+              "text": "    def __init__(self, app: Flask, **kwargs: t.Any) -> None:",
+              "function": {
+                "name": "FlaskCliRunner.__init__",
+                "startLine": 271,
+                "endLine": 273,
+                "parameters": {
+                  "self": null,
+                  "app": "Flask",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0164",
+          "kind": "context",
+          "beforeLine": 271,
+          "afterLine": 272,
+          "text": "        self.app = app",
+          "structure": {
+            "before": {
+              "id": "E0164",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 271,
+              "text": "        self.app = app",
+              "function": {
+                "name": "FlaskCliRunner.__init__",
+                "startLine": 270,
+                "endLine": 272,
+                "parameters": {
+                  "self": null,
+                  "app": "Flask",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0164",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 272,
+              "text": "        self.app = app",
+              "function": {
+                "name": "FlaskCliRunner.__init__",
+                "startLine": 271,
+                "endLine": 273,
+                "parameters": {
+                  "self": null,
+                  "app": "Flask",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0165",
+          "kind": "context",
+          "beforeLine": 272,
+          "afterLine": 273,
+          "text": "        super().__init__(**kwargs)",
+          "structure": {
+            "before": {
+              "id": "E0165",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 272,
+              "text": "        super().__init__(**kwargs)",
+              "function": {
+                "name": "FlaskCliRunner.__init__",
+                "startLine": 270,
+                "endLine": 272,
+                "parameters": {
+                  "self": null,
+                  "app": "Flask",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 272,
+                  "endLine": 272,
+                  "code": "super().__init__(**kwargs)"
+                },
+                {
+                  "kind": "Call",
+                  "startLine": 272,
+                  "endLine": 272,
+                  "code": "super()"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0165",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 273,
+              "text": "        super().__init__(**kwargs)",
+              "function": {
+                "name": "FlaskCliRunner.__init__",
+                "startLine": 271,
+                "endLine": 273,
+                "parameters": {
+                  "self": null,
+                  "app": "Flask",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 273,
+                  "endLine": 273,
+                  "code": "super().__init__(**kwargs)"
+                },
+                {
+                  "kind": "Call",
+                  "startLine": 273,
+                  "endLine": 273,
+                  "code": "super()"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0166",
+          "kind": "context",
+          "beforeLine": 273,
+          "afterLine": 274,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0166",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 273,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0166",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 274,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0167",
+          "kind": "context",
+          "beforeLine": 274,
+          "afterLine": 275,
+          "text": "    def invoke(  # type: ignore",
+          "structure": {
+            "before": {
+              "id": "E0167",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 274,
+              "text": "    def invoke(  # type: ignore",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 274,
+                "endLine": 297,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0167",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 275,
+              "text": "    def invoke(  # type: ignore",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 275,
+                "endLine": 298,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0168",
+          "kind": "context",
+          "beforeLine": 275,
+          "afterLine": 276,
+          "text": "        self, cli: t.Any = None, args: t.Any = None, **kwargs: t.Any",
+          "structure": {
+            "before": {
+              "id": "E0168",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 275,
+              "text": "        self, cli: t.Any = None, args: t.Any = None, **kwargs: t.Any",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 274,
+                "endLine": 297,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0168",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 276,
+              "text": "        self, cli: t.Any = None, args: t.Any = None, **kwargs: t.Any",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 275,
+                "endLine": 298,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0169",
+          "kind": "removed",
+          "beforeLine": 276,
+          "afterLine": null,
+          "text": "    ) -> t.Any:",
+          "structure": {
+            "before": {
+              "id": "E0169",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 276,
+              "text": "    ) -> t.Any:",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 274,
+                "endLine": 297,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0170",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 277,
+          "text": "    ) -> Result:",
+          "structure": {
+            "after": {
+              "id": "E0170",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 277,
+              "text": "    ) -> Result:",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 275,
+                "endLine": 298,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0171",
+          "kind": "context",
+          "beforeLine": 277,
+          "afterLine": 278,
+          "text": "        \"\"\"Invokes a CLI command in an isolated environment. See",
+          "structure": {
+            "before": {
+              "id": "E0171",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 277,
+              "text": "        \"\"\"Invokes a CLI command in an isolated environment. See",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 274,
+                "endLine": 297,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner.invoke",
+              "operations": []
+            },
+            "after": {
+              "id": "E0171",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 278,
+              "text": "        \"\"\"Invokes a CLI command in an isolated environment. See",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 275,
+                "endLine": 298,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner.invoke",
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0172",
+          "kind": "context",
+          "beforeLine": 278,
+          "afterLine": 279,
+          "text": "        :meth:`CliRunner.invoke <click.testing.CliRunner.invoke>` for",
+          "structure": {
+            "before": {
+              "id": "E0172",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 278,
+              "text": "        :meth:`CliRunner.invoke <click.testing.CliRunner.invoke>` for",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 274,
+                "endLine": 297,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner.invoke",
+              "operations": []
+            },
+            "after": {
+              "id": "E0172",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 279,
+              "text": "        :meth:`CliRunner.invoke <click.testing.CliRunner.invoke>` for",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 275,
+                "endLine": 298,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner.invoke",
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0173",
+          "kind": "context",
+          "beforeLine": 279,
+          "afterLine": 280,
+          "text": "        full method documentation. See :ref:`testing-cli` for examples.",
+          "structure": {
+            "before": {
+              "id": "E0173",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 279,
+              "text": "        full method documentation. See :ref:`testing-cli` for examples.",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 274,
+                "endLine": 297,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner.invoke",
+              "operations": []
+            },
+            "after": {
+              "id": "E0173",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 280,
+              "text": "        full method documentation. See :ref:`testing-cli` for examples.",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 275,
+                "endLine": 298,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner.invoke",
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0174",
+          "kind": "context",
+          "beforeLine": 280,
+          "afterLine": 281,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0174",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 280,
+              "text": "",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 274,
+                "endLine": 297,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner.invoke",
+              "operations": []
+            },
+            "after": {
+              "id": "E0174",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 281,
+              "text": "",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 275,
+                "endLine": 298,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner.invoke",
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0175",
+          "kind": "context",
+          "beforeLine": 281,
+          "afterLine": 282,
+          "text": "        If the ``obj`` argument is not given, passes an instance of",
+          "structure": {
+            "before": {
+              "id": "E0175",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 281,
+              "text": "        If the ``obj`` argument is not given, passes an instance of",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 274,
+                "endLine": 297,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner.invoke",
+              "operations": []
+            },
+            "after": {
+              "id": "E0175",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 282,
+              "text": "        If the ``obj`` argument is not given, passes an instance of",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 275,
+                "endLine": 298,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner.invoke",
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0176",
+          "kind": "context",
+          "beforeLine": 282,
+          "afterLine": 283,
+          "text": "        :class:`~flask.cli.ScriptInfo` that knows how to load the Flask",
+          "structure": {
+            "before": {
+              "id": "E0176",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 282,
+              "text": "        :class:`~flask.cli.ScriptInfo` that knows how to load the Flask",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 274,
+                "endLine": 297,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner.invoke",
+              "operations": []
+            },
+            "after": {
+              "id": "E0176",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 283,
+              "text": "        :class:`~flask.cli.ScriptInfo` that knows how to load the Flask",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 275,
+                "endLine": 298,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner.invoke",
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0177",
+          "kind": "context",
+          "beforeLine": 283,
+          "afterLine": 284,
+          "text": "        app being tested.",
+          "structure": {
+            "before": {
+              "id": "E0177",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 283,
+              "text": "        app being tested.",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 274,
+                "endLine": 297,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner.invoke",
+              "operations": []
+            },
+            "after": {
+              "id": "E0177",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 284,
+              "text": "        app being tested.",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 275,
+                "endLine": 298,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner.invoke",
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0178",
+          "kind": "context",
+          "beforeLine": 284,
+          "afterLine": 285,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0178",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 284,
+              "text": "",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 274,
+                "endLine": 297,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner.invoke",
+              "operations": []
+            },
+            "after": {
+              "id": "E0178",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 285,
+              "text": "",
+              "function": {
+                "name": "FlaskCliRunner.invoke",
+                "startLine": 275,
+                "endLine": 298,
+                "parameters": {
+                  "self": null,
+                  "cli": "t.Any",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": true,
+              "docstringOwner": "FlaskCliRunner.invoke",
+              "operations": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "file": "src/flask/testing.py",
+      "lines": [
+        {
+          "id": "E0122",
+          "kind": "context",
+          "beforeLine": 5,
+          "afterLine": 5,
+          "text": "from contextlib import contextmanager",
+          "structure": {
+            "before": {
+              "id": "E0122",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 5,
+              "text": "from contextlib import contextmanager",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 5,
+                  "endLine": 5,
+                  "code": "from contextlib import contextmanager"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0122",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 5,
+              "text": "from contextlib import contextmanager",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 5,
+                  "endLine": 5,
+                  "code": "from contextlib import contextmanager"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0123",
+          "kind": "context",
+          "beforeLine": 6,
+          "afterLine": 6,
+          "text": "from contextlib import ExitStack",
+          "structure": {
+            "before": {
+              "id": "E0123",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 6,
+              "text": "from contextlib import ExitStack",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 6,
+                  "endLine": 6,
+                  "code": "from contextlib import ExitStack"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0123",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 6,
+              "text": "from contextlib import ExitStack",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 6,
+                  "endLine": 6,
+                  "code": "from contextlib import ExitStack"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0124",
+          "kind": "context",
+          "beforeLine": 7,
+          "afterLine": 7,
+          "text": "from copy import copy",
+          "structure": {
+            "before": {
+              "id": "E0124",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 7,
+              "text": "from copy import copy",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 7,
+                  "endLine": 7,
+                  "code": "from copy import copy"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0124",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 7,
+              "text": "from copy import copy",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 7,
+                  "endLine": 7,
+                  "code": "from copy import copy"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0125",
+          "kind": "context",
+          "beforeLine": 8,
+          "afterLine": 8,
+          "text": "from types import TracebackType",
+          "structure": {
+            "before": {
+              "id": "E0125",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 8,
+              "text": "from types import TracebackType",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 8,
+                  "endLine": 8,
+                  "code": "from types import TracebackType"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0125",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 8,
+              "text": "from types import TracebackType",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 8,
+                  "endLine": 8,
+                  "code": "from types import TracebackType"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0126",
+          "kind": "context",
+          "beforeLine": 9,
+          "afterLine": 9,
+          "text": "from urllib.parse import urlsplit",
+          "structure": {
+            "before": {
+              "id": "E0126",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 9,
+              "text": "from urllib.parse import urlsplit",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 9,
+                  "endLine": 9,
+                  "code": "from urllib.parse import urlsplit"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0126",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 9,
+              "text": "from urllib.parse import urlsplit",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 9,
+                  "endLine": 9,
+                  "code": "from urllib.parse import urlsplit"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0127",
+          "kind": "context",
+          "beforeLine": 10,
+          "afterLine": 10,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0127",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 10,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0127",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 10,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0128",
+          "kind": "context",
+          "beforeLine": 11,
+          "afterLine": 11,
+          "text": "import werkzeug.test",
+          "structure": {
+            "before": {
+              "id": "E0128",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 11,
+              "text": "import werkzeug.test",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Import",
+                  "startLine": 11,
+                  "endLine": 11,
+                  "code": "import werkzeug.test"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0128",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 11,
+              "text": "import werkzeug.test",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Import",
+                  "startLine": 11,
+                  "endLine": 11,
+                  "code": "import werkzeug.test"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0129",
+          "kind": "context",
+          "beforeLine": 12,
+          "afterLine": 12,
+          "text": "from click.testing import CliRunner",
+          "structure": {
+            "before": {
+              "id": "E0129",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 12,
+              "text": "from click.testing import CliRunner",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 12,
+                  "endLine": 12,
+                  "code": "from click.testing import CliRunner"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0129",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 12,
+              "text": "from click.testing import CliRunner",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 12,
+                  "endLine": 12,
+                  "code": "from click.testing import CliRunner"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0130",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 13,
+          "text": "from click.testing import Result",
+          "structure": {
+            "after": {
+              "id": "E0130",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 13,
+              "text": "from click.testing import Result",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 13,
+                  "endLine": 13,
+                  "code": "from click.testing import Result"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0131",
+          "kind": "context",
+          "beforeLine": 13,
+          "afterLine": 14,
+          "text": "from werkzeug.test import Client",
+          "structure": {
+            "before": {
+              "id": "E0131",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 13,
+              "text": "from werkzeug.test import Client",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 13,
+                  "endLine": 13,
+                  "code": "from werkzeug.test import Client"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0131",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 14,
+              "text": "from werkzeug.test import Client",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 14,
+                  "endLine": 14,
+                  "code": "from werkzeug.test import Client"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0132",
+          "kind": "context",
+          "beforeLine": 14,
+          "afterLine": 15,
+          "text": "from werkzeug.wrappers import Request as BaseRequest",
+          "structure": {
+            "before": {
+              "id": "E0132",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 14,
+              "text": "from werkzeug.wrappers import Request as BaseRequest",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 14,
+                  "endLine": 14,
+                  "code": "from werkzeug.wrappers import Request as BaseRequest"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0132",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 15,
+              "text": "from werkzeug.wrappers import Request as BaseRequest",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 15,
+                  "endLine": 15,
+                  "code": "from werkzeug.wrappers import Request as BaseRequest"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0133",
+          "kind": "context",
+          "beforeLine": 15,
+          "afterLine": 16,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0133",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 15,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0133",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 16,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0134",
+          "kind": "context",
+          "beforeLine": 16,
+          "afterLine": 17,
+          "text": "from .cli import ScriptInfo",
+          "structure": {
+            "before": {
+              "id": "E0134",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 16,
+              "text": "from .cli import ScriptInfo",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 16,
+                  "endLine": 16,
+                  "code": "from .cli import ScriptInfo"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0134",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 17,
+              "text": "from .cli import ScriptInfo",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 17,
+                  "endLine": 17,
+                  "code": "from .cli import ScriptInfo"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0135",
+          "kind": "context",
+          "beforeLine": 17,
+          "afterLine": 18,
+          "text": "from .sessions import SessionMixin",
+          "structure": {
+            "before": {
+              "id": "E0135",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 17,
+              "text": "from .sessions import SessionMixin",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 17,
+                  "endLine": 17,
+                  "code": "from .sessions import SessionMixin"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0135",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 18,
+              "text": "from .sessions import SessionMixin",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 18,
+                  "endLine": 18,
+                  "code": "from .sessions import SessionMixin"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0136",
+          "kind": "context",
+          "beforeLine": 18,
+          "afterLine": 19,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0136",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 18,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0136",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 19,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0137",
+          "kind": "context",
+          "beforeLine": 19,
+          "afterLine": 20,
+          "text": "if t.TYPE_CHECKING:  # pragma: no cover",
+          "structure": {
+            "before": {
+              "id": "E0137",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 19,
+              "text": "if t.TYPE_CHECKING:  # pragma: no cover",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0137",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 20,
+              "text": "if t.TYPE_CHECKING:  # pragma: no cover",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0138",
+          "kind": "context",
+          "beforeLine": 20,
+          "afterLine": 21,
+          "text": "    from _typeshed.wsgi import WSGIEnvironment",
+          "structure": {
+            "before": {
+              "id": "E0138",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 20,
+              "text": "    from _typeshed.wsgi import WSGIEnvironment",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 20,
+                  "endLine": 20,
+                  "code": "from _typeshed.wsgi import WSGIEnvironment"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0138",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 21,
+              "text": "    from _typeshed.wsgi import WSGIEnvironment",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "ImportFrom",
+                  "startLine": 21,
+                  "endLine": 21,
+                  "code": "from _typeshed.wsgi import WSGIEnvironment"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

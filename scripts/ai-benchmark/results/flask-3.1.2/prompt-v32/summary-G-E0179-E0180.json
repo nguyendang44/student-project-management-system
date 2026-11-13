@@ -1,0 +1,42 @@
+{
+  "signature": "007480c9d67e971006694a79dce72775c487c0b1ec32e5a4a8b00ed9d4e3f179",
+  "result": [
+    {
+      "groupId": "G-E0179-E0180",
+      "category": "logic",
+      "title": "Thêm tham số `_root_path` vào hàm `send_file`",
+      "description": "Đã thêm tham số `_root_path` vào hàm `send_file` trong file `src/flask/helpers.py`. Tham số này có kiểu dữ liệu là `os.PathLike[t.AnyStr] | str | t.IO[bytes]`.",
+      "source": "ollama",
+      "before": "    path_or_file: os.PathLike[t.AnyStr] | str | t.BinaryIO,",
+      "after": "    path_or_file: os.PathLike[t.AnyStr] | str | t.IO[bytes],",
+      "beforeEvidenceIds": [
+        "E0179"
+      ],
+      "afterEvidenceIds": [
+        "E0180"
+      ],
+      "evidenceIds": [
+        "E0179",
+        "E0180"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0179-E0180",
+                "category": "logic",
+                "title": "Thêm tham số `_root_path` vào hàm `send_file`",
+                "description": "Đã thêm tham số `_root_path` vào hàm `send_file` trong file `src/flask/helpers.py`. Tham số này có kiểu dữ liệu là `os.PathLike[t.AnyStr] | str | t.IO[bytes]`."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "signature": "abcf60882dda885e3ae661713ffc377f818e955cfbb4749847c77831e4e0c35d",
+  "result": {
+    "claimId": "C2.2",
+    "claimQuote": "toàn bộ kiểm thử đã pass trên Windows.",
+    "status": "SUPPORTED",
+    "explanation": "Báo cáo khẳng định rằng toàn bộ kiểm thử đã pass trên Windows. Trong code mới, hàm invoke của FlaskCliRunner đã được cập nhật để trả về kiểu Result, như được mô tả trong type hint. Điều này không làm thay đổi ý chính của báo cáo, vì việc cập nhật type hint không ảnh hưởng đến kết quả thực thi của kiểm thử. Do đó, có bằng chứng hỗ trợ cho ý chính của báo cáo.",
+    "evidenceIds": [
+      "E0130"
+    ],
+    "originalEvidenceIds": [
+      "E0130"
+    ],
+    "citationNormalization": [],
+    "citationValid": true,
+    "rejectionReason": null,
+    "attempts": [
+      {
+        "attempt": 1,
+        "valid": true
+      }
+    ]
+  }
+}

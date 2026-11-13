@@ -1,0 +1,83 @@
+{
+  "signature": "901b0accab1d32d890c8e9d7f8d3d00ea9efffd6e75f8720fa3dc774af65f709",
+  "result": [
+    {
+      "groupId": "G-E0327-E0349",
+      "category": "test",
+      "title": "Thêm hàm kiểm thử async",
+      "description": "Đã thêm hàm kiểm thử `test_async_view` để kiểm tra xử lý yêu cầu async và sử dụng client context.",
+      "source": "ollama",
+      "before": "(không có dòng xóa)",
+      "after": "    def test_async_view(self, app, client):\n        @app.route(\"/\")\n        async def index():\n            flask.session[\"test\"] = \"flask\"\n\n            @flask.stream_with_context\n            def gen():\n                yield flask.session[\"test\"]\n\n            return flask.Response(gen())\n\n        # response is closed without reading stream\n        client.get().close()\n        # response stream is read\n        assert client.get().text == \"flask\"\n\n        # same as above, but with client context preservation\n        with client:\n            client.get().close()\n\n        with client:\n            assert client.get().text == \"flask\"\n",
+      "beforeEvidenceIds": [],
+      "afterEvidenceIds": [
+        "E0327",
+        "E0328",
+        "E0329",
+        "E0330",
+        "E0331",
+        "E0332",
+        "E0333",
+        "E0334",
+        "E0335",
+        "E0336",
+        "E0337",
+        "E0338",
+        "E0339",
+        "E0340",
+        "E0341",
+        "E0342",
+        "E0343",
+        "E0344",
+        "E0345",
+        "E0346",
+        "E0347",
+        "E0348",
+        "E0349"
+      ],
+      "evidenceIds": [
+        "E0327",
+        "E0328",
+        "E0329",
+        "E0330",
+        "E0331",
+        "E0332",
+        "E0333",
+        "E0334",
+        "E0335",
+        "E0336",
+        "E0337",
+        "E0338",
+        "E0339",
+        "E0340",
+        "E0341",
+        "E0342",
+        "E0343",
+        "E0344",
+        "E0345",
+        "E0346",
+        "E0347",
+        "E0348",
+        "E0349"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0327-E0349",
+                "category": "test",
+                "title": "Thêm hàm kiểm thử async",
+                "description": "Đã thêm hàm kiểm thử `test_async_view` để kiểm tra xử lý yêu cầu async và sử dụng client context."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "signature": "2b825c5cb969453f2978a116207df5e9074308c99c40efa60caf783708c2b7fc",
+  "result": [
+    {
+      "groupId": "G-E0020-E0035",
+      "category": "logic",
+      "title": "Cập nhật thông báo deprecation",
+      "description": "Cập nhật thông báo deprecation từ Flask 3.1 sang Flask 3.2.",
+      "source": "ollama",
+      "before": "        warnings.warn(\n            \"The '__version__' attribute is deprecated and will be removed in\"\n            \" Flask 3.1. Use feature detection or\"\n            \" 'importlib.metadata.version(\\\"flask\\\")' instead.\",\n            DeprecationWarning,\n            stacklevel=2,\n        )\n        return importlib.metadata.version(\"flask\")",
+      "after": "            warnings.warn(\n                \"The '__version__' attribute is deprecated and will be removed in\"\n                \" Flask 3.2. Use feature detection or\"\n                \" 'importlib.metadata.version(\\\"flask\\\")' instead.\",\n                DeprecationWarning,\n                stacklevel=2,\n            )\n            return importlib.metadata.version(\"flask\")",
+      "beforeEvidenceIds": [
+        "E0020",
+        "E0021",
+        "E0022",
+        "E0023",
+        "E0024",
+        "E0025",
+        "E0026",
+        "E0027"
+      ],
+      "afterEvidenceIds": [
+        "E0028",
+        "E0029",
+        "E0030",
+        "E0031",
+        "E0032",
+        "E0033",
+        "E0034",
+        "E0035"
+      ],
+      "evidenceIds": [
+        "E0020",
+        "E0021",
+        "E0022",
+        "E0023",
+        "E0024",
+        "E0025",
+        "E0026",
+        "E0027",
+        "E0028",
+        "E0029",
+        "E0030",
+        "E0031",
+        "E0032",
+        "E0033",
+        "E0034",
+        "E0035"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0020-E0035",
+                "category": "logic",
+                "title": "Cập nhật thông báo deprecation",
+                "description": "Cập nhật thông báo deprecation từ Flask 3.1 sang Flask 3.2."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

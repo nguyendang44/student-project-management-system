@@ -1,0 +1,16 @@
+{
+  "signature": "a915e9a007dcaaae7e5a599b759b41f496ad2e70c4eaa7af47eac8c6b4f3d11b",
+  "result": [
+    {
+      "title": "Thay đổi định nghĩa phương thức",
+      "description": "Trong phiên bản cũ, phương thức `_fail` được định nghĩa và sau đó được gán cho các phương thức khác như `__setitem__`, `__delitem__`, `clear`, `pop`, `popitem`, `update`, và `setdefault`. Trong phiên bản mới, phương thức `_fail` vẫn được định nghĩa và gán cho các phương thức tương tự, nhưng không có dòng `del _fail` nữa.",
+      "evidenceIds": [
+        "E0251",
+        "E0252",
+        "E0253"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    }
+  ]
+}

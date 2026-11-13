@@ -1,0 +1,15 @@
+{
+  "signature": "a915e9a007dcaaae7e5a599b759b41f496ad2e70c4eaa7af47eac8c6b4f3d11b",
+  "result": [
+    {
+      "title": "Thêm phương thức json_dumps",
+      "description": "Phương thức `json_dumps` đã được thêm vào lớp `EnvironBuilder`. Phương thức này sử dụng phương thức `json.dumps` từ ứng dụng Flask để chuyển đổi đối tượng Python thành chuỗi JSON.",
+      "evidenceIds": [
+        "E0288",
+        "E0294"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    }
+  ]
+}

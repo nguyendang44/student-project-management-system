@@ -1,0 +1,47 @@
+{
+  "signature": "a915e9a007dcaaae7e5a599b759b41f496ad2e70c4eaa7af47eac8c6b4f3d11b",
+  "result": [
+    {
+      "title": "Sửa lỗi khi sử dụng 'stream_with_context' không có ngữ cảnh yêu cầu",
+      "description": "Trong phiên bản cũ, nếu không có ngữ cảnh yêu cầu, hàm 'stream_with_context' sẽ tạo ra một ngữ cảnh giả định. Trong phiên bản mới, hàm này sẽ kiểm tra xem có ngữ cảnh yêu cầu nào không và ném ra lỗi nếu không có. Điều này đảm bảo rằng 'stream_with_context' chỉ được sử dụng trong ngữ cảnh yêu cầu hợp lệ.",
+      "evidenceIds": [
+        "E0114",
+        "E0115",
+        "E0116"
+      ],
+      "citationValid": false,
+      "rejectionReason": "Chỉ dẫn code giữ nguyên, chưa chứng minh thay đổi"
+    },
+    {
+      "title": "Cải tiến quản lý ngữ cảnh",
+      "description": "Trong phiên bản mới, hàm 'stream_with_context' đã được cải tiến để đảm bảo rằng ngữ cảnh ứng dụng và yêu cầu được đặt trước khi chạy generator. Điều này giúp đảm bảo rằng ngữ cảnh đúng đắn được ghi nhận, đặc biệt trong các hàm xem bất đồng bộ.",
+      "evidenceIds": [
+        "E0128",
+        "E0129",
+        "E0130",
+        "E0131",
+        "E0132",
+        "E0133",
+        "E0134",
+        "E0135",
+        "E0136",
+        "E0137",
+        "E0138",
+        "E0139"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    },
+    {
+      "title": "Sửa lỗi khi sử dụng iterator WSGI",
+      "description": "Trong phiên bản cũ, hàm 'stream_with_context' không xử lý đúng khi được truyền một iterator WSGI. Trong phiên bản mới, hàm này đã được sửa để đảm bảo rằng iterator WSGI được đóng đúng cách khi không còn cần thiết.",
+      "evidenceIds": [
+        "E0142",
+        "E0143",
+        "E0144"
+      ],
+      "citationValid": false,
+      "rejectionReason": "Chỉ dẫn code giữ nguyên, chưa chứng minh thay đổi"
+    }
+  ]
+}

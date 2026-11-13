@@ -1,0 +1,24 @@
+{
+  "signature": "103e30d78c657eb0e23ab655e1e24308e85b0a4bb62f0af8d9f3e30b7143f032",
+  "result": {
+    "claimId": "C5",
+    "status": "SUPPORTED",
+    "explanation": "Các trường hợp kiểm tra async view cho stream_with_context đã được thêm vào code. Mô tả trong báo cáo và code đều khớp với nhau.",
+    "evidenceIds": [
+      "E0327",
+      "E0328",
+      "E0329",
+      "E0330",
+      "E0331",
+      "E0332",
+      "E0333",
+      "E0334",
+      "E0335",
+      "E0336",
+      "E0337",
+      "E0338"
+    ],
+    "citationValid": true,
+    "rejectionReason": null
+  }
+}

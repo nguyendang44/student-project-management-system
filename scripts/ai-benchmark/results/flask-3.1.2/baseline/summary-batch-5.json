@@ -1,0 +1,33 @@
+{
+  "signature": "a915e9a007dcaaae7e5a599b759b41f496ad2e70c4eaa7af47eac8c6b4f3d11b",
+  "result": [
+    {
+      "title": "Thay đổi kiểu dữ liệu của tham số `path_or_file` trong hàm `send_file`",
+      "description": "Trong phiên bản mới, kiểu dữ liệu của tham số `path_or_file` đã được thay đổi từ `os.PathLike[t.AnyStr] | str | t.BinaryIO` thành `os.PathLike[t.AnyStr] | str | t.IO[bytes]`. Điều này có thể ảnh hưởng đến cách thức xử lý dữ liệu đầu vào trong hàm.",
+      "evidenceIds": [
+        "E0180"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    },
+    {
+      "title": "Thêm tham số `_root_path` vào hàm `_prepare_send_file_kwargs`",
+      "description": "Trong phiên bản mới, tham số `_root_path` đã được thêm vào hàm `_prepare_send_file_kwargs`. Điều này có thể ảnh hưởng đến cách thức xử lý đường dẫn gốc trong quá trình gửi tệp.",
+      "evidenceIds": [
+        "E0173",
+        "E0174"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    },
+    {
+      "title": "Cập nhật kiểu dữ liệu của tham số `max_age` trong hàm `send_file`",
+      "description": "Trong phiên bản mới, kiểu dữ liệu của tham số `max_age` đã được thay đổi từ `None | (int | t.Callable[[str | None], int | None])` thành `None | (int | t.Callable[[str | None], int | None])`. Điều này có thể ảnh hưởng đến cách thức xử lý thời gian tối đa cho tệp.",
+      "evidenceIds": [
+        "E0187"
+      ],
+      "citationValid": false,
+      "rejectionReason": "Chỉ dẫn code giữ nguyên, chưa chứng minh thay đổi"
+    }
+  ]
+}

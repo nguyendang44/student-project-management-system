@@ -1,0 +1,24 @@
+{
+  "signature": "c655559a970d0652a86863b0086b3069325e4340953736eea50be48004d3940e",
+  "result": {
+    "claimId": "C2.1",
+    "claimQuote": "Đổi type hint path_or_file của send_file thành t.IO[bytes]",
+    "status": "SUPPORTED",
+    "explanation": "Báo cáo khẳng định rằng đã đổi type hint path_or_file của send_file thành t.IO[bytes]. Trong code mới, ta thấy rằng type hint của path_or_file đã được thay đổi thành os.PathLike[t.AnyStr] | str | t.IO[bytes], điều này tương ứng với yêu cầu trong báo cáo. Do đó, có bằng chứng hỗ trợ cho ý này.",
+    "evidenceIds": [
+      "E0180"
+    ],
+    "originalEvidenceIds": [
+      "E0180"
+    ],
+    "citationNormalization": [],
+    "citationValid": true,
+    "rejectionReason": null,
+    "attempts": [
+      {
+        "attempt": 1,
+        "valid": true
+      }
+    ]
+  }
+}

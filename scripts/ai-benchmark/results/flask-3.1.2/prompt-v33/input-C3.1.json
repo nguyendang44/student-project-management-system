@@ -1,0 +1,172 @@
+{
+  "claim": {
+    "id": "C3.1",
+    "text": "Trong FlaskClient.open, danh sách context được khôi phục bằng pop() từ cuối danh sách như phiên bản cũ, không thay đổi vòng lặp.",
+    "originalText": "Trong FlaskClient.open, danh sách context được khôi phục bằng pop() từ cuối danh sách như phiên bản cũ, không thay đổi vòng lặp.",
+    "terms": [
+      "self._new_contexts",
+      "self._context_stack"
+    ]
+  },
+  "packets": [
+    {
+      "file": "src/flask/testing.py",
+      "lines": [
+        {
+          "id": "E0297",
+          "kind": "context",
+          "beforeLine": 235,
+          "afterLine": 235,
+          "text": "        response = super().open("
+        },
+        {
+          "id": "E0298",
+          "kind": "context",
+          "beforeLine": 236,
+          "afterLine": 236,
+          "text": "            request,"
+        },
+        {
+          "id": "E0299",
+          "kind": "context",
+          "beforeLine": 237,
+          "afterLine": 237,
+          "text": "            buffered=buffered,"
+        },
+        {
+          "id": "E0300",
+          "kind": "context",
+          "beforeLine": 238,
+          "afterLine": 238,
+          "text": "            follow_redirects=follow_redirects,"
+        },
+        {
+          "id": "E0301",
+          "kind": "context",
+          "beforeLine": 239,
+          "afterLine": 239,
+          "text": "        )"
+        },
+        {
+          "id": "E0302",
+          "kind": "context",
+          "beforeLine": 240,
+          "afterLine": 240,
+          "text": "        response.json_module = self.application.json  # type: ignore[assignment]"
+        },
+        {
+          "id": "E0303",
+          "kind": "context",
+          "beforeLine": 241,
+          "afterLine": 241,
+          "text": ""
+        },
+        {
+          "id": "E0304",
+          "kind": "context",
+          "beforeLine": 242,
+          "afterLine": 242,
+          "text": "        # Re-push contexts that were preserved during the request."
+        },
+        {
+          "id": "E0305",
+          "kind": "removed",
+          "beforeLine": 243,
+          "afterLine": null,
+          "text": "        while self._new_contexts:"
+        },
+        {
+          "id": "E0306",
+          "kind": "removed",
+          "beforeLine": 244,
+          "afterLine": null,
+          "text": "            cm = self._new_contexts.pop()"
+        },
+        {
+          "id": "E0307",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 243,
+          "text": "        for cm in self._new_contexts:"
+        },
+        {
+          "id": "E0308",
+          "kind": "context",
+          "beforeLine": 245,
+          "afterLine": 244,
+          "text": "            self._context_stack.enter_context(cm)"
+        },
+        {
+          "id": "E0309",
+          "kind": "context",
+          "beforeLine": 246,
+          "afterLine": 245,
+          "text": ""
+        },
+        {
+          "id": "E0310",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 246,
+          "text": "        self._new_contexts.clear()"
+        },
+        {
+          "id": "E0311",
+          "kind": "context",
+          "beforeLine": 247,
+          "afterLine": 247,
+          "text": "        return response"
+        },
+        {
+          "id": "E0312",
+          "kind": "context",
+          "beforeLine": 248,
+          "afterLine": 248,
+          "text": ""
+        },
+        {
+          "id": "E0313",
+          "kind": "context",
+          "beforeLine": 249,
+          "afterLine": 249,
+          "text": "    def __enter__(self) -> FlaskClient:"
+        },
+        {
+          "id": "E0314",
+          "kind": "context",
+          "beforeLine": 250,
+          "afterLine": 250,
+          "text": "        if self.preserve_context:"
+        },
+        {
+          "id": "E0315",
+          "kind": "context",
+          "beforeLine": 251,
+          "afterLine": 251,
+          "text": "            raise RuntimeError(\"Cannot nest client invocations\")"
+        },
+        {
+          "id": "E0316",
+          "kind": "context",
+          "beforeLine": 252,
+          "afterLine": 252,
+          "text": "        self.preserve_context = True"
+        },
+        {
+          "id": "E0317",
+          "kind": "context",
+          "beforeLine": 253,
+          "afterLine": 253,
+          "text": "        return self"
+        },
+        {
+          "id": "E0318",
+          "kind": "context",
+          "beforeLine": 254,
+          "afterLine": 254,
+          "text": ""
+        }
+      ]
+    }
+  ]
+}

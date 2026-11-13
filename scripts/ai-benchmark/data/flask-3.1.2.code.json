@@ -1,0 +1,2902 @@
+{
+  "id": "flask-3.1.2",
+  "repository": "https://github.com/pallets/flask",
+  "baseTag": "3.1.1",
+  "headTag": "3.1.2",
+  "baseSha": "7fff56f5172c48b6f3aedf17ee14ef5c2533dfd1",
+  "headSha": "2c1b30d0503cfb064f1cb252e6614a06915a362a",
+  "scope": "Only src/flask and tests; documentation, release notes, configuration and CI excluded.",
+  "packets": [
+    {
+      "file": "src/flask/ctx.py",
+      "lines": [
+        {
+          "id": "E0001",
+          "kind": "context",
+          "beforeLine": 182,
+          "afterLine": 182,
+          "text": "        raise RuntimeError("
+        },
+        {
+          "id": "E0002",
+          "kind": "context",
+          "beforeLine": 183,
+          "afterLine": 183,
+          "text": "            \"'copy_current_request_context' can only be used when a\""
+        },
+        {
+          "id": "E0003",
+          "kind": "context",
+          "beforeLine": 184,
+          "afterLine": 184,
+          "text": "            \" request context is active, such as in a view function.\""
+        },
+        {
+          "id": "E0004",
+          "kind": "context",
+          "beforeLine": 185,
+          "afterLine": 185,
+          "text": "        )"
+        },
+        {
+          "id": "E0005",
+          "kind": "context",
+          "beforeLine": 186,
+          "afterLine": 186,
+          "text": ""
+        },
+        {
+          "id": "E0006",
+          "kind": "context",
+          "beforeLine": 187,
+          "afterLine": 187,
+          "text": "    ctx = ctx.copy()"
+        },
+        {
+          "id": "E0007",
+          "kind": "context",
+          "beforeLine": 188,
+          "afterLine": 188,
+          "text": ""
+        },
+        {
+          "id": "E0008",
+          "kind": "context",
+          "beforeLine": 189,
+          "afterLine": 189,
+          "text": "    def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:"
+        },
+        {
+          "id": "E0009",
+          "kind": "removed",
+          "beforeLine": 190,
+          "afterLine": null,
+          "text": "        with ctx:  # type: ignore[union-attr]"
+        },
+        {
+          "id": "E0010",
+          "kind": "removed",
+          "beforeLine": 191,
+          "afterLine": null,
+          "text": "            return ctx.app.ensure_sync(f)(*args, **kwargs)  # type: ignore[union-attr]"
+        },
+        {
+          "id": "E0011",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 190,
+          "text": "        with ctx:"
+        },
+        {
+          "id": "E0012",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 191,
+          "text": "            return ctx.app.ensure_sync(f)(*args, **kwargs)"
+        },
+        {
+          "id": "E0013",
+          "kind": "context",
+          "beforeLine": 192,
+          "afterLine": 192,
+          "text": ""
+        },
+        {
+          "id": "E0014",
+          "kind": "context",
+          "beforeLine": 193,
+          "afterLine": 193,
+          "text": "    return update_wrapper(wrapper, f)  # type: ignore[return-value]"
+        },
+        {
+          "id": "E0015",
+          "kind": "context",
+          "beforeLine": 194,
+          "afterLine": 194,
+          "text": ""
+        },
+        {
+          "id": "E0016",
+          "kind": "context",
+          "beforeLine": 195,
+          "afterLine": 195,
+          "text": ""
+        },
+        {
+          "id": "E0017",
+          "kind": "context",
+          "beforeLine": 196,
+          "afterLine": 196,
+          "text": "def has_request_context() -> bool:"
+        },
+        {
+          "id": "E0018",
+          "kind": "context",
+          "beforeLine": 197,
+          "afterLine": 197,
+          "text": "    \"\"\"If you have code that wants to test if a request context is there or"
+        },
+        {
+          "id": "E0019",
+          "kind": "context",
+          "beforeLine": 198,
+          "afterLine": 198,
+          "text": "    not this function can be used.  For instance, you may want to take advantage"
+        },
+        {
+          "id": "E0020",
+          "kind": "context",
+          "beforeLine": 199,
+          "afterLine": 199,
+          "text": "    of request information if the request object is available, but fail"
+        }
+      ]
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "lines": [
+        {
+          "id": "E0021",
+          "kind": "context",
+          "beforeLine": 8,
+          "afterLine": 8,
+          "text": "from functools import cache"
+        },
+        {
+          "id": "E0022",
+          "kind": "context",
+          "beforeLine": 9,
+          "afterLine": 9,
+          "text": "from functools import update_wrapper"
+        },
+        {
+          "id": "E0023",
+          "kind": "context",
+          "beforeLine": 10,
+          "afterLine": 10,
+          "text": ""
+        },
+        {
+          "id": "E0024",
+          "kind": "context",
+          "beforeLine": 11,
+          "afterLine": 11,
+          "text": "import werkzeug.utils"
+        },
+        {
+          "id": "E0025",
+          "kind": "context",
+          "beforeLine": 12,
+          "afterLine": 12,
+          "text": "from werkzeug.exceptions import abort as _wz_abort"
+        },
+        {
+          "id": "E0026",
+          "kind": "context",
+          "beforeLine": 13,
+          "afterLine": 13,
+          "text": "from werkzeug.utils import redirect as _wz_redirect"
+        },
+        {
+          "id": "E0027",
+          "kind": "context",
+          "beforeLine": 14,
+          "afterLine": 14,
+          "text": "from werkzeug.wrappers import Response as BaseResponse"
+        },
+        {
+          "id": "E0028",
+          "kind": "context",
+          "beforeLine": 15,
+          "afterLine": 15,
+          "text": ""
+        },
+        {
+          "id": "E0029",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 16,
+          "text": "from .globals import _cv_app"
+        },
+        {
+          "id": "E0030",
+          "kind": "context",
+          "beforeLine": 16,
+          "afterLine": 17,
+          "text": "from .globals import _cv_request"
+        },
+        {
+          "id": "E0031",
+          "kind": "context",
+          "beforeLine": 17,
+          "afterLine": 18,
+          "text": "from .globals import current_app"
+        },
+        {
+          "id": "E0032",
+          "kind": "context",
+          "beforeLine": 18,
+          "afterLine": 19,
+          "text": "from .globals import request"
+        },
+        {
+          "id": "E0033",
+          "kind": "context",
+          "beforeLine": 19,
+          "afterLine": 20,
+          "text": "from .globals import request_ctx"
+        },
+        {
+          "id": "E0034",
+          "kind": "context",
+          "beforeLine": 20,
+          "afterLine": 21,
+          "text": "from .globals import session"
+        },
+        {
+          "id": "E0035",
+          "kind": "context",
+          "beforeLine": 21,
+          "afterLine": 22,
+          "text": "from .signals import message_flashed"
+        },
+        {
+          "id": "E0036",
+          "kind": "context",
+          "beforeLine": 22,
+          "afterLine": 23,
+          "text": ""
+        },
+        {
+          "id": "E0037",
+          "kind": "context",
+          "beforeLine": 23,
+          "afterLine": 24,
+          "text": "if t.TYPE_CHECKING:  # pragma: no cover"
+        }
+      ]
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "lines": [
+        {
+          "id": "E0038",
+          "kind": "context",
+          "beforeLine": 57,
+          "afterLine": 58,
+          "text": "def stream_with_context("
+        },
+        {
+          "id": "E0039",
+          "kind": "context",
+          "beforeLine": 58,
+          "afterLine": 59,
+          "text": "    generator_or_function: t.Callable[..., t.Iterator[t.AnyStr]],"
+        },
+        {
+          "id": "E0040",
+          "kind": "context",
+          "beforeLine": 59,
+          "afterLine": 60,
+          "text": ") -> t.Callable[[t.Iterator[t.AnyStr]], t.Iterator[t.AnyStr]]: ..."
+        },
+        {
+          "id": "E0041",
+          "kind": "context",
+          "beforeLine": 60,
+          "afterLine": 61,
+          "text": ""
+        },
+        {
+          "id": "E0042",
+          "kind": "context",
+          "beforeLine": 61,
+          "afterLine": 62,
+          "text": ""
+        },
+        {
+          "id": "E0043",
+          "kind": "context",
+          "beforeLine": 62,
+          "afterLine": 63,
+          "text": "def stream_with_context("
+        },
+        {
+          "id": "E0044",
+          "kind": "context",
+          "beforeLine": 63,
+          "afterLine": 64,
+          "text": "    generator_or_function: t.Iterator[t.AnyStr] | t.Callable[..., t.Iterator[t.AnyStr]],"
+        },
+        {
+          "id": "E0045",
+          "kind": "context",
+          "beforeLine": 64,
+          "afterLine": 65,
+          "text": ") -> t.Iterator[t.AnyStr] | t.Callable[[t.Iterator[t.AnyStr]], t.Iterator[t.AnyStr]]:"
+        },
+        {
+          "id": "E0046",
+          "kind": "removed",
+          "beforeLine": 65,
+          "afterLine": null,
+          "text": "    \"\"\"Request contexts disappear when the response is started on the server."
+        },
+        {
+          "id": "E0047",
+          "kind": "removed",
+          "beforeLine": 66,
+          "afterLine": null,
+          "text": "    This is done for efficiency reasons and to make it less likely to encounter"
+        },
+        {
+          "id": "E0048",
+          "kind": "removed",
+          "beforeLine": 67,
+          "afterLine": null,
+          "text": "    memory leaks with badly written WSGI middlewares.  The downside is that if"
+        },
+        {
+          "id": "E0049",
+          "kind": "removed",
+          "beforeLine": 68,
+          "afterLine": null,
+          "text": "    you are using streamed responses, the generator cannot access request bound"
+        },
+        {
+          "id": "E0050",
+          "kind": "removed",
+          "beforeLine": 69,
+          "afterLine": null,
+          "text": "    information any more."
+        },
+        {
+          "id": "E0051",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 66,
+          "text": "    \"\"\"Wrap a response generator function so that it runs inside the current"
+        },
+        {
+          "id": "E0052",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 67,
+          "text": "    request context. This keeps :data:`request`, :data:`session`, and :data:`g`"
+        },
+        {
+          "id": "E0053",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 68,
+          "text": "    available, even though at the point the generator runs the request context"
+        },
+        {
+          "id": "E0054",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 69,
+          "text": "    will typically have ended."
+        },
+        {
+          "id": "E0055",
+          "kind": "context",
+          "beforeLine": 70,
+          "afterLine": 70,
+          "text": ""
+        },
+        {
+          "id": "E0056",
+          "kind": "removed",
+          "beforeLine": 71,
+          "afterLine": null,
+          "text": "    This function however can help you keep the context around for longer::"
+        },
+        {
+          "id": "E0057",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 71,
+          "text": "    Use it as a decorator on a generator function:"
+        },
+        {
+          "id": "E0058",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 72,
+          "text": ""
+        },
+        {
+          "id": "E0059",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 73,
+          "text": "    .. code-block:: python"
+        },
+        {
+          "id": "E0060",
+          "kind": "context",
+          "beforeLine": 72,
+          "afterLine": 74,
+          "text": ""
+        },
+        {
+          "id": "E0061",
+          "kind": "context",
+          "beforeLine": 73,
+          "afterLine": 75,
+          "text": "        from flask import stream_with_context, request, Response"
+        },
+        {
+          "id": "E0062",
+          "kind": "context",
+          "beforeLine": 74,
+          "afterLine": 76,
+          "text": ""
+        },
+        {
+          "id": "E0063",
+          "kind": "removed",
+          "beforeLine": 75,
+          "afterLine": null,
+          "text": "        @app.route('/stream')"
+        },
+        {
+          "id": "E0064",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 77,
+          "text": "        @app.get(\"/stream\")"
+        },
+        {
+          "id": "E0065",
+          "kind": "context",
+          "beforeLine": 76,
+          "afterLine": 78,
+          "text": "        def streamed_response():"
+        },
+        {
+          "id": "E0066",
+          "kind": "context",
+          "beforeLine": 77,
+          "afterLine": 79,
+          "text": "            @stream_with_context"
+        },
+        {
+          "id": "E0067",
+          "kind": "context",
+          "beforeLine": 78,
+          "afterLine": 80,
+          "text": "            def generate():"
+        },
+        {
+          "id": "E0068",
+          "kind": "removed",
+          "beforeLine": 79,
+          "afterLine": null,
+          "text": "                yield 'Hello '"
+        },
+        {
+          "id": "E0069",
+          "kind": "removed",
+          "beforeLine": 80,
+          "afterLine": null,
+          "text": "                yield request.args['name']"
+        },
+        {
+          "id": "E0070",
+          "kind": "removed",
+          "beforeLine": 81,
+          "afterLine": null,
+          "text": "                yield '!'"
+        },
+        {
+          "id": "E0071",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 81,
+          "text": "                yield \"Hello \""
+        },
+        {
+          "id": "E0072",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 82,
+          "text": "                yield request.args[\"name\"]"
+        },
+        {
+          "id": "E0073",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 83,
+          "text": "                yield \"!\""
+        },
+        {
+          "id": "E0074",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 84,
+          "text": ""
+        },
+        {
+          "id": "E0075",
+          "kind": "context",
+          "beforeLine": 82,
+          "afterLine": 85,
+          "text": "            return Response(generate())"
+        },
+        {
+          "id": "E0076",
+          "kind": "context",
+          "beforeLine": 83,
+          "afterLine": 86,
+          "text": ""
+        },
+        {
+          "id": "E0077",
+          "kind": "removed",
+          "beforeLine": 84,
+          "afterLine": null,
+          "text": "    Alternatively it can also be used around a specific generator::"
+        },
+        {
+          "id": "E0078",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 87,
+          "text": "    Or use it as a wrapper around a created generator:"
+        },
+        {
+          "id": "E0079",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 88,
+          "text": ""
+        },
+        {
+          "id": "E0080",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 89,
+          "text": "    .. code-block:: python"
+        },
+        {
+          "id": "E0081",
+          "kind": "context",
+          "beforeLine": 85,
+          "afterLine": 90,
+          "text": ""
+        },
+        {
+          "id": "E0082",
+          "kind": "context",
+          "beforeLine": 86,
+          "afterLine": 91,
+          "text": "        from flask import stream_with_context, request, Response"
+        },
+        {
+          "id": "E0083",
+          "kind": "context",
+          "beforeLine": 87,
+          "afterLine": 92,
+          "text": ""
+        },
+        {
+          "id": "E0084",
+          "kind": "removed",
+          "beforeLine": 88,
+          "afterLine": null,
+          "text": "        @app.route('/stream')"
+        },
+        {
+          "id": "E0085",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 93,
+          "text": "        @app.get(\"/stream\")"
+        },
+        {
+          "id": "E0086",
+          "kind": "context",
+          "beforeLine": 89,
+          "afterLine": 94,
+          "text": "        def streamed_response():"
+        },
+        {
+          "id": "E0087",
+          "kind": "context",
+          "beforeLine": 90,
+          "afterLine": 95,
+          "text": "            def generate():"
+        },
+        {
+          "id": "E0088",
+          "kind": "removed",
+          "beforeLine": 91,
+          "afterLine": null,
+          "text": "                yield 'Hello '"
+        },
+        {
+          "id": "E0089",
+          "kind": "removed",
+          "beforeLine": 92,
+          "afterLine": null,
+          "text": "                yield request.args['name']"
+        },
+        {
+          "id": "E0090",
+          "kind": "removed",
+          "beforeLine": 93,
+          "afterLine": null,
+          "text": "                yield '!'"
+        },
+        {
+          "id": "E0091",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 96,
+          "text": "                yield \"Hello \""
+        },
+        {
+          "id": "E0092",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 97,
+          "text": "                yield request.args[\"name\"]"
+        },
+        {
+          "id": "E0093",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 98,
+          "text": "                yield \"!\""
+        },
+        {
+          "id": "E0094",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 99,
+          "text": ""
+        },
+        {
+          "id": "E0095",
+          "kind": "context",
+          "beforeLine": 94,
+          "afterLine": 100,
+          "text": "            return Response(stream_with_context(generate()))"
+        },
+        {
+          "id": "E0096",
+          "kind": "context",
+          "beforeLine": 95,
+          "afterLine": 101,
+          "text": ""
+        },
+        {
+          "id": "E0097",
+          "kind": "context",
+          "beforeLine": 96,
+          "afterLine": 102,
+          "text": "    .. versionadded:: 0.9"
+        }
+      ]
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "lines": [
+        {
+          "id": "E0098",
+          "kind": "context",
+          "beforeLine": 97,
+          "afterLine": 103,
+          "text": "    \"\"\""
+        },
+        {
+          "id": "E0099",
+          "kind": "context",
+          "beforeLine": 98,
+          "afterLine": 104,
+          "text": "    try:"
+        },
+        {
+          "id": "E0100",
+          "kind": "context",
+          "beforeLine": 99,
+          "afterLine": 105,
+          "text": "        gen = iter(generator_or_function)  # type: ignore[arg-type]"
+        },
+        {
+          "id": "E0101",
+          "kind": "context",
+          "beforeLine": 100,
+          "afterLine": 106,
+          "text": "    except TypeError:"
+        },
+        {
+          "id": "E0102",
+          "kind": "context",
+          "beforeLine": 101,
+          "afterLine": 107,
+          "text": ""
+        },
+        {
+          "id": "E0103",
+          "kind": "context",
+          "beforeLine": 102,
+          "afterLine": 108,
+          "text": "        def decorator(*args: t.Any, **kwargs: t.Any) -> t.Any:"
+        },
+        {
+          "id": "E0104",
+          "kind": "context",
+          "beforeLine": 103,
+          "afterLine": 109,
+          "text": "            gen = generator_or_function(*args, **kwargs)  # type: ignore[operator]"
+        },
+        {
+          "id": "E0105",
+          "kind": "context",
+          "beforeLine": 104,
+          "afterLine": 110,
+          "text": "            return stream_with_context(gen)"
+        },
+        {
+          "id": "E0106",
+          "kind": "context",
+          "beforeLine": 105,
+          "afterLine": 111,
+          "text": ""
+        },
+        {
+          "id": "E0107",
+          "kind": "context",
+          "beforeLine": 106,
+          "afterLine": 112,
+          "text": "        return update_wrapper(decorator, generator_or_function)  # type: ignore[arg-type]"
+        },
+        {
+          "id": "E0108",
+          "kind": "context",
+          "beforeLine": 107,
+          "afterLine": 113,
+          "text": ""
+        },
+        {
+          "id": "E0109",
+          "kind": "removed",
+          "beforeLine": 108,
+          "afterLine": null,
+          "text": "    def generator() -> t.Iterator[t.AnyStr | None]:"
+        },
+        {
+          "id": "E0110",
+          "kind": "removed",
+          "beforeLine": 109,
+          "afterLine": null,
+          "text": "        ctx = _cv_request.get(None)"
+        },
+        {
+          "id": "E0111",
+          "kind": "removed",
+          "beforeLine": 110,
+          "afterLine": null,
+          "text": "        if ctx is None:"
+        },
+        {
+          "id": "E0112",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 114,
+          "text": "    def generator() -> t.Iterator[t.AnyStr]:"
+        },
+        {
+          "id": "E0113",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 115,
+          "text": "        if (req_ctx := _cv_request.get(None)) is None:"
+        },
+        {
+          "id": "E0114",
+          "kind": "context",
+          "beforeLine": 111,
+          "afterLine": 116,
+          "text": "            raise RuntimeError("
+        },
+        {
+          "id": "E0115",
+          "kind": "context",
+          "beforeLine": 112,
+          "afterLine": 117,
+          "text": "                \"'stream_with_context' can only be used when a request\""
+        },
+        {
+          "id": "E0116",
+          "kind": "context",
+          "beforeLine": 113,
+          "afterLine": 118,
+          "text": "                \" context is active, such as in a view function.\""
+        },
+        {
+          "id": "E0117",
+          "kind": "context",
+          "beforeLine": 114,
+          "afterLine": 119,
+          "text": "            )"
+        },
+        {
+          "id": "E0118",
+          "kind": "removed",
+          "beforeLine": 115,
+          "afterLine": null,
+          "text": "        with ctx:"
+        },
+        {
+          "id": "E0119",
+          "kind": "removed",
+          "beforeLine": 116,
+          "afterLine": null,
+          "text": "            # Dummy sentinel.  Has to be inside the context block or we're"
+        },
+        {
+          "id": "E0120",
+          "kind": "removed",
+          "beforeLine": 117,
+          "afterLine": null,
+          "text": "            # not actually keeping the context around."
+        },
+        {
+          "id": "E0121",
+          "kind": "removed",
+          "beforeLine": 118,
+          "afterLine": null,
+          "text": "            yield None"
+        },
+        {
+          "id": "E0122",
+          "kind": "removed",
+          "beforeLine": 119,
+          "afterLine": null,
+          "text": ""
+        },
+        {
+          "id": "E0123",
+          "kind": "removed",
+          "beforeLine": 120,
+          "afterLine": null,
+          "text": "            # The try/finally is here so that if someone passes a WSGI level"
+        },
+        {
+          "id": "E0124",
+          "kind": "removed",
+          "beforeLine": 121,
+          "afterLine": null,
+          "text": "            # iterator in we're still running the cleanup logic.  Generators"
+        },
+        {
+          "id": "E0125",
+          "kind": "removed",
+          "beforeLine": 122,
+          "afterLine": null,
+          "text": "            # don't need that because they are closed on their destruction"
+        },
+        {
+          "id": "E0126",
+          "kind": "removed",
+          "beforeLine": 123,
+          "afterLine": null,
+          "text": "            # automatically."
+        },
+        {
+          "id": "E0127",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 120,
+          "text": ""
+        },
+        {
+          "id": "E0128",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 121,
+          "text": "        app_ctx = _cv_app.get()"
+        },
+        {
+          "id": "E0129",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 122,
+          "text": "        # Setup code below will run the generator to this point, so that the"
+        },
+        {
+          "id": "E0130",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 123,
+          "text": "        # current contexts are recorded. The contexts must be pushed after,"
+        },
+        {
+          "id": "E0131",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 124,
+          "text": "        # otherwise their ContextVar will record the wrong event loop during"
+        },
+        {
+          "id": "E0132",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 125,
+          "text": "        # async view functions."
+        },
+        {
+          "id": "E0133",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 126,
+          "text": "        yield None  # type: ignore[misc]"
+        },
+        {
+          "id": "E0134",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 127,
+          "text": ""
+        },
+        {
+          "id": "E0135",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 128,
+          "text": "        # Push the app context first, so that the request context does not"
+        },
+        {
+          "id": "E0136",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 129,
+          "text": "        # automatically create and push a different app context."
+        },
+        {
+          "id": "E0137",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 130,
+          "text": "        with app_ctx, req_ctx:"
+        },
+        {
+          "id": "E0138",
+          "kind": "context",
+          "beforeLine": 124,
+          "afterLine": 131,
+          "text": "            try:"
+        },
+        {
+          "id": "E0139",
+          "kind": "context",
+          "beforeLine": 125,
+          "afterLine": 132,
+          "text": "                yield from gen"
+        },
+        {
+          "id": "E0140",
+          "kind": "context",
+          "beforeLine": 126,
+          "afterLine": 133,
+          "text": "            finally:"
+        },
+        {
+          "id": "E0141",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 134,
+          "text": "                # Clean up in case the user wrapped a WSGI iterator."
+        },
+        {
+          "id": "E0142",
+          "kind": "context",
+          "beforeLine": 127,
+          "afterLine": 135,
+          "text": "                if hasattr(gen, \"close\"):"
+        },
+        {
+          "id": "E0143",
+          "kind": "context",
+          "beforeLine": 128,
+          "afterLine": 136,
+          "text": "                    gen.close()"
+        },
+        {
+          "id": "E0144",
+          "kind": "context",
+          "beforeLine": 129,
+          "afterLine": 137,
+          "text": ""
+        },
+        {
+          "id": "E0145",
+          "kind": "removed",
+          "beforeLine": 130,
+          "afterLine": null,
+          "text": "    # The trick is to start the generator.  Then the code execution runs until"
+        },
+        {
+          "id": "E0146",
+          "kind": "removed",
+          "beforeLine": 131,
+          "afterLine": null,
+          "text": "    # the first dummy None is yielded at which point the context was already"
+        },
+        {
+          "id": "E0147",
+          "kind": "removed",
+          "beforeLine": 132,
+          "afterLine": null,
+          "text": "    # pushed.  This item is discarded.  Then when the iteration continues the"
+        },
+        {
+          "id": "E0148",
+          "kind": "removed",
+          "beforeLine": 133,
+          "afterLine": null,
+          "text": "    # real generator is executed."
+        },
+        {
+          "id": "E0149",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 138,
+          "text": "    # Execute the generator to the sentinel value. This ensures the context is"
+        },
+        {
+          "id": "E0150",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 139,
+          "text": "    # preserved in the generator's state. Further iteration will push the"
+        },
+        {
+          "id": "E0151",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 140,
+          "text": "    # context and yield from the original iterator."
+        },
+        {
+          "id": "E0152",
+          "kind": "context",
+          "beforeLine": 134,
+          "afterLine": 141,
+          "text": "    wrapped_g = generator()"
+        },
+        {
+          "id": "E0153",
+          "kind": "context",
+          "beforeLine": 135,
+          "afterLine": 142,
+          "text": "    next(wrapped_g)"
+        },
+        {
+          "id": "E0154",
+          "kind": "removed",
+          "beforeLine": 136,
+          "afterLine": null,
+          "text": "    return wrapped_g  # type: ignore[return-value]"
+        },
+        {
+          "id": "E0155",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 143,
+          "text": "    return wrapped_g"
+        },
+        {
+          "id": "E0156",
+          "kind": "context",
+          "beforeLine": 137,
+          "afterLine": 144,
+          "text": ""
+        },
+        {
+          "id": "E0157",
+          "kind": "context",
+          "beforeLine": 138,
+          "afterLine": 145,
+          "text": ""
+        }
+      ]
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "lines": [
+        {
+          "id": "E0164",
+          "kind": "context",
+          "beforeLine": 387,
+          "afterLine": 394,
+          "text": "def _prepare_send_file_kwargs(**kwargs: t.Any) -> dict[str, t.Any]:"
+        },
+        {
+          "id": "E0165",
+          "kind": "context",
+          "beforeLine": 388,
+          "afterLine": 395,
+          "text": "    if kwargs.get(\"max_age\") is None:"
+        },
+        {
+          "id": "E0166",
+          "kind": "context",
+          "beforeLine": 389,
+          "afterLine": 396,
+          "text": "        kwargs[\"max_age\"] = current_app.get_send_file_max_age"
+        },
+        {
+          "id": "E0167",
+          "kind": "context",
+          "beforeLine": 390,
+          "afterLine": 397,
+          "text": ""
+        },
+        {
+          "id": "E0168",
+          "kind": "context",
+          "beforeLine": 391,
+          "afterLine": 398,
+          "text": "    kwargs.update("
+        },
+        {
+          "id": "E0169",
+          "kind": "context",
+          "beforeLine": 392,
+          "afterLine": 399,
+          "text": "        environ=request.environ,"
+        },
+        {
+          "id": "E0170",
+          "kind": "context",
+          "beforeLine": 393,
+          "afterLine": 400,
+          "text": "        use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],"
+        },
+        {
+          "id": "E0171",
+          "kind": "context",
+          "beforeLine": 394,
+          "afterLine": 401,
+          "text": "        response_class=current_app.response_class,"
+        },
+        {
+          "id": "E0172",
+          "kind": "removed",
+          "beforeLine": 395,
+          "afterLine": null,
+          "text": "        _root_path=current_app.root_path,  # type: ignore"
+        },
+        {
+          "id": "E0173",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 402,
+          "text": "        _root_path=current_app.root_path,"
+        },
+        {
+          "id": "E0174",
+          "kind": "context",
+          "beforeLine": 396,
+          "afterLine": 403,
+          "text": "    )"
+        },
+        {
+          "id": "E0175",
+          "kind": "context",
+          "beforeLine": 397,
+          "afterLine": 404,
+          "text": "    return kwargs"
+        },
+        {
+          "id": "E0176",
+          "kind": "context",
+          "beforeLine": 398,
+          "afterLine": 405,
+          "text": ""
+        },
+        {
+          "id": "E0177",
+          "kind": "context",
+          "beforeLine": 399,
+          "afterLine": 406,
+          "text": ""
+        },
+        {
+          "id": "E0178",
+          "kind": "context",
+          "beforeLine": 400,
+          "afterLine": 407,
+          "text": "def send_file("
+        },
+        {
+          "id": "E0179",
+          "kind": "removed",
+          "beforeLine": 401,
+          "afterLine": null,
+          "text": "    path_or_file: os.PathLike[t.AnyStr] | str | t.BinaryIO,"
+        },
+        {
+          "id": "E0180",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 408,
+          "text": "    path_or_file: os.PathLike[t.AnyStr] | str | t.IO[bytes],"
+        },
+        {
+          "id": "E0181",
+          "kind": "context",
+          "beforeLine": 402,
+          "afterLine": 409,
+          "text": "    mimetype: str | None = None,"
+        },
+        {
+          "id": "E0182",
+          "kind": "context",
+          "beforeLine": 403,
+          "afterLine": 410,
+          "text": "    as_attachment: bool = False,"
+        },
+        {
+          "id": "E0183",
+          "kind": "context",
+          "beforeLine": 404,
+          "afterLine": 411,
+          "text": "    download_name: str | None = None,"
+        },
+        {
+          "id": "E0184",
+          "kind": "context",
+          "beforeLine": 405,
+          "afterLine": 412,
+          "text": "    conditional: bool = True,"
+        },
+        {
+          "id": "E0185",
+          "kind": "context",
+          "beforeLine": 406,
+          "afterLine": 413,
+          "text": "    etag: bool | str = True,"
+        },
+        {
+          "id": "E0186",
+          "kind": "context",
+          "beforeLine": 407,
+          "afterLine": 414,
+          "text": "    last_modified: datetime | int | float | None = None,"
+        },
+        {
+          "id": "E0187",
+          "kind": "context",
+          "beforeLine": 408,
+          "afterLine": 415,
+          "text": "    max_age: None | (int | t.Callable[[str | None], int | None]) = None,"
+        },
+        {
+          "id": "E0188",
+          "kind": "context",
+          "beforeLine": 409,
+          "afterLine": 416,
+          "text": ") -> Response:"
+        }
+      ]
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "lines": [
+        {
+          "id": "E0189",
+          "kind": "context",
+          "beforeLine": 418,
+          "afterLine": 418,
+          "text": "                \" request, any changes will not be applied\""
+        },
+        {
+          "id": "E0190",
+          "kind": "context",
+          "beforeLine": 419,
+          "afterLine": 419,
+          "text": "                \" consistently.\\n\""
+        },
+        {
+          "id": "E0191",
+          "kind": "context",
+          "beforeLine": 420,
+          "afterLine": 420,
+          "text": "                \"Make sure all imports, decorators, functions, etc.\""
+        },
+        {
+          "id": "E0192",
+          "kind": "context",
+          "beforeLine": 421,
+          "afterLine": 421,
+          "text": "                \" needed to set up the application are done before\""
+        },
+        {
+          "id": "E0193",
+          "kind": "context",
+          "beforeLine": 422,
+          "afterLine": 422,
+          "text": "                \" running it.\""
+        },
+        {
+          "id": "E0194",
+          "kind": "context",
+          "beforeLine": 423,
+          "afterLine": 423,
+          "text": "            )"
+        },
+        {
+          "id": "E0195",
+          "kind": "context",
+          "beforeLine": 424,
+          "afterLine": 424,
+          "text": ""
+        },
+        {
+          "id": "E0196",
+          "kind": "context",
+          "beforeLine": 425,
+          "afterLine": 425,
+          "text": "    @cached_property"
+        },
+        {
+          "id": "E0197",
+          "kind": "removed",
+          "beforeLine": 426,
+          "afterLine": null,
+          "text": "    def name(self) -> str:  # type: ignore"
+        },
+        {
+          "id": "E0198",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 426,
+          "text": "    def name(self) -> str:"
+        },
+        {
+          "id": "E0199",
+          "kind": "context",
+          "beforeLine": 427,
+          "afterLine": 427,
+          "text": "        \"\"\"The name of the application.  This is usually the import name"
+        },
+        {
+          "id": "E0200",
+          "kind": "context",
+          "beforeLine": 428,
+          "afterLine": 428,
+          "text": "        with the difference that it's guessed from the run file if the"
+        },
+        {
+          "id": "E0201",
+          "kind": "context",
+          "beforeLine": 429,
+          "afterLine": 429,
+          "text": "        import name is main.  This name is used as a display name when"
+        },
+        {
+          "id": "E0202",
+          "kind": "context",
+          "beforeLine": 430,
+          "afterLine": 430,
+          "text": "        Flask needs the name of the application.  It can be set and overridden"
+        },
+        {
+          "id": "E0203",
+          "kind": "context",
+          "beforeLine": 431,
+          "afterLine": 431,
+          "text": "        to change the value."
+        },
+        {
+          "id": "E0204",
+          "kind": "context",
+          "beforeLine": 432,
+          "afterLine": 432,
+          "text": ""
+        },
+        {
+          "id": "E0205",
+          "kind": "context",
+          "beforeLine": 433,
+          "afterLine": 433,
+          "text": "        .. versionadded:: 0.8"
+        },
+        {
+          "id": "E0206",
+          "kind": "context",
+          "beforeLine": 434,
+          "afterLine": 434,
+          "text": "        \"\"\""
+        }
+      ]
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "lines": [
+        {
+          "id": "E0207",
+          "kind": "context",
+          "beforeLine": 516,
+          "afterLine": 516,
+          "text": "        .. versionadded:: 0.8"
+        },
+        {
+          "id": "E0208",
+          "kind": "context",
+          "beforeLine": 517,
+          "afterLine": 517,
+          "text": "        \"\"\""
+        },
+        {
+          "id": "E0209",
+          "kind": "context",
+          "beforeLine": 518,
+          "afterLine": 518,
+          "text": "        prefix, package_path = find_package(self.import_name)"
+        },
+        {
+          "id": "E0210",
+          "kind": "context",
+          "beforeLine": 519,
+          "afterLine": 519,
+          "text": "        if prefix is None:"
+        },
+        {
+          "id": "E0211",
+          "kind": "context",
+          "beforeLine": 520,
+          "afterLine": 520,
+          "text": "            return os.path.join(package_path, \"instance\")"
+        },
+        {
+          "id": "E0212",
+          "kind": "context",
+          "beforeLine": 521,
+          "afterLine": 521,
+          "text": "        return os.path.join(prefix, \"var\", f\"{self.name}-instance\")"
+        },
+        {
+          "id": "E0213",
+          "kind": "context",
+          "beforeLine": 522,
+          "afterLine": 522,
+          "text": ""
+        },
+        {
+          "id": "E0214",
+          "kind": "context",
+          "beforeLine": 523,
+          "afterLine": 523,
+          "text": "    def create_global_jinja_loader(self) -> DispatchingJinjaLoader:"
+        },
+        {
+          "id": "E0215",
+          "kind": "removed",
+          "beforeLine": 524,
+          "afterLine": null,
+          "text": "        \"\"\"Creates the loader for the Jinja2 environment.  Can be used to"
+        },
+        {
+          "id": "E0216",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 524,
+          "text": "        \"\"\"Creates the loader for the Jinja environment.  Can be used to"
+        },
+        {
+          "id": "E0217",
+          "kind": "context",
+          "beforeLine": 525,
+          "afterLine": 525,
+          "text": "        override just the loader and keeping the rest unchanged.  It's"
+        },
+        {
+          "id": "E0218",
+          "kind": "context",
+          "beforeLine": 526,
+          "afterLine": 526,
+          "text": "        discouraged to override this function.  Instead one should override"
+        },
+        {
+          "id": "E0219",
+          "kind": "context",
+          "beforeLine": 527,
+          "afterLine": 527,
+          "text": "        the :meth:`jinja_loader` function instead."
+        },
+        {
+          "id": "E0220",
+          "kind": "context",
+          "beforeLine": 528,
+          "afterLine": 528,
+          "text": ""
+        },
+        {
+          "id": "E0221",
+          "kind": "context",
+          "beforeLine": 529,
+          "afterLine": 529,
+          "text": "        The global loader dispatches between the loaders of the application"
+        },
+        {
+          "id": "E0222",
+          "kind": "context",
+          "beforeLine": 530,
+          "afterLine": 530,
+          "text": "        and the individual blueprints."
+        },
+        {
+          "id": "E0223",
+          "kind": "context",
+          "beforeLine": 531,
+          "afterLine": 531,
+          "text": ""
+        },
+        {
+          "id": "E0224",
+          "kind": "context",
+          "beforeLine": 532,
+          "afterLine": 532,
+          "text": "        .. versionadded:: 0.7"
+        }
+      ]
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "lines": [
+        {
+          "id": "E0225",
+          "kind": "context",
+          "beforeLine": 79,
+          "afterLine": 79,
+          "text": "        static_url_path: str | None = None,"
+        },
+        {
+          "id": "E0226",
+          "kind": "context",
+          "beforeLine": 80,
+          "afterLine": 80,
+          "text": "        template_folder: str | os.PathLike[str] | None = None,"
+        },
+        {
+          "id": "E0227",
+          "kind": "context",
+          "beforeLine": 81,
+          "afterLine": 81,
+          "text": "        root_path: str | None = None,"
+        },
+        {
+          "id": "E0228",
+          "kind": "context",
+          "beforeLine": 82,
+          "afterLine": 82,
+          "text": "    ):"
+        },
+        {
+          "id": "E0229",
+          "kind": "context",
+          "beforeLine": 83,
+          "afterLine": 83,
+          "text": "        #: The name of the package or module that this object belongs"
+        },
+        {
+          "id": "E0230",
+          "kind": "context",
+          "beforeLine": 84,
+          "afterLine": 84,
+          "text": "        #: to. Do not change this once it is set by the constructor."
+        },
+        {
+          "id": "E0231",
+          "kind": "context",
+          "beforeLine": 85,
+          "afterLine": 85,
+          "text": "        self.import_name = import_name"
+        },
+        {
+          "id": "E0232",
+          "kind": "context",
+          "beforeLine": 86,
+          "afterLine": 86,
+          "text": ""
+        },
+        {
+          "id": "E0233",
+          "kind": "removed",
+          "beforeLine": 87,
+          "afterLine": null,
+          "text": "        self.static_folder = static_folder  # type: ignore"
+        },
+        {
+          "id": "E0234",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 87,
+          "text": "        self.static_folder = static_folder"
+        },
+        {
+          "id": "E0235",
+          "kind": "context",
+          "beforeLine": 88,
+          "afterLine": 88,
+          "text": "        self.static_url_path = static_url_path"
+        },
+        {
+          "id": "E0236",
+          "kind": "context",
+          "beforeLine": 89,
+          "afterLine": 89,
+          "text": ""
+        },
+        {
+          "id": "E0237",
+          "kind": "context",
+          "beforeLine": 90,
+          "afterLine": 90,
+          "text": "        #: The path to the templates folder, relative to"
+        },
+        {
+          "id": "E0238",
+          "kind": "context",
+          "beforeLine": 91,
+          "afterLine": 91,
+          "text": "        #: :attr:`root_path`, to add to the template loader. ``None`` if"
+        },
+        {
+          "id": "E0239",
+          "kind": "context",
+          "beforeLine": 92,
+          "afterLine": 92,
+          "text": "        #: templates should not be added."
+        },
+        {
+          "id": "E0240",
+          "kind": "context",
+          "beforeLine": 93,
+          "afterLine": 93,
+          "text": "        self.template_folder = template_folder"
+        },
+        {
+          "id": "E0241",
+          "kind": "context",
+          "beforeLine": 94,
+          "afterLine": 94,
+          "text": ""
+        },
+        {
+          "id": "E0242",
+          "kind": "context",
+          "beforeLine": 95,
+          "afterLine": 95,
+          "text": "        if root_path is None:"
+        }
+      ]
+    },
+    {
+      "file": "src/flask/sessions.py",
+      "lines": [
+        {
+          "id": "E0243",
+          "kind": "context",
+          "beforeLine": 102,
+          "afterLine": 102,
+          "text": ""
+        },
+        {
+          "id": "E0244",
+          "kind": "context",
+          "beforeLine": 103,
+          "afterLine": 103,
+          "text": "    def _fail(self, *args: t.Any, **kwargs: t.Any) -> t.NoReturn:"
+        },
+        {
+          "id": "E0245",
+          "kind": "context",
+          "beforeLine": 104,
+          "afterLine": 104,
+          "text": "        raise RuntimeError("
+        },
+        {
+          "id": "E0246",
+          "kind": "context",
+          "beforeLine": 105,
+          "afterLine": 105,
+          "text": "            \"The session is unavailable because no secret \""
+        },
+        {
+          "id": "E0247",
+          "kind": "context",
+          "beforeLine": 106,
+          "afterLine": 106,
+          "text": "            \"key was set.  Set the secret_key on the \""
+        },
+        {
+          "id": "E0248",
+          "kind": "context",
+          "beforeLine": 107,
+          "afterLine": 107,
+          "text": "            \"application to something unique and secret.\""
+        },
+        {
+          "id": "E0249",
+          "kind": "context",
+          "beforeLine": 108,
+          "afterLine": 108,
+          "text": "        )"
+        },
+        {
+          "id": "E0250",
+          "kind": "context",
+          "beforeLine": 109,
+          "afterLine": 109,
+          "text": ""
+        },
+        {
+          "id": "E0251",
+          "kind": "removed",
+          "beforeLine": 110,
+          "afterLine": null,
+          "text": "    __setitem__ = __delitem__ = clear = pop = popitem = update = setdefault = _fail  # type: ignore # noqa: B950"
+        },
+        {
+          "id": "E0252",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 110,
+          "text": "    __setitem__ = __delitem__ = clear = pop = popitem = update = setdefault = _fail  # noqa: B950"
+        },
+        {
+          "id": "E0253",
+          "kind": "context",
+          "beforeLine": 111,
+          "afterLine": 111,
+          "text": "    del _fail"
+        },
+        {
+          "id": "E0254",
+          "kind": "context",
+          "beforeLine": 112,
+          "afterLine": 112,
+          "text": ""
+        },
+        {
+          "id": "E0255",
+          "kind": "context",
+          "beforeLine": 113,
+          "afterLine": 113,
+          "text": ""
+        },
+        {
+          "id": "E0256",
+          "kind": "context",
+          "beforeLine": 114,
+          "afterLine": 114,
+          "text": "class SessionInterface:"
+        },
+        {
+          "id": "E0257",
+          "kind": "context",
+          "beforeLine": 115,
+          "afterLine": 115,
+          "text": "    \"\"\"The basic interface you have to implement in order to replace the"
+        },
+        {
+          "id": "E0258",
+          "kind": "context",
+          "beforeLine": 116,
+          "afterLine": 116,
+          "text": "    default session interface which uses werkzeug's securecookie"
+        },
+        {
+          "id": "E0259",
+          "kind": "context",
+          "beforeLine": 117,
+          "afterLine": 117,
+          "text": "    implementation.  The only methods you have to implement are"
+        },
+        {
+          "id": "E0260",
+          "kind": "context",
+          "beforeLine": 118,
+          "afterLine": 118,
+          "text": "    :meth:`open_session` and :meth:`save_session`, the others have"
+        }
+      ]
+    },
+    {
+      "file": "src/flask/templating.py",
+      "lines": [
+        {
+          "id": "E0261",
+          "kind": "context",
+          "beforeLine": 32,
+          "afterLine": 32,
+          "text": "        rv[\"g\"] = appctx.g"
+        },
+        {
+          "id": "E0262",
+          "kind": "context",
+          "beforeLine": 33,
+          "afterLine": 33,
+          "text": "    if reqctx is not None:"
+        },
+        {
+          "id": "E0263",
+          "kind": "context",
+          "beforeLine": 34,
+          "afterLine": 34,
+          "text": "        rv[\"request\"] = reqctx.request"
+        },
+        {
+          "id": "E0264",
+          "kind": "context",
+          "beforeLine": 35,
+          "afterLine": 35,
+          "text": "        rv[\"session\"] = reqctx.session"
+        },
+        {
+          "id": "E0265",
+          "kind": "context",
+          "beforeLine": 36,
+          "afterLine": 36,
+          "text": "    return rv"
+        },
+        {
+          "id": "E0266",
+          "kind": "context",
+          "beforeLine": 37,
+          "afterLine": 37,
+          "text": ""
+        },
+        {
+          "id": "E0267",
+          "kind": "context",
+          "beforeLine": 38,
+          "afterLine": 38,
+          "text": ""
+        },
+        {
+          "id": "E0268",
+          "kind": "context",
+          "beforeLine": 39,
+          "afterLine": 39,
+          "text": "class Environment(BaseEnvironment):"
+        },
+        {
+          "id": "E0269",
+          "kind": "removed",
+          "beforeLine": 40,
+          "afterLine": null,
+          "text": "    \"\"\"Works like a regular Jinja2 environment but has some additional"
+        },
+        {
+          "id": "E0270",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 40,
+          "text": "    \"\"\"Works like a regular Jinja environment but has some additional"
+        },
+        {
+          "id": "E0271",
+          "kind": "context",
+          "beforeLine": 41,
+          "afterLine": 41,
+          "text": "    knowledge of how Flask's blueprint works so that it can prepend the"
+        },
+        {
+          "id": "E0272",
+          "kind": "context",
+          "beforeLine": 42,
+          "afterLine": 42,
+          "text": "    name of the blueprint to referenced templates if necessary."
+        },
+        {
+          "id": "E0273",
+          "kind": "context",
+          "beforeLine": 43,
+          "afterLine": 43,
+          "text": "    \"\"\""
+        },
+        {
+          "id": "E0274",
+          "kind": "context",
+          "beforeLine": 44,
+          "afterLine": 44,
+          "text": ""
+        },
+        {
+          "id": "E0275",
+          "kind": "context",
+          "beforeLine": 45,
+          "afterLine": 45,
+          "text": "    def __init__(self, app: App, **options: t.Any) -> None:"
+        },
+        {
+          "id": "E0276",
+          "kind": "context",
+          "beforeLine": 46,
+          "afterLine": 46,
+          "text": "        if \"loader\" not in options:"
+        },
+        {
+          "id": "E0277",
+          "kind": "context",
+          "beforeLine": 47,
+          "afterLine": 47,
+          "text": "            options[\"loader\"] = app.create_global_jinja_loader()"
+        },
+        {
+          "id": "E0278",
+          "kind": "context",
+          "beforeLine": 48,
+          "afterLine": 48,
+          "text": "        BaseEnvironment.__init__(self, **options)"
+        }
+      ]
+    },
+    {
+      "file": "src/flask/testing.py",
+      "lines": [
+        {
+          "id": "E0279",
+          "kind": "context",
+          "beforeLine": 80,
+          "afterLine": 80,
+          "text": "            path = url.path"
+        },
+        {
+          "id": "E0280",
+          "kind": "context",
+          "beforeLine": 81,
+          "afterLine": 81,
+          "text": ""
+        },
+        {
+          "id": "E0281",
+          "kind": "context",
+          "beforeLine": 82,
+          "afterLine": 82,
+          "text": "            if url.query:"
+        },
+        {
+          "id": "E0282",
+          "kind": "context",
+          "beforeLine": 83,
+          "afterLine": 83,
+          "text": "                path = f\"{path}?{url.query}\""
+        },
+        {
+          "id": "E0283",
+          "kind": "context",
+          "beforeLine": 84,
+          "afterLine": 84,
+          "text": ""
+        },
+        {
+          "id": "E0284",
+          "kind": "context",
+          "beforeLine": 85,
+          "afterLine": 85,
+          "text": "        self.app = app"
+        },
+        {
+          "id": "E0285",
+          "kind": "context",
+          "beforeLine": 86,
+          "afterLine": 86,
+          "text": "        super().__init__(path, base_url, *args, **kwargs)"
+        },
+        {
+          "id": "E0286",
+          "kind": "context",
+          "beforeLine": 87,
+          "afterLine": 87,
+          "text": ""
+        },
+        {
+          "id": "E0287",
+          "kind": "removed",
+          "beforeLine": 88,
+          "afterLine": null,
+          "text": "    def json_dumps(self, obj: t.Any, **kwargs: t.Any) -> str:  # type: ignore"
+        },
+        {
+          "id": "E0288",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 88,
+          "text": "    def json_dumps(self, obj: t.Any, **kwargs: t.Any) -> str:"
+        },
+        {
+          "id": "E0289",
+          "kind": "context",
+          "beforeLine": 89,
+          "afterLine": 89,
+          "text": "        \"\"\"Serialize ``obj`` to a JSON-formatted string."
+        },
+        {
+          "id": "E0290",
+          "kind": "context",
+          "beforeLine": 90,
+          "afterLine": 90,
+          "text": ""
+        },
+        {
+          "id": "E0291",
+          "kind": "context",
+          "beforeLine": 91,
+          "afterLine": 91,
+          "text": "        The serialization will be configured according to the config associated"
+        },
+        {
+          "id": "E0292",
+          "kind": "context",
+          "beforeLine": 92,
+          "afterLine": 92,
+          "text": "        with this EnvironBuilder's ``app``."
+        },
+        {
+          "id": "E0293",
+          "kind": "context",
+          "beforeLine": 93,
+          "afterLine": 93,
+          "text": "        \"\"\""
+        },
+        {
+          "id": "E0294",
+          "kind": "context",
+          "beforeLine": 94,
+          "afterLine": 94,
+          "text": "        return self.app.json.dumps(obj, **kwargs)"
+        },
+        {
+          "id": "E0295",
+          "kind": "context",
+          "beforeLine": 95,
+          "afterLine": 95,
+          "text": ""
+        },
+        {
+          "id": "E0296",
+          "kind": "context",
+          "beforeLine": 96,
+          "afterLine": 96,
+          "text": ""
+        }
+      ]
+    },
+    {
+      "file": "src/flask/testing.py",
+      "lines": [
+        {
+          "id": "E0297",
+          "kind": "context",
+          "beforeLine": 235,
+          "afterLine": 235,
+          "text": "        response = super().open("
+        },
+        {
+          "id": "E0298",
+          "kind": "context",
+          "beforeLine": 236,
+          "afterLine": 236,
+          "text": "            request,"
+        },
+        {
+          "id": "E0299",
+          "kind": "context",
+          "beforeLine": 237,
+          "afterLine": 237,
+          "text": "            buffered=buffered,"
+        },
+        {
+          "id": "E0300",
+          "kind": "context",
+          "beforeLine": 238,
+          "afterLine": 238,
+          "text": "            follow_redirects=follow_redirects,"
+        },
+        {
+          "id": "E0301",
+          "kind": "context",
+          "beforeLine": 239,
+          "afterLine": 239,
+          "text": "        )"
+        },
+        {
+          "id": "E0302",
+          "kind": "context",
+          "beforeLine": 240,
+          "afterLine": 240,
+          "text": "        response.json_module = self.application.json  # type: ignore[assignment]"
+        },
+        {
+          "id": "E0303",
+          "kind": "context",
+          "beforeLine": 241,
+          "afterLine": 241,
+          "text": ""
+        },
+        {
+          "id": "E0304",
+          "kind": "context",
+          "beforeLine": 242,
+          "afterLine": 242,
+          "text": "        # Re-push contexts that were preserved during the request."
+        },
+        {
+          "id": "E0305",
+          "kind": "removed",
+          "beforeLine": 243,
+          "afterLine": null,
+          "text": "        while self._new_contexts:"
+        },
+        {
+          "id": "E0306",
+          "kind": "removed",
+          "beforeLine": 244,
+          "afterLine": null,
+          "text": "            cm = self._new_contexts.pop()"
+        },
+        {
+          "id": "E0307",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 243,
+          "text": "        for cm in self._new_contexts:"
+        },
+        {
+          "id": "E0308",
+          "kind": "context",
+          "beforeLine": 245,
+          "afterLine": 244,
+          "text": "            self._context_stack.enter_context(cm)"
+        },
+        {
+          "id": "E0309",
+          "kind": "context",
+          "beforeLine": 246,
+          "afterLine": 245,
+          "text": ""
+        },
+        {
+          "id": "E0310",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 246,
+          "text": "        self._new_contexts.clear()"
+        },
+        {
+          "id": "E0311",
+          "kind": "context",
+          "beforeLine": 247,
+          "afterLine": 247,
+          "text": "        return response"
+        },
+        {
+          "id": "E0312",
+          "kind": "context",
+          "beforeLine": 248,
+          "afterLine": 248,
+          "text": ""
+        },
+        {
+          "id": "E0313",
+          "kind": "context",
+          "beforeLine": 249,
+          "afterLine": 249,
+          "text": "    def __enter__(self) -> FlaskClient:"
+        },
+        {
+          "id": "E0314",
+          "kind": "context",
+          "beforeLine": 250,
+          "afterLine": 250,
+          "text": "        if self.preserve_context:"
+        },
+        {
+          "id": "E0315",
+          "kind": "context",
+          "beforeLine": 251,
+          "afterLine": 251,
+          "text": "            raise RuntimeError(\"Cannot nest client invocations\")"
+        },
+        {
+          "id": "E0316",
+          "kind": "context",
+          "beforeLine": 252,
+          "afterLine": 252,
+          "text": "        self.preserve_context = True"
+        },
+        {
+          "id": "E0317",
+          "kind": "context",
+          "beforeLine": 253,
+          "afterLine": 253,
+          "text": "        return self"
+        },
+        {
+          "id": "E0318",
+          "kind": "context",
+          "beforeLine": 254,
+          "afterLine": 254,
+          "text": ""
+        }
+      ]
+    },
+    {
+      "file": "tests/test_helpers.py",
+      "lines": [
+        {
+          "id": "E0319",
+          "kind": "context",
+          "beforeLine": 301,
+          "afterLine": 301,
+          "text": "            def gen():"
+        },
+        {
+          "id": "E0320",
+          "kind": "context",
+          "beforeLine": 302,
+          "afterLine": 302,
+          "text": "                yield flask.session[\"test\"]"
+        },
+        {
+          "id": "E0321",
+          "kind": "context",
+          "beforeLine": 303,
+          "afterLine": 303,
+          "text": ""
+        },
+        {
+          "id": "E0322",
+          "kind": "context",
+          "beforeLine": 304,
+          "afterLine": 304,
+          "text": "            return flask.Response(gen())"
+        },
+        {
+          "id": "E0323",
+          "kind": "context",
+          "beforeLine": 305,
+          "afterLine": 305,
+          "text": ""
+        },
+        {
+          "id": "E0324",
+          "kind": "context",
+          "beforeLine": 306,
+          "afterLine": 306,
+          "text": "        rv = client.get(\"/\")"
+        },
+        {
+          "id": "E0325",
+          "kind": "context",
+          "beforeLine": 307,
+          "afterLine": 307,
+          "text": "        assert rv.data == b\"flask\""
+        },
+        {
+          "id": "E0326",
+          "kind": "context",
+          "beforeLine": 308,
+          "afterLine": 308,
+          "text": ""
+        },
+        {
+          "id": "E0327",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 309,
+          "text": "    def test_async_view(self, app, client):"
+        },
+        {
+          "id": "E0328",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 310,
+          "text": "        @app.route(\"/\")"
+        },
+        {
+          "id": "E0329",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 311,
+          "text": "        async def index():"
+        },
+        {
+          "id": "E0330",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 312,
+          "text": "            flask.session[\"test\"] = \"flask\""
+        },
+        {
+          "id": "E0331",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 313,
+          "text": ""
+        },
+        {
+          "id": "E0332",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 314,
+          "text": "            @flask.stream_with_context"
+        },
+        {
+          "id": "E0333",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 315,
+          "text": "            def gen():"
+        },
+        {
+          "id": "E0334",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 316,
+          "text": "                yield flask.session[\"test\"]"
+        },
+        {
+          "id": "E0335",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 317,
+          "text": ""
+        },
+        {
+          "id": "E0336",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 318,
+          "text": "            return flask.Response(gen())"
+        },
+        {
+          "id": "E0337",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 319,
+          "text": ""
+        },
+        {
+          "id": "E0338",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 320,
+          "text": "        # response is closed without reading stream"
+        },
+        {
+          "id": "E0339",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 321,
+          "text": "        client.get().close()"
+        },
+        {
+          "id": "E0340",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 322,
+          "text": "        # response stream is read"
+        },
+        {
+          "id": "E0341",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 323,
+          "text": "        assert client.get().text == \"flask\""
+        },
+        {
+          "id": "E0342",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 324,
+          "text": ""
+        },
+        {
+          "id": "E0343",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 325,
+          "text": "        # same as above, but with client context preservation"
+        },
+        {
+          "id": "E0344",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 326,
+          "text": "        with client:"
+        },
+        {
+          "id": "E0345",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 327,
+          "text": "            client.get().close()"
+        },
+        {
+          "id": "E0346",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 328,
+          "text": ""
+        },
+        {
+          "id": "E0347",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 329,
+          "text": "        with client:"
+        },
+        {
+          "id": "E0348",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 330,
+          "text": "            assert client.get().text == \"flask\""
+        },
+        {
+          "id": "E0349",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 331,
+          "text": ""
+        },
+        {
+          "id": "E0350",
+          "kind": "context",
+          "beforeLine": 309,
+          "afterLine": 332,
+          "text": ""
+        },
+        {
+          "id": "E0351",
+          "kind": "context",
+          "beforeLine": 310,
+          "afterLine": 333,
+          "text": "class TestHelpers:"
+        },
+        {
+          "id": "E0352",
+          "kind": "context",
+          "beforeLine": 311,
+          "afterLine": 334,
+          "text": "    @pytest.mark.parametrize("
+        },
+        {
+          "id": "E0353",
+          "kind": "context",
+          "beforeLine": 312,
+          "afterLine": 335,
+          "text": "        (\"debug\", \"expect\"),"
+        },
+        {
+          "id": "E0354",
+          "kind": "context",
+          "beforeLine": 313,
+          "afterLine": 336,
+          "text": "        ["
+        },
+        {
+          "id": "E0355",
+          "kind": "context",
+          "beforeLine": 314,
+          "afterLine": 337,
+          "text": "            (\"\", False),"
+        },
+        {
+          "id": "E0356",
+          "kind": "context",
+          "beforeLine": 315,
+          "afterLine": 338,
+          "text": "            (\"0\", False),"
+        },
+        {
+          "id": "E0357",
+          "kind": "context",
+          "beforeLine": 316,
+          "afterLine": 339,
+          "text": "            (\"False\", False),"
+        }
+      ]
+    },
+    {
+      "file": "tests/test_testing.py",
+      "lines": [
+        {
+          "id": "E0358",
+          "kind": "context",
+          "beforeLine": 133,
+          "afterLine": 133,
+          "text": ""
+        },
+        {
+          "id": "E0359",
+          "kind": "context",
+          "beforeLine": 134,
+          "afterLine": 134,
+          "text": "    with ctx:"
+        },
+        {
+          "id": "E0360",
+          "kind": "context",
+          "beforeLine": 135,
+          "afterLine": 135,
+          "text": "        assert ctx.request.blueprint == bp.name"
+        },
+        {
+          "id": "E0361",
+          "kind": "context",
+          "beforeLine": 136,
+          "afterLine": 136,
+          "text": ""
+        },
+        {
+          "id": "E0362",
+          "kind": "context",
+          "beforeLine": 137,
+          "afterLine": 137,
+          "text": "    rv = client.get(\"/\", subdomain=\"xxx\")"
+        },
+        {
+          "id": "E0363",
+          "kind": "context",
+          "beforeLine": 138,
+          "afterLine": 138,
+          "text": "    assert rv.data == b\"http://xxx.example.com:1234/foo/\""
+        },
+        {
+          "id": "E0364",
+          "kind": "context",
+          "beforeLine": 139,
+          "afterLine": 139,
+          "text": ""
+        },
+        {
+          "id": "E0365",
+          "kind": "context",
+          "beforeLine": 140,
+          "afterLine": 140,
+          "text": ""
+        },
+        {
+          "id": "E0366",
+          "kind": "removed",
+          "beforeLine": 141,
+          "afterLine": null,
+          "text": "def test_redirect_keep_session(app, client, app_ctx):"
+        },
+        {
+          "id": "E0367",
+          "kind": "removed",
+          "beforeLine": 142,
+          "afterLine": null,
+          "text": "    @app.route(\"/\", methods=[\"GET\", \"POST\"])"
+        },
+        {
+          "id": "E0368",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 141,
+          "text": "def test_redirect_session(app, client, app_ctx):"
+        },
+        {
+          "id": "E0369",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 142,
+          "text": "    @app.route(\"/redirect\")"
+        },
+        {
+          "id": "E0370",
+          "kind": "context",
+          "beforeLine": 143,
+          "afterLine": 143,
+          "text": "    def index():"
+        },
+        {
+          "id": "E0371",
+          "kind": "removed",
+          "beforeLine": 144,
+          "afterLine": null,
+          "text": "        if flask.request.method == \"POST\":"
+        },
+        {
+          "id": "E0372",
+          "kind": "removed",
+          "beforeLine": 145,
+          "afterLine": null,
+          "text": "            return flask.redirect(\"/getsession\")"
+        },
+        {
+          "id": "E0373",
+          "kind": "removed",
+          "beforeLine": 146,
+          "afterLine": null,
+          "text": "        flask.session[\"data\"] = \"foo\""
+        },
+        {
+          "id": "E0374",
+          "kind": "removed",
+          "beforeLine": 147,
+          "afterLine": null,
+          "text": "        return \"index\""
+        },
+        {
+          "id": "E0375",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 144,
+          "text": "        flask.session[\"redirect\"] = True"
+        },
+        {
+          "id": "E0376",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 145,
+          "text": "        return flask.redirect(\"/target\")"
+        },
+        {
+          "id": "E0377",
+          "kind": "context",
+          "beforeLine": 148,
+          "afterLine": 146,
+          "text": ""
+        },
+        {
+          "id": "E0378",
+          "kind": "removed",
+          "beforeLine": 149,
+          "afterLine": null,
+          "text": "    @app.route(\"/getsession\")"
+        },
+        {
+          "id": "E0379",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 147,
+          "text": "    @app.route(\"/target\")"
+        },
+        {
+          "id": "E0380",
+          "kind": "context",
+          "beforeLine": 150,
+          "afterLine": 148,
+          "text": "    def get_session():"
+        },
+        {
+          "id": "E0381",
+          "kind": "removed",
+          "beforeLine": 151,
+          "afterLine": null,
+          "text": "        return flask.session.get(\"data\", \"<missing>\")"
+        },
+        {
+          "id": "E0382",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 149,
+          "text": "        flask.session[\"target\"] = True"
+        },
+        {
+          "id": "E0383",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 150,
+          "text": "        return \"\""
+        },
+        {
+          "id": "E0384",
+          "kind": "context",
+          "beforeLine": 152,
+          "afterLine": 151,
+          "text": ""
+        },
+        {
+          "id": "E0385",
+          "kind": "context",
+          "beforeLine": 153,
+          "afterLine": 152,
+          "text": "    with client:"
+        },
+        {
+          "id": "E0386",
+          "kind": "removed",
+          "beforeLine": 154,
+          "afterLine": null,
+          "text": "        rv = client.get(\"/getsession\")"
+        },
+        {
+          "id": "E0387",
+          "kind": "removed",
+          "beforeLine": 155,
+          "afterLine": null,
+          "text": "        assert rv.data == b\"<missing>\""
+        },
+        {
+          "id": "E0388",
+          "kind": "removed",
+          "beforeLine": 156,
+          "afterLine": null,
+          "text": ""
+        },
+        {
+          "id": "E0389",
+          "kind": "removed",
+          "beforeLine": 157,
+          "afterLine": null,
+          "text": "        rv = client.get(\"/\")"
+        },
+        {
+          "id": "E0390",
+          "kind": "removed",
+          "beforeLine": 158,
+          "afterLine": null,
+          "text": "        assert rv.data == b\"index\""
+        },
+        {
+          "id": "E0391",
+          "kind": "removed",
+          "beforeLine": 159,
+          "afterLine": null,
+          "text": "        assert flask.session.get(\"data\") == \"foo\""
+        },
+        {
+          "id": "E0392",
+          "kind": "removed",
+          "beforeLine": 160,
+          "afterLine": null,
+          "text": ""
+        },
+        {
+          "id": "E0393",
+          "kind": "removed",
+          "beforeLine": 161,
+          "afterLine": null,
+          "text": "        rv = client.post(\"/\", data={}, follow_redirects=True)"
+        },
+        {
+          "id": "E0394",
+          "kind": "removed",
+          "beforeLine": 162,
+          "afterLine": null,
+          "text": "        assert rv.data == b\"foo\""
+        },
+        {
+          "id": "E0395",
+          "kind": "removed",
+          "beforeLine": 163,
+          "afterLine": null,
+          "text": "        assert flask.session.get(\"data\") == \"foo\""
+        },
+        {
+          "id": "E0396",
+          "kind": "removed",
+          "beforeLine": 164,
+          "afterLine": null,
+          "text": ""
+        },
+        {
+          "id": "E0397",
+          "kind": "removed",
+          "beforeLine": 165,
+          "afterLine": null,
+          "text": "        rv = client.get(\"/getsession\")"
+        },
+        {
+          "id": "E0398",
+          "kind": "removed",
+          "beforeLine": 166,
+          "afterLine": null,
+          "text": "        assert rv.data == b\"foo\""
+        },
+        {
+          "id": "E0399",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 153,
+          "text": "        client.get(\"/redirect\", follow_redirects=True)"
+        },
+        {
+          "id": "E0400",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 154,
+          "text": "        assert flask.session[\"redirect\"] is True"
+        },
+        {
+          "id": "E0401",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 155,
+          "text": "        assert flask.session[\"target\"] is True"
+        },
+        {
+          "id": "E0402",
+          "kind": "context",
+          "beforeLine": 167,
+          "afterLine": 156,
+          "text": ""
+        },
+        {
+          "id": "E0403",
+          "kind": "context",
+          "beforeLine": 168,
+          "afterLine": 157,
+          "text": ""
+        },
+        {
+          "id": "E0404",
+          "kind": "context",
+          "beforeLine": 169,
+          "afterLine": 158,
+          "text": "def test_session_transactions(app, client):"
+        },
+        {
+          "id": "E0405",
+          "kind": "context",
+          "beforeLine": 170,
+          "afterLine": 159,
+          "text": "    @app.route(\"/\")"
+        },
+        {
+          "id": "E0406",
+          "kind": "context",
+          "beforeLine": 171,
+          "afterLine": 160,
+          "text": "    def index():"
+        },
+        {
+          "id": "E0407",
+          "kind": "context",
+          "beforeLine": 172,
+          "afterLine": 161,
+          "text": "        return str(flask.session[\"foo\"])"
+        },
+        {
+          "id": "E0408",
+          "kind": "context",
+          "beforeLine": 173,
+          "afterLine": 162,
+          "text": ""
+        },
+        {
+          "id": "E0409",
+          "kind": "context",
+          "beforeLine": 174,
+          "afterLine": 163,
+          "text": "    with client:"
+        }
+      ]
+    }
+  ]
+}

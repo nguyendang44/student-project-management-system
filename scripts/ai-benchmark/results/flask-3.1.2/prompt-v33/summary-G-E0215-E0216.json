@@ -1,0 +1,42 @@
+{
+  "signature": "901b0accab1d32d890c8e9d7f8d3d00ea9efffd6e75f8720fa3dc774af65f709",
+  "result": [
+    {
+      "groupId": "G-E0215-E0216",
+      "category": "documentation",
+      "title": "Đổi tên chú thích",
+      "description": "Chú thích đã được đổi từ 'Jinja2' sang 'Jinja' trong hàm `create_global_jinja_loader`.",
+      "source": "ollama",
+      "before": "        \"\"\"Creates the loader for the Jinja2 environment.  Can be used to",
+      "after": "        \"\"\"Creates the loader for the Jinja environment.  Can be used to",
+      "beforeEvidenceIds": [
+        "E0215"
+      ],
+      "afterEvidenceIds": [
+        "E0216"
+      ],
+      "evidenceIds": [
+        "E0215",
+        "E0216"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0215-E0216",
+                "category": "documentation",
+                "title": "Đổi tên chú thích",
+                "description": "Chú thích đã được đổi từ 'Jinja2' sang 'Jinja' trong hàm `create_global_jinja_loader`."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

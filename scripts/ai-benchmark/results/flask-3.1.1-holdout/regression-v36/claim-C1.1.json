@@ -1,0 +1,26 @@
+{
+  "signature": "5cbc5d51cdc4691a1efe0f15992b414db370d9243fcc8412a1227e8d44bb15b4",
+  "result": {
+    "claimId": "C1.1",
+    "claimQuote": "Đổi cách xây dựng danh sách khóa trong get_signing_serializer: thêm các fallback trước, sau đó append app.secret_key.",
+    "status": "SUPPORTED",
+    "explanation": "Báo cáo khẳng định rằng trong hàm get_signing_serializer, các fallback phải được thêm trước, sau đó append app.secret_key. Trong code mới, các fallback được thêm vào danh sách keys trước khi append app.secret_key, tuân thủ yêu cầu của báo cáo.",
+    "evidenceIds": [
+      "E0110",
+      "E0113"
+    ],
+    "originalEvidenceIds": [
+      "E0110",
+      "E0113"
+    ],
+    "citationNormalization": [],
+    "citationValid": true,
+    "rejectionReason": null,
+    "attempts": [
+      {
+        "attempt": 1,
+        "valid": true
+      }
+    ]
+  }
+}

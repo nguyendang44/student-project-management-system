@@ -1,0 +1,78 @@
+{
+  "signature": "229f3c3133a796c711a811466b9e24e98d0e6eaa702ee5e1643a7b9816a5f47a",
+  "result": [
+    {
+      "groupId": "G-E0118-E0137",
+      "category": "logic",
+      "title": "Thêm logic để giữ context",
+      "description": "Đã thêm logic để giữ context trong hàm `stream_with_context.generator`. Trước đây, logic này nằm trong một khối `with ctx:`. Bây giờ, logic này được thực hiện trước khi `yield None` và sau đó sử dụng `with app_ctx, req_ctx:` để đảm bảo rằng các context được giữ đúng.",
+      "source": "ollama",
+      "before": "        with ctx:\n            # Dummy sentinel.  Has to be inside the context block or we're\n            # not actually keeping the context around.\n            yield None\n\n            # The try/finally is here so that if someone passes a WSGI level\n            # iterator in we're still running the cleanup logic.  Generators\n            # don't need that because they are closed on their destruction\n            # automatically.",
+      "after": "\n        app_ctx = _cv_app.get()\n        # Setup code below will run the generator to this point, so that the\n        # current contexts are recorded. The contexts must be pushed after,\n        # otherwise their ContextVar will record the wrong event loop during\n        # async view functions.\n        yield None  # type: ignore[misc]\n\n        # Push the app context first, so that the request context does not\n        # automatically create and push a different app context.\n        with app_ctx, req_ctx:",
+      "beforeEvidenceIds": [
+        "E0118",
+        "E0119",
+        "E0120",
+        "E0121",
+        "E0122",
+        "E0123",
+        "E0124",
+        "E0125",
+        "E0126"
+      ],
+      "afterEvidenceIds": [
+        "E0127",
+        "E0128",
+        "E0129",
+        "E0130",
+        "E0131",
+        "E0132",
+        "E0133",
+        "E0134",
+        "E0135",
+        "E0136",
+        "E0137"
+      ],
+      "evidenceIds": [
+        "E0118",
+        "E0119",
+        "E0120",
+        "E0121",
+        "E0122",
+        "E0123",
+        "E0124",
+        "E0125",
+        "E0126",
+        "E0127",
+        "E0128",
+        "E0129",
+        "E0130",
+        "E0131",
+        "E0132",
+        "E0133",
+        "E0134",
+        "E0135",
+        "E0136",
+        "E0137"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0118-E0137",
+                "category": "logic",
+                "title": "Thêm logic để giữ context",
+                "description": "Đã thêm logic để giữ context trong hàm `stream_with_context.generator`. Trước đây, logic này nằm trong một khối `with ctx:`. Bây giờ, logic này được thực hiện trước khi `yield None` và sau đó sử dụng `with app_ctx, req_ctx:` để đảm bảo rằng các context được giữ đúng."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "signature": "d60dae3b4dd87ed5dc4b187b7b475408d21d00e635d127e3d69e4171ca1b6af8",
+  "result": {
+    "claimId": "C2.2",
+    "claimQuote": "đã đo được tốc độ gửi file tăng 30%.",
+    "status": "INSUFFICIENT",
+    "explanation": "Báo cáo khẳng định đã đo được tốc độ gửi file tăng 30%, nhưng code không cung cấp bất kỳ bằng chứng nào về việc đo lường tốc độ gửi file hoặc sự thay đổi trong tốc độ đó.",
+    "evidenceIds": [],
+    "citationValid": true,
+    "rejectionReason": null,
+    "attempts": [
+      {
+        "attempt": 1,
+        "valid": true
+      }
+    ]
+  }
+}

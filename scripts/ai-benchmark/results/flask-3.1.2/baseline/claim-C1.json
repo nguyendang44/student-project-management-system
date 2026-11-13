@@ -1,0 +1,24 @@
+{
+  "signature": "7de029b1aa2e687cbf2f957f28fe0cd015766a9d5ba5ab5cb67d033d896fe462",
+  "result": {
+    "claimId": "C1",
+    "status": "SUPPORTED",
+    "explanation": "Các ý trong báo cáo đều có bằng chứng code. Báo cáo đề cập đến việc điều chỉnh stream_with_context để lưu app context và request context trước khi tiếp tục generator, rồi đẩy app context trước request context. Trong code, có thể thấy rằng đã được thêm vào một hàm generator mới và đã được điều chỉnh để lưu app context trước request context. Điều này được thể hiện qua việc sử dụng `app_ctx = _cv_app.get()` và `req_ctx = _cv_request.get(None)` trước khi thực hiện generator. Ngoài ra, đã được thêm vào một đoạn mã để đảm bảo rằng app context được đẩy trước request context, như vậy đảm bảo rằng ngữ cảnh ứng dụng được lưu giữ trước khi ngữ cảnh yêu cầu được lưu giữ.",
+    "evidenceIds": [
+      "E0128",
+      "E0129",
+      "E0130",
+      "E0131",
+      "E0132",
+      "E0133",
+      "E0134",
+      "E0135",
+      "E0136",
+      "E0137",
+      "E0138",
+      "E0139"
+    ],
+    "citationValid": true,
+    "rejectionReason": null
+  }
+}

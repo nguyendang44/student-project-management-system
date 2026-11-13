@@ -1,0 +1,30 @@
+{
+  "signature": "ecde62eeb7c25f0bbabb015ef9c596462c2b408635e665c5ff611a343ff3463f",
+  "result": {
+    "claimId": "C5.2",
+    "claimQuote": "Thêm test async view cho stream_with_context, có trường hợp đọc nội dung trả về.",
+    "status": "SUPPORTED",
+    "explanation": "Báo cáo khẳng định thêm test async view cho stream_with_context, có trường hợp đọc nội dung trả về. Trong code mới, có một hàm test `test_async_view` được thêm vào lớp `TestHelpers`, trong đó có hai trường hợp kiểm tra: một trường hợp đóng response trước khi đọc stream và một trường hợp đọc nội dung trả về. Cả hai trường hợp này đều được kiểm tra thông qua các assert, cho thấy code thực hiện đúng yêu cầu trong báo cáo.",
+    "evidenceIds": [
+      "E0339",
+      "E0341",
+      "E0345",
+      "E0348"
+    ],
+    "originalEvidenceIds": [
+      "E0339",
+      "E0341",
+      "E0345",
+      "E0348"
+    ],
+    "citationNormalization": [],
+    "citationValid": true,
+    "rejectionReason": null,
+    "attempts": [
+      {
+        "attempt": 1,
+        "valid": true
+      }
+    ]
+  }
+}

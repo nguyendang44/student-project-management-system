@@ -1,0 +1,50 @@
+{
+  "signature": "2b825c5cb969453f2978a116207df5e9074308c99c40efa60caf783708c2b7fc",
+  "result": [
+    {
+      "groupId": "G-E0047-E0052",
+      "category": "logic",
+      "title": "Sửa đổi cấu trúc assertion",
+      "description": "Trong hàm Flask.__init__, assertion về `static_host` và `host_matching` đã được chuyển từ một dòng thành ba dòng riêng biệt, cải thiện tính đọc và dễ dàng hơn trong việc kiểm tra.",
+      "source": "ollama",
+      "before": "            assert (\n                bool(static_host) == host_matching\n            ), \"Invalid static_host/host_matching combination\"",
+      "after": "            assert bool(static_host) == host_matching, (\n                \"Invalid static_host/host_matching combination\"\n            )",
+      "beforeEvidenceIds": [
+        "E0047",
+        "E0048",
+        "E0049"
+      ],
+      "afterEvidenceIds": [
+        "E0050",
+        "E0051",
+        "E0052"
+      ],
+      "evidenceIds": [
+        "E0047",
+        "E0048",
+        "E0049",
+        "E0050",
+        "E0051",
+        "E0052"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0047-E0052",
+                "category": "logic",
+                "title": "Sửa đổi cấu trúc assertion",
+                "description": "Trong hàm Flask.__init__, assertion về `static_host` và `host_matching` đã được chuyển từ một dòng thành ba dòng riêng biệt, cải thiện tính đọc và dễ dàng hơn trong việc kiểm tra."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

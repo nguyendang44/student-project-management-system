@@ -1,0 +1,44 @@
+{
+  "signature": "d7f6da740d15c208302868fe8dc2a6fab5d6462bed1de885c01728812ade93b2",
+  "result": [
+    {
+      "category": "logic",
+      "title": "Giải thích thêm cho việc khởi động generator",
+      "before": "Không có giải thích thêm",
+      "after": "Giải thích thêm về cách thực hiện generator cho đến giá trị sentinel và đảm bảo ngữ cảnh được giữ lại trong trạng thái của generator.",
+      "description": "Đã thêm hai dòng giải thích để giải thích thêm về cách thực hiện generator cho đến giá trị sentinel và đảm bảo ngữ cảnh được giữ lại trong trạng thái của generator.",
+      "beforeEvidenceIds": [],
+      "afterEvidenceIds": [
+        "E0149",
+        "E0150",
+        "E0151"
+      ],
+      "evidenceIds": [
+        "E0149",
+        "E0150",
+        "E0151"
+      ],
+      "citationValid": false,
+      "rejectionReason": "Chưa dẫn code cũ bị thay đổi"
+    },
+    {
+      "category": "formatting",
+      "title": "Định dạng lại dòng return",
+      "before": "return wrapped_g  # type: ignore[return-value]",
+      "after": "return wrapped_g",
+      "description": "Đã định dạng lại dòng return để loại bỏ chú thích kiểu và giữ nguyên giá trị trả về.",
+      "beforeEvidenceIds": [
+        "E0154"
+      ],
+      "afterEvidenceIds": [
+        "E0155"
+      ],
+      "evidenceIds": [
+        "E0154",
+        "E0155"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    }
+  ]
+}

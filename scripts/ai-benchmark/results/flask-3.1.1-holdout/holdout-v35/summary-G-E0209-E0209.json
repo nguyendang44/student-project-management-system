@@ -1,0 +1,39 @@
+{
+  "signature": "773f8a42d86d4085556196fc8e1d4bbbc2a960dafcc3fda8f135d82300138443",
+  "result": [
+    {
+      "groupId": "G-E0209-E0209",
+      "category": "test",
+      "title": "Xóa import pkgutil",
+      "description": "Đã xóa import pkgutil từ file tests/conftest.py.",
+      "source": "ollama",
+      "before": "import pkgutil",
+      "after": "(không có dòng thêm)",
+      "beforeEvidenceIds": [
+        "E0209"
+      ],
+      "afterEvidenceIds": [],
+      "evidenceIds": [
+        "E0209"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0209-E0209",
+                "category": "test",
+                "title": "Xóa import pkgutil",
+                "description": "Đã xóa import pkgutil từ file tests/conftest.py."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

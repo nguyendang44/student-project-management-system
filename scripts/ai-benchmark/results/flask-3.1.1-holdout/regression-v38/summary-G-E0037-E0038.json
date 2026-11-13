@@ -1,0 +1,42 @@
+{
+  "signature": "2b825c5cb969453f2978a116207df5e9074308c99c40efa60caf783708c2b7fc",
+  "result": [
+    {
+      "groupId": "G-E0037-E0038",
+      "category": "logic",
+      "title": "Thêm câu lệnh raise AttributeError(name)",
+      "description": "Trong file src/flask/__init__.py, đã thêm câu lệnh raise AttributeError(name) ở dòng 61.",
+      "source": "ollama",
+      "before": "    raise AttributeError(name)",
+      "after": "        raise AttributeError(name)",
+      "beforeEvidenceIds": [
+        "E0037"
+      ],
+      "afterEvidenceIds": [
+        "E0038"
+      ],
+      "evidenceIds": [
+        "E0037",
+        "E0038"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0037-E0038",
+                "category": "logic",
+                "title": "Thêm câu lệnh raise AttributeError(name)",
+                "description": "Trong file src/flask/__init__.py, đã thêm câu lệnh raise AttributeError(name) ở dòng 61."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

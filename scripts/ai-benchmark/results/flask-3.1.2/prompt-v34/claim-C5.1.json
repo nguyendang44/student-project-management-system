@@ -1,0 +1,30 @@
+{
+  "signature": "972bbc24928c093f28eb5d0a53751bf7d5f398544b30f85f7a2d560a1a110465",
+  "result": {
+    "claimId": "C5.1",
+    "claimQuote": "Thêm test async view cho stream_with_context, có trường hợp đóng response chưa đọc stream",
+    "status": "SUPPORTED",
+    "explanation": "Báo cáo khẳng định rằng cần thêm một test async view cho stream_with_context với trường hợp đóng response trước khi đọc stream. Trong code mới, có một hàm test được thêm vào lớp TestHelpers, được gọi là test_async_view. Trong hàm này, có hai trường hợp được kiểm tra: một trường hợp đóng response trước khi đọc stream và một trường hợp đọc nội dung trả về. Trong cả hai trường hợp này, đều có lệnh client.get().close() được gọi trước khi đọc nội dung trả về, điều này chứng minh rằng code đã thực hiện đúng yêu cầu trong báo cáo.",
+    "evidenceIds": [
+      "E0339",
+      "E0341",
+      "E0345",
+      "E0348"
+    ],
+    "originalEvidenceIds": [
+      "E0339",
+      "E0341",
+      "E0345",
+      "E0348"
+    ],
+    "citationNormalization": [],
+    "citationValid": true,
+    "rejectionReason": null,
+    "attempts": [
+      {
+        "attempt": 1,
+        "valid": true
+      }
+    ]
+  }
+}

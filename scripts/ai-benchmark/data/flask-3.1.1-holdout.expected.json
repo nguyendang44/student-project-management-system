@@ -1,0 +1,103 @@
+{
+  "releaseNotesUrl": "https://github.com/pallets/flask/releases/tag/3.1.1",
+  "referenceFacts": [
+    {
+      "id": "R1",
+      "text": "Điều chỉnh thứ tự khóa ký khi SECRET_KEY_FALLBACKS được sử dụng.",
+      "file": "src/flask/sessions.py",
+      "anchors": [
+        "keys: list[str | bytes] = []",
+        "keys.append(app.secret_key)"
+      ]
+    },
+    {
+      "id": "R2",
+      "text": "Xử lý yêu cầu --help để nạp app và các lệnh liên quan sớm.",
+      "file": "src/flask/cli.py",
+      "anchors": [
+        "len(args) == 1 and args[0] in self.get_help_option_names(ctx)"
+      ]
+    },
+    {
+      "id": "R3",
+      "text": "Đổi type hint trả về của FlaskCliRunner.invoke thành Result.",
+      "file": "src/flask/testing.py",
+      "anchors": [
+        ") -> Result:"
+      ]
+    },
+    {
+      "id": "R4",
+      "text": "Bổ sung AsyncIterable[str] và AsyncIterable[bytes] trong kiểu ResponseValue để phục vụ Quart.",
+      "file": "src/flask/typing.py",
+      "anchors": [
+        "cabc.AsyncIterable[str]",
+        "cabc.AsyncIterable[bytes]"
+      ]
+    }
+  ],
+  "claims": [
+    {
+      "id": "C1",
+      "text": "Đổi cách xây dựng danh sách khóa trong get_signing_serializer: thêm các fallback trước, sau đó append app.secret_key.",
+      "terms": [
+        "keys.extend",
+        "keys.append",
+        "keys: list"
+      ],
+      "expected": "SUPPORTED",
+      "reason": "Code mới khởi tạo list rỗng, extend fallbacks rồi append khóa hiện tại."
+    },
+    {
+      "id": "C2",
+      "text": "FlaskCliRunner.invoke đổi type hint trả về thành Result; toàn bộ kiểm thử đã pass trên Windows.",
+      "terms": [
+        "def invoke",
+        "Result"
+      ],
+      "expected": "PARTIAL",
+      "reason": "Có đổi type hint; không có log chạy kiểm thử trên Windows."
+    },
+    {
+      "id": "C3",
+      "text": "Danh sách khóa mới khởi tạo bằng [app.secret_key] rồi mới extend các fallback như cũ.",
+      "terms": [
+        "keys: list",
+        "keys.append",
+        "keys.extend"
+      ],
+      "expected": "CONTRADICTED",
+      "reason": "Diff đổi sang danh sách rỗng và append khóa hiện tại sau fallbacks."
+    },
+    {
+      "id": "C4",
+      "text": "Thay đổi này làm tốc độ chạy ứng dụng tăng 30% qua benchmark thực tế.",
+      "terms": [
+        "parse_args",
+        "invoke"
+      ],
+      "expected": "INSUFFICIENT",
+      "reason": "Phạm vi dữ liệu không có kết quả benchmark."
+    },
+    {
+      "id": "C5",
+      "text": "ResponseValue thêm cả cabc.AsyncIterable[str] và cabc.AsyncIterable[bytes].",
+      "terms": [
+        "cabc.AsyncIterable"
+      ],
+      "expected": "SUPPORTED",
+      "reason": "Cả hai type đều là dòng thêm trong src/flask/typing.py."
+    },
+    {
+      "id": "C6",
+      "text": "FlaskCliRunner.invoke được đổi type hint trả về từ t.Any sang str.",
+      "terms": [
+        "def invoke",
+        "Result"
+      ],
+      "expected": "CONTRADICTED",
+      "reason": "Kiểu trả về mới là Result, không phải str."
+    }
+  ],
+  "note": "Reference facts cover release-note highlights only; other code changes may also be valid. Expected labels are manually prepared fixtures, not model output."
+}

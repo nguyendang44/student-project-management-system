@@ -1,0 +1,42 @@
+{
+  "signature": "773f8a42d86d4085556196fc8e1d4bbbc2a960dafcc3fda8f135d82300138443",
+  "result": [
+    {
+      "groupId": "G-E0282-E0283",
+      "category": "test",
+      "title": "Thêm thay đổi secret key",
+      "description": "Trong hàm test_session_secret_key_fallbacks, đã thêm dòng mã để thay đổi secret key thành '? key'.",
+      "source": "ollama",
+      "before": "    app.secret_key = \"new test key\"",
+      "after": "    app.secret_key = \"? key\"",
+      "beforeEvidenceIds": [
+        "E0282"
+      ],
+      "afterEvidenceIds": [
+        "E0283"
+      ],
+      "evidenceIds": [
+        "E0282",
+        "E0283"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0282-E0283",
+                "category": "test",
+                "title": "Thêm thay đổi secret key",
+                "description": "Trong hàm test_session_secret_key_fallbacks, đã thêm dòng mã để thay đổi secret key thành '? key'."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

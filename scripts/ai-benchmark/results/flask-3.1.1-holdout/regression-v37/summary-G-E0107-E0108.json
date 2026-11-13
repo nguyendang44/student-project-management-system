@@ -1,0 +1,42 @@
+{
+  "signature": "493b473338cd2a86927dcb868598b5df2a594659b6729bd3a89f0596a914f3af",
+  "result": [
+    {
+      "groupId": "G-E0107-E0108",
+      "category": "logic",
+      "title": "Thay đổi giá trị của biến keys",
+      "description": "Trong hàm `get_signing_serializer` của lớp `SecureCookieSessionInterface`, giá trị của biến `keys` đã được thay đổi từ `[app.secret_key]` thành `[]`. Điều này có thể ảnh hưởng đến cách thức mã hóa và giải mã cookie.",
+      "source": "ollama",
+      "before": "        keys: list[str | bytes] = [app.secret_key]",
+      "after": "        keys: list[str | bytes] = []",
+      "beforeEvidenceIds": [
+        "E0107"
+      ],
+      "afterEvidenceIds": [
+        "E0108"
+      ],
+      "evidenceIds": [
+        "E0107",
+        "E0108"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0107-E0108",
+                "category": "logic",
+                "title": "Thay đổi giá trị của biến keys",
+                "description": "Trong hàm `get_signing_serializer` của lớp `SecureCookieSessionInterface`, giá trị của biến `keys` đã được thay đổi từ `[app.secret_key]` thành `[]`. Điều này có thể ảnh hưởng đến cách thức mã hóa và giải mã cookie."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

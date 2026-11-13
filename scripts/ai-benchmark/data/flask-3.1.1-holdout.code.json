@@ -1,0 +1,2543 @@
+{
+  "id": "flask-3.1.1-holdout",
+  "repository": "https://github.com/pallets/flask",
+  "baseTag": "3.1.0",
+  "headTag": "3.1.1",
+  "baseSha": "ab8149664182b662453a563161aa89013c806dc9",
+  "headSha": "7fff56f5172c48b6f3aedf17ee14ef5c2533dfd1",
+  "scope": "Only src/flask and tests; documentation, release notes, configuration and CI excluded.",
+  "packets": [
+    {
+      "file": "src/flask/__init__.py",
+      "lines": [
+        {
+          "id": "E0001",
+          "kind": "context",
+          "beforeLine": 37,
+          "afterLine": 37,
+          "text": "from .signals import template_rendered as template_rendered"
+        },
+        {
+          "id": "E0002",
+          "kind": "context",
+          "beforeLine": 38,
+          "afterLine": 38,
+          "text": "from .templating import render_template as render_template"
+        },
+        {
+          "id": "E0003",
+          "kind": "context",
+          "beforeLine": 39,
+          "afterLine": 39,
+          "text": "from .templating import render_template_string as render_template_string"
+        },
+        {
+          "id": "E0004",
+          "kind": "context",
+          "beforeLine": 40,
+          "afterLine": 40,
+          "text": "from .templating import stream_template as stream_template"
+        },
+        {
+          "id": "E0005",
+          "kind": "context",
+          "beforeLine": 41,
+          "afterLine": 41,
+          "text": "from .templating import stream_template_string as stream_template_string"
+        },
+        {
+          "id": "E0006",
+          "kind": "context",
+          "beforeLine": 42,
+          "afterLine": 42,
+          "text": "from .wrappers import Request as Request"
+        },
+        {
+          "id": "E0007",
+          "kind": "context",
+          "beforeLine": 43,
+          "afterLine": 43,
+          "text": "from .wrappers import Response as Response"
+        },
+        {
+          "id": "E0008",
+          "kind": "context",
+          "beforeLine": 44,
+          "afterLine": 44,
+          "text": ""
+        },
+        {
+          "id": "E0009",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 45,
+          "text": "if not t.TYPE_CHECKING:"
+        },
+        {
+          "id": "E0010",
+          "kind": "context",
+          "beforeLine": 45,
+          "afterLine": 46,
+          "text": ""
+        },
+        {
+          "id": "E0011",
+          "kind": "removed",
+          "beforeLine": 46,
+          "afterLine": null,
+          "text": "def __getattr__(name: str) -> t.Any:"
+        },
+        {
+          "id": "E0012",
+          "kind": "removed",
+          "beforeLine": 47,
+          "afterLine": null,
+          "text": "    if name == \"__version__\":"
+        },
+        {
+          "id": "E0013",
+          "kind": "removed",
+          "beforeLine": 48,
+          "afterLine": null,
+          "text": "        import importlib.metadata"
+        },
+        {
+          "id": "E0014",
+          "kind": "removed",
+          "beforeLine": 49,
+          "afterLine": null,
+          "text": "        import warnings"
+        },
+        {
+          "id": "E0015",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 47,
+          "text": "    def __getattr__(name: str) -> t.Any:"
+        },
+        {
+          "id": "E0016",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 48,
+          "text": "        if name == \"__version__\":"
+        },
+        {
+          "id": "E0017",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 49,
+          "text": "            import importlib.metadata"
+        },
+        {
+          "id": "E0018",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 50,
+          "text": "            import warnings"
+        },
+        {
+          "id": "E0019",
+          "kind": "context",
+          "beforeLine": 50,
+          "afterLine": 51,
+          "text": ""
+        },
+        {
+          "id": "E0020",
+          "kind": "removed",
+          "beforeLine": 51,
+          "afterLine": null,
+          "text": "        warnings.warn("
+        },
+        {
+          "id": "E0021",
+          "kind": "removed",
+          "beforeLine": 52,
+          "afterLine": null,
+          "text": "            \"The '__version__' attribute is deprecated and will be removed in\""
+        },
+        {
+          "id": "E0022",
+          "kind": "removed",
+          "beforeLine": 53,
+          "afterLine": null,
+          "text": "            \" Flask 3.1. Use feature detection or\""
+        },
+        {
+          "id": "E0023",
+          "kind": "removed",
+          "beforeLine": 54,
+          "afterLine": null,
+          "text": "            \" 'importlib.metadata.version(\\\"flask\\\")' instead.\","
+        },
+        {
+          "id": "E0024",
+          "kind": "removed",
+          "beforeLine": 55,
+          "afterLine": null,
+          "text": "            DeprecationWarning,"
+        },
+        {
+          "id": "E0025",
+          "kind": "removed",
+          "beforeLine": 56,
+          "afterLine": null,
+          "text": "            stacklevel=2,"
+        },
+        {
+          "id": "E0026",
+          "kind": "removed",
+          "beforeLine": 57,
+          "afterLine": null,
+          "text": "        )"
+        },
+        {
+          "id": "E0027",
+          "kind": "removed",
+          "beforeLine": 58,
+          "afterLine": null,
+          "text": "        return importlib.metadata.version(\"flask\")"
+        },
+        {
+          "id": "E0028",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 52,
+          "text": "            warnings.warn("
+        },
+        {
+          "id": "E0029",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 53,
+          "text": "                \"The '__version__' attribute is deprecated and will be removed in\""
+        },
+        {
+          "id": "E0030",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 54,
+          "text": "                \" Flask 3.2. Use feature detection or\""
+        },
+        {
+          "id": "E0031",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 55,
+          "text": "                \" 'importlib.metadata.version(\\\"flask\\\")' instead.\","
+        },
+        {
+          "id": "E0032",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 56,
+          "text": "                DeprecationWarning,"
+        },
+        {
+          "id": "E0033",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 57,
+          "text": "                stacklevel=2,"
+        },
+        {
+          "id": "E0034",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 58,
+          "text": "            )"
+        },
+        {
+          "id": "E0035",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 59,
+          "text": "            return importlib.metadata.version(\"flask\")"
+        },
+        {
+          "id": "E0036",
+          "kind": "context",
+          "beforeLine": 59,
+          "afterLine": 60,
+          "text": ""
+        },
+        {
+          "id": "E0037",
+          "kind": "removed",
+          "beforeLine": 60,
+          "afterLine": null,
+          "text": "    raise AttributeError(name)"
+        },
+        {
+          "id": "E0038",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 61,
+          "text": "        raise AttributeError(name)"
+        }
+      ]
+    },
+    {
+      "file": "src/flask/app.py",
+      "lines": [
+        {
+          "id": "E0039",
+          "kind": "context",
+          "beforeLine": 260,
+          "afterLine": 260,
+          "text": "        self.cli.name = self.name"
+        },
+        {
+          "id": "E0040",
+          "kind": "context",
+          "beforeLine": 261,
+          "afterLine": 261,
+          "text": ""
+        },
+        {
+          "id": "E0041",
+          "kind": "context",
+          "beforeLine": 262,
+          "afterLine": 262,
+          "text": "        # Add a static route using the provided static_url_path, static_host,"
+        },
+        {
+          "id": "E0042",
+          "kind": "context",
+          "beforeLine": 263,
+          "afterLine": 263,
+          "text": "        # and static_folder if there is a configured static_folder."
+        },
+        {
+          "id": "E0043",
+          "kind": "context",
+          "beforeLine": 264,
+          "afterLine": 264,
+          "text": "        # Note we do this without checking if static_folder exists."
+        },
+        {
+          "id": "E0044",
+          "kind": "context",
+          "beforeLine": 265,
+          "afterLine": 265,
+          "text": "        # For one, it might be created while the server is running (e.g. during"
+        },
+        {
+          "id": "E0045",
+          "kind": "context",
+          "beforeLine": 266,
+          "afterLine": 266,
+          "text": "        # development). Also, Google App Engine stores static files somewhere"
+        },
+        {
+          "id": "E0046",
+          "kind": "context",
+          "beforeLine": 267,
+          "afterLine": 267,
+          "text": "        if self.has_static_folder:"
+        },
+        {
+          "id": "E0047",
+          "kind": "removed",
+          "beforeLine": 268,
+          "afterLine": null,
+          "text": "            assert ("
+        },
+        {
+          "id": "E0048",
+          "kind": "removed",
+          "beforeLine": 269,
+          "afterLine": null,
+          "text": "                bool(static_host) == host_matching"
+        },
+        {
+          "id": "E0049",
+          "kind": "removed",
+          "beforeLine": 270,
+          "afterLine": null,
+          "text": "            ), \"Invalid static_host/host_matching combination\""
+        },
+        {
+          "id": "E0050",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 268,
+          "text": "            assert bool(static_host) == host_matching, ("
+        },
+        {
+          "id": "E0051",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 269,
+          "text": "                \"Invalid static_host/host_matching combination\""
+        },
+        {
+          "id": "E0052",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 270,
+          "text": "            )"
+        },
+        {
+          "id": "E0053",
+          "kind": "context",
+          "beforeLine": 271,
+          "afterLine": 271,
+          "text": "            # Use a weakref to avoid creating a reference cycle between the app"
+        },
+        {
+          "id": "E0054",
+          "kind": "context",
+          "beforeLine": 272,
+          "afterLine": 272,
+          "text": "            # and the view function (see #3761)."
+        },
+        {
+          "id": "E0055",
+          "kind": "context",
+          "beforeLine": 273,
+          "afterLine": 273,
+          "text": "            self_ref = weakref.ref(self)"
+        },
+        {
+          "id": "E0056",
+          "kind": "context",
+          "beforeLine": 274,
+          "afterLine": 274,
+          "text": "            self.add_url_rule("
+        },
+        {
+          "id": "E0057",
+          "kind": "context",
+          "beforeLine": 275,
+          "afterLine": 275,
+          "text": "                f\"{self.static_url_path}/<path:filename>\","
+        },
+        {
+          "id": "E0058",
+          "kind": "context",
+          "beforeLine": 276,
+          "afterLine": 276,
+          "text": "                endpoint=\"static\","
+        },
+        {
+          "id": "E0059",
+          "kind": "context",
+          "beforeLine": 277,
+          "afterLine": 277,
+          "text": "                host=static_host,"
+        },
+        {
+          "id": "E0060",
+          "kind": "context",
+          "beforeLine": 278,
+          "afterLine": 278,
+          "text": "                view_func=lambda **kw: self_ref().send_static_file(**kw),  # type: ignore # noqa: B950"
+        }
+      ]
+    },
+    {
+      "file": "src/flask/app.py",
+      "lines": [
+        {
+          "id": "E0061",
+          "kind": "context",
+          "beforeLine": 1217,
+          "afterLine": 1217,
+          "text": ""
+        },
+        {
+          "id": "E0062",
+          "kind": "context",
+          "beforeLine": 1218,
+          "afterLine": 1218,
+          "text": "        # make sure the body is an instance of the response class"
+        },
+        {
+          "id": "E0063",
+          "kind": "context",
+          "beforeLine": 1219,
+          "afterLine": 1219,
+          "text": "        if not isinstance(rv, self.response_class):"
+        },
+        {
+          "id": "E0064",
+          "kind": "context",
+          "beforeLine": 1220,
+          "afterLine": 1220,
+          "text": "            if isinstance(rv, (str, bytes, bytearray)) or isinstance(rv, cabc.Iterator):"
+        },
+        {
+          "id": "E0065",
+          "kind": "context",
+          "beforeLine": 1221,
+          "afterLine": 1221,
+          "text": "                # let the response class set the status and headers instead of"
+        },
+        {
+          "id": "E0066",
+          "kind": "context",
+          "beforeLine": 1222,
+          "afterLine": 1222,
+          "text": "                # waiting to do it manually, so that the class can handle any"
+        },
+        {
+          "id": "E0067",
+          "kind": "context",
+          "beforeLine": 1223,
+          "afterLine": 1223,
+          "text": "                # special logic"
+        },
+        {
+          "id": "E0068",
+          "kind": "context",
+          "beforeLine": 1224,
+          "afterLine": 1224,
+          "text": "                rv = self.response_class("
+        },
+        {
+          "id": "E0069",
+          "kind": "removed",
+          "beforeLine": 1225,
+          "afterLine": null,
+          "text": "                    rv,"
+        },
+        {
+          "id": "E0070",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 1225,
+          "text": "                    rv,  # pyright: ignore"
+        },
+        {
+          "id": "E0071",
+          "kind": "context",
+          "beforeLine": 1226,
+          "afterLine": 1226,
+          "text": "                    status=status,"
+        },
+        {
+          "id": "E0072",
+          "kind": "context",
+          "beforeLine": 1227,
+          "afterLine": 1227,
+          "text": "                    headers=headers,  # type: ignore[arg-type]"
+        },
+        {
+          "id": "E0073",
+          "kind": "context",
+          "beforeLine": 1228,
+          "afterLine": 1228,
+          "text": "                )"
+        },
+        {
+          "id": "E0074",
+          "kind": "context",
+          "beforeLine": 1229,
+          "afterLine": 1229,
+          "text": "                status = headers = None"
+        },
+        {
+          "id": "E0075",
+          "kind": "context",
+          "beforeLine": 1230,
+          "afterLine": 1230,
+          "text": "            elif isinstance(rv, (dict, list)):"
+        },
+        {
+          "id": "E0076",
+          "kind": "context",
+          "beforeLine": 1231,
+          "afterLine": 1231,
+          "text": "                rv = self.json.response(rv)"
+        },
+        {
+          "id": "E0077",
+          "kind": "context",
+          "beforeLine": 1232,
+          "afterLine": 1232,
+          "text": "            elif isinstance(rv, BaseResponse) or callable(rv):"
+        },
+        {
+          "id": "E0078",
+          "kind": "context",
+          "beforeLine": 1233,
+          "afterLine": 1233,
+          "text": "                # evaluate a WSGI callable, or coerce a different response"
+        }
+      ]
+    },
+    {
+      "file": "src/flask/cli.py",
+      "lines": [
+        {
+          "id": "E0079",
+          "kind": "context",
+          "beforeLine": 679,
+          "afterLine": 679,
+          "text": "                create_app=self.create_app,"
+        },
+        {
+          "id": "E0080",
+          "kind": "context",
+          "beforeLine": 680,
+          "afterLine": 680,
+          "text": "                set_debug_flag=self.set_debug_flag,"
+        },
+        {
+          "id": "E0081",
+          "kind": "context",
+          "beforeLine": 681,
+          "afterLine": 681,
+          "text": "                load_dotenv_defaults=self.load_dotenv,"
+        },
+        {
+          "id": "E0082",
+          "kind": "context",
+          "beforeLine": 682,
+          "afterLine": 682,
+          "text": "            )"
+        },
+        {
+          "id": "E0083",
+          "kind": "context",
+          "beforeLine": 683,
+          "afterLine": 683,
+          "text": ""
+        },
+        {
+          "id": "E0084",
+          "kind": "context",
+          "beforeLine": 684,
+          "afterLine": 684,
+          "text": "        return super().make_context(info_name, args, parent=parent, **extra)"
+        },
+        {
+          "id": "E0085",
+          "kind": "context",
+          "beforeLine": 685,
+          "afterLine": 685,
+          "text": ""
+        },
+        {
+          "id": "E0086",
+          "kind": "context",
+          "beforeLine": 686,
+          "afterLine": 686,
+          "text": "    def parse_args(self, ctx: click.Context, args: list[str]) -> list[str]:"
+        },
+        {
+          "id": "E0087",
+          "kind": "removed",
+          "beforeLine": 687,
+          "afterLine": null,
+          "text": "        if not args and self.no_args_is_help:"
+        },
+        {
+          "id": "E0088",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 687,
+          "text": "        if (not args and self.no_args_is_help) or ("
+        },
+        {
+          "id": "E0089",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 688,
+          "text": "            len(args) == 1 and args[0] in self.get_help_option_names(ctx)"
+        },
+        {
+          "id": "E0090",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 689,
+          "text": "        ):"
+        },
+        {
+          "id": "E0091",
+          "kind": "context",
+          "beforeLine": 688,
+          "afterLine": 690,
+          "text": "            # Attempt to load --env-file and --app early in case they"
+        },
+        {
+          "id": "E0092",
+          "kind": "context",
+          "beforeLine": 689,
+          "afterLine": 691,
+          "text": "            # were given as env vars. Otherwise no_args_is_help will not"
+        },
+        {
+          "id": "E0093",
+          "kind": "context",
+          "beforeLine": 690,
+          "afterLine": 692,
+          "text": "            # see commands from app.cli."
+        },
+        {
+          "id": "E0094",
+          "kind": "context",
+          "beforeLine": 691,
+          "afterLine": 693,
+          "text": "            _env_file_option.handle_parse_result(ctx, {}, [])"
+        },
+        {
+          "id": "E0095",
+          "kind": "context",
+          "beforeLine": 692,
+          "afterLine": 694,
+          "text": "            _app_option.handle_parse_result(ctx, {}, [])"
+        },
+        {
+          "id": "E0096",
+          "kind": "context",
+          "beforeLine": 693,
+          "afterLine": 695,
+          "text": ""
+        },
+        {
+          "id": "E0097",
+          "kind": "context",
+          "beforeLine": 694,
+          "afterLine": 696,
+          "text": "        return super().parse_args(ctx, args)"
+        },
+        {
+          "id": "E0098",
+          "kind": "context",
+          "beforeLine": 695,
+          "afterLine": 697,
+          "text": ""
+        }
+      ]
+    },
+    {
+      "file": "src/flask/sessions.py",
+      "lines": [
+        {
+          "id": "E0099",
+          "kind": "context",
+          "beforeLine": 313,
+          "afterLine": 313,
+          "text": "    #: such as datetime objects or tuples."
+        },
+        {
+          "id": "E0100",
+          "kind": "context",
+          "beforeLine": 314,
+          "afterLine": 314,
+          "text": "    serializer = session_json_serializer"
+        },
+        {
+          "id": "E0101",
+          "kind": "context",
+          "beforeLine": 315,
+          "afterLine": 315,
+          "text": "    session_class = SecureCookieSession"
+        },
+        {
+          "id": "E0102",
+          "kind": "context",
+          "beforeLine": 316,
+          "afterLine": 316,
+          "text": ""
+        },
+        {
+          "id": "E0103",
+          "kind": "context",
+          "beforeLine": 317,
+          "afterLine": 317,
+          "text": "    def get_signing_serializer(self, app: Flask) -> URLSafeTimedSerializer | None:"
+        },
+        {
+          "id": "E0104",
+          "kind": "context",
+          "beforeLine": 318,
+          "afterLine": 318,
+          "text": "        if not app.secret_key:"
+        },
+        {
+          "id": "E0105",
+          "kind": "context",
+          "beforeLine": 319,
+          "afterLine": 319,
+          "text": "            return None"
+        },
+        {
+          "id": "E0106",
+          "kind": "context",
+          "beforeLine": 320,
+          "afterLine": 320,
+          "text": ""
+        },
+        {
+          "id": "E0107",
+          "kind": "removed",
+          "beforeLine": 321,
+          "afterLine": null,
+          "text": "        keys: list[str | bytes] = [app.secret_key]"
+        },
+        {
+          "id": "E0108",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 321,
+          "text": "        keys: list[str | bytes] = []"
+        },
+        {
+          "id": "E0109",
+          "kind": "context",
+          "beforeLine": 322,
+          "afterLine": 322,
+          "text": ""
+        },
+        {
+          "id": "E0110",
+          "kind": "context",
+          "beforeLine": 323,
+          "afterLine": 323,
+          "text": "        if fallbacks := app.config[\"SECRET_KEY_FALLBACKS\"]:"
+        },
+        {
+          "id": "E0111",
+          "kind": "context",
+          "beforeLine": 324,
+          "afterLine": 324,
+          "text": "            keys.extend(fallbacks)"
+        },
+        {
+          "id": "E0112",
+          "kind": "context",
+          "beforeLine": 325,
+          "afterLine": 325,
+          "text": ""
+        },
+        {
+          "id": "E0113",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 326,
+          "text": "        keys.append(app.secret_key)  # itsdangerous expects current key at top"
+        },
+        {
+          "id": "E0114",
+          "kind": "context",
+          "beforeLine": 326,
+          "afterLine": 327,
+          "text": "        return URLSafeTimedSerializer("
+        },
+        {
+          "id": "E0115",
+          "kind": "context",
+          "beforeLine": 327,
+          "afterLine": 328,
+          "text": "            keys,  # type: ignore[arg-type]"
+        },
+        {
+          "id": "E0116",
+          "kind": "context",
+          "beforeLine": 328,
+          "afterLine": 329,
+          "text": "            salt=self.salt,"
+        },
+        {
+          "id": "E0117",
+          "kind": "context",
+          "beforeLine": 329,
+          "afterLine": 330,
+          "text": "            serializer=self.serializer,"
+        },
+        {
+          "id": "E0118",
+          "kind": "context",
+          "beforeLine": 330,
+          "afterLine": 331,
+          "text": "            signer_kwargs={"
+        },
+        {
+          "id": "E0119",
+          "kind": "context",
+          "beforeLine": 331,
+          "afterLine": 332,
+          "text": "                \"key_derivation\": self.key_derivation,"
+        },
+        {
+          "id": "E0120",
+          "kind": "context",
+          "beforeLine": 332,
+          "afterLine": 333,
+          "text": "                \"digest_method\": self.digest_method,"
+        },
+        {
+          "id": "E0121",
+          "kind": "context",
+          "beforeLine": 333,
+          "afterLine": 334,
+          "text": "            },"
+        }
+      ]
+    },
+    {
+      "file": "src/flask/testing.py",
+      "lines": [
+        {
+          "id": "E0122",
+          "kind": "context",
+          "beforeLine": 5,
+          "afterLine": 5,
+          "text": "from contextlib import contextmanager"
+        },
+        {
+          "id": "E0123",
+          "kind": "context",
+          "beforeLine": 6,
+          "afterLine": 6,
+          "text": "from contextlib import ExitStack"
+        },
+        {
+          "id": "E0124",
+          "kind": "context",
+          "beforeLine": 7,
+          "afterLine": 7,
+          "text": "from copy import copy"
+        },
+        {
+          "id": "E0125",
+          "kind": "context",
+          "beforeLine": 8,
+          "afterLine": 8,
+          "text": "from types import TracebackType"
+        },
+        {
+          "id": "E0126",
+          "kind": "context",
+          "beforeLine": 9,
+          "afterLine": 9,
+          "text": "from urllib.parse import urlsplit"
+        },
+        {
+          "id": "E0127",
+          "kind": "context",
+          "beforeLine": 10,
+          "afterLine": 10,
+          "text": ""
+        },
+        {
+          "id": "E0128",
+          "kind": "context",
+          "beforeLine": 11,
+          "afterLine": 11,
+          "text": "import werkzeug.test"
+        },
+        {
+          "id": "E0129",
+          "kind": "context",
+          "beforeLine": 12,
+          "afterLine": 12,
+          "text": "from click.testing import CliRunner"
+        },
+        {
+          "id": "E0130",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 13,
+          "text": "from click.testing import Result"
+        },
+        {
+          "id": "E0131",
+          "kind": "context",
+          "beforeLine": 13,
+          "afterLine": 14,
+          "text": "from werkzeug.test import Client"
+        },
+        {
+          "id": "E0132",
+          "kind": "context",
+          "beforeLine": 14,
+          "afterLine": 15,
+          "text": "from werkzeug.wrappers import Request as BaseRequest"
+        },
+        {
+          "id": "E0133",
+          "kind": "context",
+          "beforeLine": 15,
+          "afterLine": 16,
+          "text": ""
+        },
+        {
+          "id": "E0134",
+          "kind": "context",
+          "beforeLine": 16,
+          "afterLine": 17,
+          "text": "from .cli import ScriptInfo"
+        },
+        {
+          "id": "E0135",
+          "kind": "context",
+          "beforeLine": 17,
+          "afterLine": 18,
+          "text": "from .sessions import SessionMixin"
+        },
+        {
+          "id": "E0136",
+          "kind": "context",
+          "beforeLine": 18,
+          "afterLine": 19,
+          "text": ""
+        },
+        {
+          "id": "E0137",
+          "kind": "context",
+          "beforeLine": 19,
+          "afterLine": 20,
+          "text": "if t.TYPE_CHECKING:  # pragma: no cover"
+        },
+        {
+          "id": "E0138",
+          "kind": "context",
+          "beforeLine": 20,
+          "afterLine": 21,
+          "text": "    from _typeshed.wsgi import WSGIEnvironment"
+        }
+      ]
+    },
+    {
+      "file": "src/flask/testing.py",
+      "lines": [
+        {
+          "id": "E0139",
+          "kind": "context",
+          "beforeLine": 52,
+          "afterLine": 53,
+          "text": "        base_url: str | None = None,"
+        },
+        {
+          "id": "E0140",
+          "kind": "context",
+          "beforeLine": 53,
+          "afterLine": 54,
+          "text": "        subdomain: str | None = None,"
+        },
+        {
+          "id": "E0141",
+          "kind": "context",
+          "beforeLine": 54,
+          "afterLine": 55,
+          "text": "        url_scheme: str | None = None,"
+        },
+        {
+          "id": "E0142",
+          "kind": "context",
+          "beforeLine": 55,
+          "afterLine": 56,
+          "text": "        *args: t.Any,"
+        },
+        {
+          "id": "E0143",
+          "kind": "context",
+          "beforeLine": 56,
+          "afterLine": 57,
+          "text": "        **kwargs: t.Any,"
+        },
+        {
+          "id": "E0144",
+          "kind": "context",
+          "beforeLine": 57,
+          "afterLine": 58,
+          "text": "    ) -> None:"
+        },
+        {
+          "id": "E0145",
+          "kind": "context",
+          "beforeLine": 58,
+          "afterLine": 59,
+          "text": "        assert not (base_url or subdomain or url_scheme) or ("
+        },
+        {
+          "id": "E0146",
+          "kind": "context",
+          "beforeLine": 59,
+          "afterLine": 60,
+          "text": "            base_url is not None"
+        },
+        {
+          "id": "E0147",
+          "kind": "removed",
+          "beforeLine": 60,
+          "afterLine": null,
+          "text": "        ) != bool("
+        },
+        {
+          "id": "E0148",
+          "kind": "removed",
+          "beforeLine": 61,
+          "afterLine": null,
+          "text": "            subdomain or url_scheme"
+        },
+        {
+          "id": "E0149",
+          "kind": "removed",
+          "beforeLine": 62,
+          "afterLine": null,
+          "text": "        ), 'Cannot pass \"subdomain\" or \"url_scheme\" with \"base_url\".'"
+        },
+        {
+          "id": "E0150",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 61,
+          "text": "        ) != bool(subdomain or url_scheme), ("
+        },
+        {
+          "id": "E0151",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 62,
+          "text": "            'Cannot pass \"subdomain\" or \"url_scheme\" with \"base_url\".'"
+        },
+        {
+          "id": "E0152",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 63,
+          "text": "        )"
+        },
+        {
+          "id": "E0153",
+          "kind": "context",
+          "beforeLine": 63,
+          "afterLine": 64,
+          "text": ""
+        },
+        {
+          "id": "E0154",
+          "kind": "context",
+          "beforeLine": 64,
+          "afterLine": 65,
+          "text": "        if base_url is None:"
+        },
+        {
+          "id": "E0155",
+          "kind": "context",
+          "beforeLine": 65,
+          "afterLine": 66,
+          "text": "            http_host = app.config.get(\"SERVER_NAME\") or \"localhost\""
+        },
+        {
+          "id": "E0156",
+          "kind": "context",
+          "beforeLine": 66,
+          "afterLine": 67,
+          "text": "            app_root = app.config[\"APPLICATION_ROOT\"]"
+        },
+        {
+          "id": "E0157",
+          "kind": "context",
+          "beforeLine": 67,
+          "afterLine": 68,
+          "text": ""
+        },
+        {
+          "id": "E0158",
+          "kind": "context",
+          "beforeLine": 68,
+          "afterLine": 69,
+          "text": "            if subdomain:"
+        },
+        {
+          "id": "E0159",
+          "kind": "context",
+          "beforeLine": 69,
+          "afterLine": 70,
+          "text": "                http_host = f\"{subdomain}.{http_host}\""
+        },
+        {
+          "id": "E0160",
+          "kind": "context",
+          "beforeLine": 70,
+          "afterLine": 71,
+          "text": ""
+        }
+      ]
+    },
+    {
+      "file": "src/flask/testing.py",
+      "lines": [
+        {
+          "id": "E0161",
+          "kind": "context",
+          "beforeLine": 268,
+          "afterLine": 269,
+          "text": "    \"\"\""
+        },
+        {
+          "id": "E0162",
+          "kind": "context",
+          "beforeLine": 269,
+          "afterLine": 270,
+          "text": ""
+        },
+        {
+          "id": "E0163",
+          "kind": "context",
+          "beforeLine": 270,
+          "afterLine": 271,
+          "text": "    def __init__(self, app: Flask, **kwargs: t.Any) -> None:"
+        },
+        {
+          "id": "E0164",
+          "kind": "context",
+          "beforeLine": 271,
+          "afterLine": 272,
+          "text": "        self.app = app"
+        },
+        {
+          "id": "E0165",
+          "kind": "context",
+          "beforeLine": 272,
+          "afterLine": 273,
+          "text": "        super().__init__(**kwargs)"
+        },
+        {
+          "id": "E0166",
+          "kind": "context",
+          "beforeLine": 273,
+          "afterLine": 274,
+          "text": ""
+        },
+        {
+          "id": "E0167",
+          "kind": "context",
+          "beforeLine": 274,
+          "afterLine": 275,
+          "text": "    def invoke(  # type: ignore"
+        },
+        {
+          "id": "E0168",
+          "kind": "context",
+          "beforeLine": 275,
+          "afterLine": 276,
+          "text": "        self, cli: t.Any = None, args: t.Any = None, **kwargs: t.Any"
+        },
+        {
+          "id": "E0169",
+          "kind": "removed",
+          "beforeLine": 276,
+          "afterLine": null,
+          "text": "    ) -> t.Any:"
+        },
+        {
+          "id": "E0170",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 277,
+          "text": "    ) -> Result:"
+        },
+        {
+          "id": "E0171",
+          "kind": "context",
+          "beforeLine": 277,
+          "afterLine": 278,
+          "text": "        \"\"\"Invokes a CLI command in an isolated environment. See"
+        },
+        {
+          "id": "E0172",
+          "kind": "context",
+          "beforeLine": 278,
+          "afterLine": 279,
+          "text": "        :meth:`CliRunner.invoke <click.testing.CliRunner.invoke>` for"
+        },
+        {
+          "id": "E0173",
+          "kind": "context",
+          "beforeLine": 279,
+          "afterLine": 280,
+          "text": "        full method documentation. See :ref:`testing-cli` for examples."
+        },
+        {
+          "id": "E0174",
+          "kind": "context",
+          "beforeLine": 280,
+          "afterLine": 281,
+          "text": ""
+        },
+        {
+          "id": "E0175",
+          "kind": "context",
+          "beforeLine": 281,
+          "afterLine": 282,
+          "text": "        If the ``obj`` argument is not given, passes an instance of"
+        },
+        {
+          "id": "E0176",
+          "kind": "context",
+          "beforeLine": 282,
+          "afterLine": 283,
+          "text": "        :class:`~flask.cli.ScriptInfo` that knows how to load the Flask"
+        },
+        {
+          "id": "E0177",
+          "kind": "context",
+          "beforeLine": 283,
+          "afterLine": 284,
+          "text": "        app being tested."
+        },
+        {
+          "id": "E0178",
+          "kind": "context",
+          "beforeLine": 284,
+          "afterLine": 285,
+          "text": ""
+        }
+      ]
+    },
+    {
+      "file": "src/flask/typing.py",
+      "lines": [
+        {
+          "id": "E0179",
+          "kind": "context",
+          "beforeLine": 1,
+          "afterLine": 1,
+          "text": "from __future__ import annotations"
+        },
+        {
+          "id": "E0180",
+          "kind": "context",
+          "beforeLine": 2,
+          "afterLine": 2,
+          "text": ""
+        },
+        {
+          "id": "E0181",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 3,
+          "text": "import collections.abc as cabc"
+        },
+        {
+          "id": "E0182",
+          "kind": "context",
+          "beforeLine": 3,
+          "afterLine": 4,
+          "text": "import typing as t"
+        },
+        {
+          "id": "E0183",
+          "kind": "context",
+          "beforeLine": 4,
+          "afterLine": 5,
+          "text": ""
+        },
+        {
+          "id": "E0184",
+          "kind": "context",
+          "beforeLine": 5,
+          "afterLine": 6,
+          "text": "if t.TYPE_CHECKING:  # pragma: no cover"
+        },
+        {
+          "id": "E0185",
+          "kind": "context",
+          "beforeLine": 6,
+          "afterLine": 7,
+          "text": "    from _typeshed.wsgi import WSGIApplication  # noqa: F401"
+        },
+        {
+          "id": "E0186",
+          "kind": "context",
+          "beforeLine": 7,
+          "afterLine": 8,
+          "text": "    from werkzeug.datastructures import Headers  # noqa: F401"
+        },
+        {
+          "id": "E0187",
+          "kind": "context",
+          "beforeLine": 8,
+          "afterLine": 9,
+          "text": "    from werkzeug.sansio.response import Response  # noqa: F401"
+        },
+        {
+          "id": "E0188",
+          "kind": "context",
+          "beforeLine": 9,
+          "afterLine": 10,
+          "text": ""
+        },
+        {
+          "id": "E0189",
+          "kind": "context",
+          "beforeLine": 10,
+          "afterLine": 11,
+          "text": "# The possible types that are directly convertible or are a Response object."
+        }
+      ]
+    },
+    {
+      "file": "src/flask/typing.py",
+      "lines": [
+        {
+          "id": "E0190",
+          "kind": "context",
+          "beforeLine": 12,
+          "afterLine": 13,
+          "text": "    \"Response\","
+        },
+        {
+          "id": "E0191",
+          "kind": "context",
+          "beforeLine": 13,
+          "afterLine": 14,
+          "text": "    str,"
+        },
+        {
+          "id": "E0192",
+          "kind": "context",
+          "beforeLine": 14,
+          "afterLine": 15,
+          "text": "    bytes,"
+        },
+        {
+          "id": "E0193",
+          "kind": "context",
+          "beforeLine": 15,
+          "afterLine": 16,
+          "text": "    list[t.Any],"
+        },
+        {
+          "id": "E0194",
+          "kind": "context",
+          "beforeLine": 16,
+          "afterLine": 17,
+          "text": "    # Only dict is actually accepted, but Mapping allows for TypedDict."
+        },
+        {
+          "id": "E0195",
+          "kind": "context",
+          "beforeLine": 17,
+          "afterLine": 18,
+          "text": "    t.Mapping[str, t.Any],"
+        },
+        {
+          "id": "E0196",
+          "kind": "context",
+          "beforeLine": 18,
+          "afterLine": 19,
+          "text": "    t.Iterator[str],"
+        },
+        {
+          "id": "E0197",
+          "kind": "context",
+          "beforeLine": 19,
+          "afterLine": 20,
+          "text": "    t.Iterator[bytes],"
+        },
+        {
+          "id": "E0198",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 21,
+          "text": "    cabc.AsyncIterable[str],  # for Quart, until App is generic."
+        },
+        {
+          "id": "E0199",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 22,
+          "text": "    cabc.AsyncIterable[bytes],"
+        },
+        {
+          "id": "E0200",
+          "kind": "context",
+          "beforeLine": 20,
+          "afterLine": 23,
+          "text": "]"
+        },
+        {
+          "id": "E0201",
+          "kind": "context",
+          "beforeLine": 21,
+          "afterLine": 24,
+          "text": ""
+        },
+        {
+          "id": "E0202",
+          "kind": "context",
+          "beforeLine": 22,
+          "afterLine": 25,
+          "text": "# the possible types for an individual HTTP header"
+        },
+        {
+          "id": "E0203",
+          "kind": "context",
+          "beforeLine": 23,
+          "afterLine": 26,
+          "text": "# This should be a Union, but mypy doesn't pass unless it's a TypeVar."
+        },
+        {
+          "id": "E0204",
+          "kind": "context",
+          "beforeLine": 24,
+          "afterLine": 27,
+          "text": "HeaderValue = t.Union[str, list[str], tuple[str, ...]]"
+        },
+        {
+          "id": "E0205",
+          "kind": "context",
+          "beforeLine": 25,
+          "afterLine": 28,
+          "text": ""
+        },
+        {
+          "id": "E0206",
+          "kind": "context",
+          "beforeLine": 26,
+          "afterLine": 29,
+          "text": "# the possible types for HTTP headers"
+        },
+        {
+          "id": "E0207",
+          "kind": "context",
+          "beforeLine": 27,
+          "afterLine": 30,
+          "text": "HeadersValue = t.Union["
+        }
+      ]
+    },
+    {
+      "file": "tests/conftest.py",
+      "lines": [
+        {
+          "id": "E0208",
+          "kind": "context",
+          "beforeLine": 1,
+          "afterLine": 1,
+          "text": "import os"
+        },
+        {
+          "id": "E0209",
+          "kind": "removed",
+          "beforeLine": 2,
+          "afterLine": null,
+          "text": "import pkgutil"
+        },
+        {
+          "id": "E0210",
+          "kind": "context",
+          "beforeLine": 3,
+          "afterLine": 2,
+          "text": "import sys"
+        },
+        {
+          "id": "E0211",
+          "kind": "context",
+          "beforeLine": 4,
+          "afterLine": 3,
+          "text": ""
+        },
+        {
+          "id": "E0212",
+          "kind": "context",
+          "beforeLine": 5,
+          "afterLine": 4,
+          "text": "import pytest"
+        },
+        {
+          "id": "E0213",
+          "kind": "context",
+          "beforeLine": 6,
+          "afterLine": 5,
+          "text": "from _pytest import monkeypatch"
+        },
+        {
+          "id": "E0214",
+          "kind": "context",
+          "beforeLine": 7,
+          "afterLine": 6,
+          "text": ""
+        },
+        {
+          "id": "E0215",
+          "kind": "context",
+          "beforeLine": 8,
+          "afterLine": 7,
+          "text": "from flask import Flask"
+        },
+        {
+          "id": "E0216",
+          "kind": "context",
+          "beforeLine": 9,
+          "afterLine": 8,
+          "text": "from flask.globals import request_ctx"
+        },
+        {
+          "id": "E0217",
+          "kind": "context",
+          "beforeLine": 10,
+          "afterLine": 9,
+          "text": ""
+        }
+      ]
+    },
+    {
+      "file": "tests/conftest.py",
+      "lines": [
+        {
+          "id": "E0218",
+          "kind": "context",
+          "beforeLine": 91,
+          "afterLine": 90,
+          "text": "    leaks = []"
+        },
+        {
+          "id": "E0219",
+          "kind": "context",
+          "beforeLine": 92,
+          "afterLine": 91,
+          "text": "    while request_ctx:"
+        },
+        {
+          "id": "E0220",
+          "kind": "context",
+          "beforeLine": 93,
+          "afterLine": 92,
+          "text": "        leaks.append(request_ctx._get_current_object())"
+        },
+        {
+          "id": "E0221",
+          "kind": "context",
+          "beforeLine": 94,
+          "afterLine": 93,
+          "text": "        request_ctx.pop()"
+        },
+        {
+          "id": "E0222",
+          "kind": "context",
+          "beforeLine": 95,
+          "afterLine": 94,
+          "text": ""
+        },
+        {
+          "id": "E0223",
+          "kind": "context",
+          "beforeLine": 96,
+          "afterLine": 95,
+          "text": "    assert leaks == []"
+        },
+        {
+          "id": "E0224",
+          "kind": "context",
+          "beforeLine": 97,
+          "afterLine": 96,
+          "text": ""
+        },
+        {
+          "id": "E0225",
+          "kind": "context",
+          "beforeLine": 98,
+          "afterLine": 97,
+          "text": ""
+        },
+        {
+          "id": "E0226",
+          "kind": "removed",
+          "beforeLine": 99,
+          "afterLine": null,
+          "text": "@pytest.fixture(params=(True, False))"
+        },
+        {
+          "id": "E0227",
+          "kind": "removed",
+          "beforeLine": 100,
+          "afterLine": null,
+          "text": "def limit_loader(request, monkeypatch):"
+        },
+        {
+          "id": "E0228",
+          "kind": "removed",
+          "beforeLine": 101,
+          "afterLine": null,
+          "text": "    \"\"\"Patch pkgutil.get_loader to give loader without get_filename or archive."
+        },
+        {
+          "id": "E0229",
+          "kind": "removed",
+          "beforeLine": 102,
+          "afterLine": null,
+          "text": ""
+        },
+        {
+          "id": "E0230",
+          "kind": "removed",
+          "beforeLine": 103,
+          "afterLine": null,
+          "text": "    This provides for tests where a system has custom loaders, e.g. Google App"
+        },
+        {
+          "id": "E0231",
+          "kind": "removed",
+          "beforeLine": 104,
+          "afterLine": null,
+          "text": "    Engine's HardenedModulesHook, which have neither the `get_filename` method"
+        },
+        {
+          "id": "E0232",
+          "kind": "removed",
+          "beforeLine": 105,
+          "afterLine": null,
+          "text": "    nor the `archive` attribute."
+        },
+        {
+          "id": "E0233",
+          "kind": "removed",
+          "beforeLine": 106,
+          "afterLine": null,
+          "text": ""
+        },
+        {
+          "id": "E0234",
+          "kind": "removed",
+          "beforeLine": 107,
+          "afterLine": null,
+          "text": "    This fixture will run the testcase twice, once with and once without the"
+        },
+        {
+          "id": "E0235",
+          "kind": "removed",
+          "beforeLine": 108,
+          "afterLine": null,
+          "text": "    limitation/mock."
+        },
+        {
+          "id": "E0236",
+          "kind": "removed",
+          "beforeLine": 109,
+          "afterLine": null,
+          "text": "    \"\"\""
+        },
+        {
+          "id": "E0237",
+          "kind": "removed",
+          "beforeLine": 110,
+          "afterLine": null,
+          "text": "    if not request.param:"
+        },
+        {
+          "id": "E0238",
+          "kind": "removed",
+          "beforeLine": 111,
+          "afterLine": null,
+          "text": "        return"
+        },
+        {
+          "id": "E0239",
+          "kind": "removed",
+          "beforeLine": 112,
+          "afterLine": null,
+          "text": ""
+        },
+        {
+          "id": "E0240",
+          "kind": "removed",
+          "beforeLine": 113,
+          "afterLine": null,
+          "text": "    class LimitedLoader:"
+        },
+        {
+          "id": "E0241",
+          "kind": "removed",
+          "beforeLine": 114,
+          "afterLine": null,
+          "text": "        def __init__(self, loader):"
+        },
+        {
+          "id": "E0242",
+          "kind": "removed",
+          "beforeLine": 115,
+          "afterLine": null,
+          "text": "            self.loader = loader"
+        },
+        {
+          "id": "E0243",
+          "kind": "removed",
+          "beforeLine": 116,
+          "afterLine": null,
+          "text": ""
+        },
+        {
+          "id": "E0244",
+          "kind": "removed",
+          "beforeLine": 117,
+          "afterLine": null,
+          "text": "        def __getattr__(self, name):"
+        },
+        {
+          "id": "E0245",
+          "kind": "removed",
+          "beforeLine": 118,
+          "afterLine": null,
+          "text": "            if name in {\"archive\", \"get_filename\"}:"
+        },
+        {
+          "id": "E0246",
+          "kind": "removed",
+          "beforeLine": 119,
+          "afterLine": null,
+          "text": "                raise AttributeError(f\"Mocking a loader which does not have {name!r}.\")"
+        },
+        {
+          "id": "E0247",
+          "kind": "removed",
+          "beforeLine": 120,
+          "afterLine": null,
+          "text": "            return getattr(self.loader, name)"
+        },
+        {
+          "id": "E0248",
+          "kind": "removed",
+          "beforeLine": 121,
+          "afterLine": null,
+          "text": ""
+        },
+        {
+          "id": "E0249",
+          "kind": "removed",
+          "beforeLine": 122,
+          "afterLine": null,
+          "text": "    old_get_loader = pkgutil.get_loader"
+        },
+        {
+          "id": "E0250",
+          "kind": "removed",
+          "beforeLine": 123,
+          "afterLine": null,
+          "text": ""
+        },
+        {
+          "id": "E0251",
+          "kind": "removed",
+          "beforeLine": 124,
+          "afterLine": null,
+          "text": "    def get_loader(*args, **kwargs):"
+        },
+        {
+          "id": "E0252",
+          "kind": "removed",
+          "beforeLine": 125,
+          "afterLine": null,
+          "text": "        return LimitedLoader(old_get_loader(*args, **kwargs))"
+        },
+        {
+          "id": "E0253",
+          "kind": "removed",
+          "beforeLine": 126,
+          "afterLine": null,
+          "text": ""
+        },
+        {
+          "id": "E0254",
+          "kind": "removed",
+          "beforeLine": 127,
+          "afterLine": null,
+          "text": "    monkeypatch.setattr(pkgutil, \"get_loader\", get_loader)"
+        },
+        {
+          "id": "E0255",
+          "kind": "removed",
+          "beforeLine": 128,
+          "afterLine": null,
+          "text": ""
+        },
+        {
+          "id": "E0256",
+          "kind": "removed",
+          "beforeLine": 129,
+          "afterLine": null,
+          "text": ""
+        },
+        {
+          "id": "E0257",
+          "kind": "context",
+          "beforeLine": 130,
+          "afterLine": 98,
+          "text": "@pytest.fixture"
+        },
+        {
+          "id": "E0258",
+          "kind": "context",
+          "beforeLine": 131,
+          "afterLine": 99,
+          "text": "def modules_tmp_path(tmp_path, monkeypatch):"
+        },
+        {
+          "id": "E0259",
+          "kind": "context",
+          "beforeLine": 132,
+          "afterLine": 100,
+          "text": "    \"\"\"A temporary directory added to sys.path.\"\"\""
+        },
+        {
+          "id": "E0260",
+          "kind": "context",
+          "beforeLine": 133,
+          "afterLine": 101,
+          "text": "    rv = tmp_path / \"modules_tmp\""
+        },
+        {
+          "id": "E0261",
+          "kind": "context",
+          "beforeLine": 134,
+          "afterLine": 102,
+          "text": "    rv.mkdir()"
+        },
+        {
+          "id": "E0262",
+          "kind": "context",
+          "beforeLine": 135,
+          "afterLine": 103,
+          "text": "    monkeypatch.syspath_prepend(os.fspath(rv))"
+        },
+        {
+          "id": "E0263",
+          "kind": "context",
+          "beforeLine": 136,
+          "afterLine": 104,
+          "text": "    return rv"
+        },
+        {
+          "id": "E0264",
+          "kind": "context",
+          "beforeLine": 137,
+          "afterLine": 105,
+          "text": ""
+        }
+      ]
+    },
+    {
+      "file": "tests/test_basic.py",
+      "lines": [
+        {
+          "id": "E0265",
+          "kind": "context",
+          "beforeLine": 376,
+          "afterLine": 376,
+          "text": "    def set_session() -> str:"
+        },
+        {
+          "id": "E0266",
+          "kind": "context",
+          "beforeLine": 377,
+          "afterLine": 377,
+          "text": "        flask.session[\"a\"] = 1"
+        },
+        {
+          "id": "E0267",
+          "kind": "context",
+          "beforeLine": 378,
+          "afterLine": 378,
+          "text": "        return \"\""
+        },
+        {
+          "id": "E0268",
+          "kind": "context",
+          "beforeLine": 379,
+          "afterLine": 379,
+          "text": ""
+        },
+        {
+          "id": "E0269",
+          "kind": "context",
+          "beforeLine": 380,
+          "afterLine": 380,
+          "text": "    @app.get(\"/\")"
+        },
+        {
+          "id": "E0270",
+          "kind": "context",
+          "beforeLine": 381,
+          "afterLine": 381,
+          "text": "    def get_session() -> dict[str, t.Any]:"
+        },
+        {
+          "id": "E0271",
+          "kind": "context",
+          "beforeLine": 382,
+          "afterLine": 382,
+          "text": "        return dict(flask.session)"
+        },
+        {
+          "id": "E0272",
+          "kind": "context",
+          "beforeLine": 383,
+          "afterLine": 383,
+          "text": ""
+        },
+        {
+          "id": "E0273",
+          "kind": "removed",
+          "beforeLine": 384,
+          "afterLine": null,
+          "text": "    # Set session with initial secret key"
+        },
+        {
+          "id": "E0274",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 384,
+          "text": "    # Set session with initial secret key, and two valid expiring keys"
+        },
+        {
+          "id": "E0275",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 385,
+          "text": "    app.secret_key, app.config[\"SECRET_KEY_FALLBACKS\"] = ("
+        },
+        {
+          "id": "E0276",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 386,
+          "text": "        \"0 key\","
+        },
+        {
+          "id": "E0277",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 387,
+          "text": "        [\"-1 key\", \"-2 key\"],"
+        },
+        {
+          "id": "E0278",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 388,
+          "text": "    )"
+        },
+        {
+          "id": "E0279",
+          "kind": "context",
+          "beforeLine": 385,
+          "afterLine": 389,
+          "text": "    client.post()"
+        },
+        {
+          "id": "E0280",
+          "kind": "context",
+          "beforeLine": 386,
+          "afterLine": 390,
+          "text": "    assert client.get().json == {\"a\": 1}"
+        },
+        {
+          "id": "E0281",
+          "kind": "context",
+          "beforeLine": 387,
+          "afterLine": 391,
+          "text": "    # Change secret key, session can't be loaded and appears empty"
+        },
+        {
+          "id": "E0282",
+          "kind": "removed",
+          "beforeLine": 388,
+          "afterLine": null,
+          "text": "    app.secret_key = \"new test key\""
+        },
+        {
+          "id": "E0283",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 392,
+          "text": "    app.secret_key = \"? key\""
+        },
+        {
+          "id": "E0284",
+          "kind": "context",
+          "beforeLine": 389,
+          "afterLine": 393,
+          "text": "    assert client.get().json == {}"
+        },
+        {
+          "id": "E0285",
+          "kind": "removed",
+          "beforeLine": 390,
+          "afterLine": null,
+          "text": "    # Add initial secret key as fallback, session can be loaded"
+        },
+        {
+          "id": "E0286",
+          "kind": "removed",
+          "beforeLine": 391,
+          "afterLine": null,
+          "text": "    app.config[\"SECRET_KEY_FALLBACKS\"] = [\"test key\"]"
+        },
+        {
+          "id": "E0287",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 394,
+          "text": "    # Rotate the valid keys, session can be loaded"
+        },
+        {
+          "id": "E0288",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 395,
+          "text": "    app.secret_key, app.config[\"SECRET_KEY_FALLBACKS\"] = ("
+        },
+        {
+          "id": "E0289",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 396,
+          "text": "        \"+1 key\","
+        },
+        {
+          "id": "E0290",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 397,
+          "text": "        [\"0 key\", \"-1 key\"],"
+        },
+        {
+          "id": "E0291",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 398,
+          "text": "    )"
+        },
+        {
+          "id": "E0292",
+          "kind": "context",
+          "beforeLine": 392,
+          "afterLine": 399,
+          "text": "    assert client.get().json == {\"a\": 1}"
+        },
+        {
+          "id": "E0293",
+          "kind": "context",
+          "beforeLine": 393,
+          "afterLine": 400,
+          "text": ""
+        },
+        {
+          "id": "E0294",
+          "kind": "context",
+          "beforeLine": 394,
+          "afterLine": 401,
+          "text": ""
+        },
+        {
+          "id": "E0295",
+          "kind": "context",
+          "beforeLine": 395,
+          "afterLine": 402,
+          "text": "def test_session_expiration(app, client):"
+        },
+        {
+          "id": "E0296",
+          "kind": "context",
+          "beforeLine": 396,
+          "afterLine": 403,
+          "text": "    permanent = True"
+        },
+        {
+          "id": "E0297",
+          "kind": "context",
+          "beforeLine": 397,
+          "afterLine": 404,
+          "text": ""
+        },
+        {
+          "id": "E0298",
+          "kind": "context",
+          "beforeLine": 398,
+          "afterLine": 405,
+          "text": "    @app.route(\"/\")"
+        },
+        {
+          "id": "E0299",
+          "kind": "context",
+          "beforeLine": 399,
+          "afterLine": 406,
+          "text": "    def index():"
+        }
+      ]
+    },
+    {
+      "file": "tests/test_instance_config.py",
+      "lines": [
+        {
+          "id": "E0300",
+          "kind": "context",
+          "beforeLine": 58,
+          "afterLine": 58,
+          "text": "    purge_module(\"namespace\")"
+        },
+        {
+          "id": "E0301",
+          "kind": "context",
+          "beforeLine": 59,
+          "afterLine": 59,
+          "text": ""
+        },
+        {
+          "id": "E0302",
+          "kind": "context",
+          "beforeLine": 60,
+          "afterLine": 60,
+          "text": "    from namespace.package2 import app"
+        },
+        {
+          "id": "E0303",
+          "kind": "context",
+          "beforeLine": 61,
+          "afterLine": 61,
+          "text": ""
+        },
+        {
+          "id": "E0304",
+          "kind": "context",
+          "beforeLine": 62,
+          "afterLine": 62,
+          "text": "    assert app.instance_path == os.fspath(project2 / \"instance\")"
+        },
+        {
+          "id": "E0305",
+          "kind": "context",
+          "beforeLine": 63,
+          "afterLine": 63,
+          "text": ""
+        },
+        {
+          "id": "E0306",
+          "kind": "context",
+          "beforeLine": 64,
+          "afterLine": 64,
+          "text": ""
+        },
+        {
+          "id": "E0307",
+          "kind": "context",
+          "beforeLine": 65,
+          "afterLine": 65,
+          "text": "def test_installed_module_paths("
+        },
+        {
+          "id": "E0308",
+          "kind": "removed",
+          "beforeLine": 66,
+          "afterLine": null,
+          "text": "    modules_tmp_path, modules_tmp_path_prefix, purge_module, site_packages, limit_loader"
+        },
+        {
+          "id": "E0309",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 66,
+          "text": "    modules_tmp_path, modules_tmp_path_prefix, purge_module, site_packages"
+        },
+        {
+          "id": "E0310",
+          "kind": "context",
+          "beforeLine": 67,
+          "afterLine": 67,
+          "text": "):"
+        },
+        {
+          "id": "E0311",
+          "kind": "context",
+          "beforeLine": 68,
+          "afterLine": 68,
+          "text": "    (site_packages / \"site_app.py\").write_text("
+        },
+        {
+          "id": "E0312",
+          "kind": "context",
+          "beforeLine": 69,
+          "afterLine": 69,
+          "text": "        \"import flask\\napp = flask.Flask(__name__)\\n\""
+        },
+        {
+          "id": "E0313",
+          "kind": "context",
+          "beforeLine": 70,
+          "afterLine": 70,
+          "text": "    )"
+        },
+        {
+          "id": "E0314",
+          "kind": "context",
+          "beforeLine": 71,
+          "afterLine": 71,
+          "text": "    purge_module(\"site_app\")"
+        },
+        {
+          "id": "E0315",
+          "kind": "context",
+          "beforeLine": 72,
+          "afterLine": 72,
+          "text": ""
+        },
+        {
+          "id": "E0316",
+          "kind": "context",
+          "beforeLine": 73,
+          "afterLine": 73,
+          "text": "    from site_app import app"
+        },
+        {
+          "id": "E0317",
+          "kind": "context",
+          "beforeLine": 74,
+          "afterLine": 74,
+          "text": ""
+        },
+        {
+          "id": "E0318",
+          "kind": "context",
+          "beforeLine": 75,
+          "afterLine": 75,
+          "text": "    assert app.instance_path == os.fspath("
+        },
+        {
+          "id": "E0319",
+          "kind": "context",
+          "beforeLine": 76,
+          "afterLine": 76,
+          "text": "        modules_tmp_path / \"var\" / \"site_app-instance\""
+        },
+        {
+          "id": "E0320",
+          "kind": "context",
+          "beforeLine": 77,
+          "afterLine": 77,
+          "text": "    )"
+        },
+        {
+          "id": "E0321",
+          "kind": "context",
+          "beforeLine": 78,
+          "afterLine": 78,
+          "text": ""
+        },
+        {
+          "id": "E0322",
+          "kind": "context",
+          "beforeLine": 79,
+          "afterLine": 79,
+          "text": ""
+        },
+        {
+          "id": "E0323",
+          "kind": "context",
+          "beforeLine": 80,
+          "afterLine": 80,
+          "text": "def test_installed_package_paths("
+        },
+        {
+          "id": "E0324",
+          "kind": "removed",
+          "beforeLine": 81,
+          "afterLine": null,
+          "text": "    limit_loader, modules_tmp_path, modules_tmp_path_prefix, purge_module, monkeypatch"
+        },
+        {
+          "id": "E0325",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 81,
+          "text": "    modules_tmp_path, modules_tmp_path_prefix, purge_module, monkeypatch"
+        },
+        {
+          "id": "E0326",
+          "kind": "context",
+          "beforeLine": 82,
+          "afterLine": 82,
+          "text": "):"
+        },
+        {
+          "id": "E0327",
+          "kind": "context",
+          "beforeLine": 83,
+          "afterLine": 83,
+          "text": "    installed_path = modules_tmp_path / \"path\""
+        },
+        {
+          "id": "E0328",
+          "kind": "context",
+          "beforeLine": 84,
+          "afterLine": 84,
+          "text": "    installed_path.mkdir()"
+        },
+        {
+          "id": "E0329",
+          "kind": "context",
+          "beforeLine": 85,
+          "afterLine": 85,
+          "text": "    monkeypatch.syspath_prepend(installed_path)"
+        },
+        {
+          "id": "E0330",
+          "kind": "context",
+          "beforeLine": 86,
+          "afterLine": 86,
+          "text": ""
+        },
+        {
+          "id": "E0331",
+          "kind": "context",
+          "beforeLine": 87,
+          "afterLine": 87,
+          "text": "    app = installed_path / \"installed_package\""
+        },
+        {
+          "id": "E0332",
+          "kind": "context",
+          "beforeLine": 88,
+          "afterLine": 88,
+          "text": "    app.mkdir()"
+        },
+        {
+          "id": "E0333",
+          "kind": "context",
+          "beforeLine": 89,
+          "afterLine": 89,
+          "text": "    (app / \"__init__.py\").write_text(\"import flask\\napp = flask.Flask(__name__)\\n\")"
+        }
+      ]
+    },
+    {
+      "file": "tests/test_instance_config.py",
+      "lines": [
+        {
+          "id": "E0334",
+          "kind": "context",
+          "beforeLine": 92,
+          "afterLine": 92,
+          "text": "    from installed_package import app"
+        },
+        {
+          "id": "E0335",
+          "kind": "context",
+          "beforeLine": 93,
+          "afterLine": 93,
+          "text": ""
+        },
+        {
+          "id": "E0336",
+          "kind": "context",
+          "beforeLine": 94,
+          "afterLine": 94,
+          "text": "    assert app.instance_path == os.fspath("
+        },
+        {
+          "id": "E0337",
+          "kind": "context",
+          "beforeLine": 95,
+          "afterLine": 95,
+          "text": "        modules_tmp_path / \"var\" / \"installed_package-instance\""
+        },
+        {
+          "id": "E0338",
+          "kind": "context",
+          "beforeLine": 96,
+          "afterLine": 96,
+          "text": "    )"
+        },
+        {
+          "id": "E0339",
+          "kind": "context",
+          "beforeLine": 97,
+          "afterLine": 97,
+          "text": ""
+        },
+        {
+          "id": "E0340",
+          "kind": "context",
+          "beforeLine": 98,
+          "afterLine": 98,
+          "text": ""
+        },
+        {
+          "id": "E0341",
+          "kind": "context",
+          "beforeLine": 99,
+          "afterLine": 99,
+          "text": "def test_prefix_package_paths("
+        },
+        {
+          "id": "E0342",
+          "kind": "removed",
+          "beforeLine": 100,
+          "afterLine": null,
+          "text": "    limit_loader, modules_tmp_path, modules_tmp_path_prefix, purge_module, site_packages"
+        },
+        {
+          "id": "E0343",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 100,
+          "text": "    modules_tmp_path, modules_tmp_path_prefix, purge_module, site_packages"
+        },
+        {
+          "id": "E0344",
+          "kind": "context",
+          "beforeLine": 101,
+          "afterLine": 101,
+          "text": "):"
+        },
+        {
+          "id": "E0345",
+          "kind": "context",
+          "beforeLine": 102,
+          "afterLine": 102,
+          "text": "    app = site_packages / \"site_package\""
+        },
+        {
+          "id": "E0346",
+          "kind": "context",
+          "beforeLine": 103,
+          "afterLine": 103,
+          "text": "    app.mkdir()"
+        },
+        {
+          "id": "E0347",
+          "kind": "context",
+          "beforeLine": 104,
+          "afterLine": 104,
+          "text": "    (app / \"__init__.py\").write_text(\"import flask\\napp = flask.Flask(__name__)\\n\")"
+        },
+        {
+          "id": "E0348",
+          "kind": "context",
+          "beforeLine": 105,
+          "afterLine": 105,
+          "text": "    purge_module(\"site_package\")"
+        },
+        {
+          "id": "E0349",
+          "kind": "context",
+          "beforeLine": 106,
+          "afterLine": 106,
+          "text": ""
+        },
+        {
+          "id": "E0350",
+          "kind": "context",
+          "beforeLine": 107,
+          "afterLine": 107,
+          "text": "    import site_package"
+        },
+        {
+          "id": "E0351",
+          "kind": "context",
+          "beforeLine": 108,
+          "afterLine": 108,
+          "text": ""
+        }
+      ]
+    }
+  ]
+}

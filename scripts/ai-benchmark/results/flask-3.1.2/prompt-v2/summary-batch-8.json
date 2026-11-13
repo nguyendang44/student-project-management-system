@@ -1,0 +1,24 @@
+{
+  "signature": "d7f6da740d15c208302868fe8dc2a6fab5d6462bed1de885c01728812ade93b2",
+  "result": [
+    {
+      "category": "logic",
+      "title": "Thêm thuộc tính static_folder",
+      "before": "self.static_folder = static_folder  # type: ignore",
+      "after": "self.static_folder = static_folder",
+      "description": "Đã thêm dòng code để gán giá trị cho thuộc tính static_folder.",
+      "beforeEvidenceIds": [
+        "E0233"
+      ],
+      "afterEvidenceIds": [
+        "E0234"
+      ],
+      "evidenceIds": [
+        "E0233",
+        "E0234"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    }
+  ]
+}

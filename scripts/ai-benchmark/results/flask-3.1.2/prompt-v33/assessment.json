@@ -1,0 +1,477 @@
+{
+  "signature": "901b0accab1d32d890c8e9d7f8d3d00ea9efffd6e75f8720fa3dc774af65f709",
+  "resumedFrom": null,
+  "checks": [
+    {
+      "claimId": "C1",
+      "status": "SUPPORTED",
+      "rawStatus": "SUPPORTED",
+      "atoms": [
+        {
+          "claimId": "C1.1",
+          "claimQuote": "Điều chỉnh stream_with_context để lưu app context và request context trước khi tiếp tục generator, rồi đẩy app context trước request context.",
+          "status": "SUPPORTED",
+          "explanation": "Báo cáo khẳng định rằng stream_with_context cần lưu app context và request context trước khi tiếp tục generator và đẩy app context trước request context. Trong code mới, có thể thấy rằng hàm stream_with_context đã được cập nhật để bao gồm logic mới để lưu app context và request context trước khi tiếp tục generator. Cụ thể, đoạn mã mới đã thêm logic để lấy app context và request context, sau đó đẩy app context trước request context. Điều này hỗ trợ chính xác yêu cầu trong báo cáo.",
+          "evidenceIds": [
+            "E0128",
+            "E0129",
+            "E0130",
+            "E0131",
+            "E0132",
+            "E0133",
+            "E0134",
+            "E0135",
+            "E0136",
+            "E0137",
+            "E0138",
+            "E0139"
+          ],
+          "originalEvidenceIds": [
+            "E0128",
+            "E0129",
+            "E0130",
+            "E0131",
+            "E0132",
+            "E0133",
+            "E0134",
+            "E0135",
+            "E0136",
+            "E0137",
+            "E0138",
+            "E0139"
+          ],
+          "citationNormalization": [],
+          "citationValid": true,
+          "rejectionReason": null,
+          "attempts": [
+            {
+              "attempt": 1,
+              "valid": true
+            }
+          ],
+          "sourceTestRows": [
+            {
+              "evidenceId": "E0360",
+              "quote": "        assert ctx.request.blueprint == bp.name"
+            },
+            {
+              "evidenceId": "E0363",
+              "quote": "    assert rv.data == b\"http://xxx.example.com:1234/foo/\""
+            },
+            {
+              "evidenceId": "E0400",
+              "quote": "        assert flask.session[\"redirect\"] is True"
+            },
+            {
+              "evidenceId": "E0401",
+              "quote": "        assert flask.session[\"target\"] is True"
+            }
+          ],
+          "text": "Điều chỉnh stream_with_context để lưu app context và request context trước khi tiếp tục generator, rồi đẩy app context trước request context.",
+          "rawStatus": "SUPPORTED",
+          "effectiveStatus": "SUPPORTED",
+          "policyReason": null
+        }
+      ],
+      "text": "Điều chỉnh stream_with_context để lưu app context và request context trước khi tiếp tục generator, rồi đẩy app context trước request context.",
+      "explanation": "C1.1: Báo cáo khẳng định rằng stream_with_context cần lưu app context và request context trước khi tiếp tục generator và đẩy app context trước request context. Trong code mới, có thể thấy rằng hàm stream_with_context đã được cập nhật để bao gồm logic mới để lưu app context và request context trước khi tiếp tục generator. Cụ thể, đoạn mã mới đã thêm logic để lấy app context và request context, sau đó đẩy app context trước request context. Điều này hỗ trợ chính xác yêu cầu trong báo cáo.",
+      "evidenceIds": [
+        "E0128",
+        "E0129",
+        "E0130",
+        "E0131",
+        "E0132",
+        "E0133",
+        "E0134",
+        "E0135",
+        "E0136",
+        "E0137",
+        "E0138",
+        "E0139"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "expected": "SUPPORTED",
+      "reason": "Đoạn sửa trong generator lưu cả hai context rồi sử dụng with app_ctx, req_ctx."
+    },
+    {
+      "claimId": "C2",
+      "status": "PARTIAL",
+      "rawStatus": "PARTIAL",
+      "atoms": [
+        {
+          "claimId": "C2.1",
+          "claimQuote": "Đổi type hint path_or_file của send_file thành t.IO[bytes]",
+          "status": "SUPPORTED",
+          "explanation": "Báo cáo khẳng định rằng đã đổi type hint path_or_file của send_file thành t.IO[bytes]. Trong code mới, ta thấy rằng type hint của path_or_file đã được thay đổi thành os.PathLike[t.AnyStr] | str | t.IO[bytes], điều này tương ứng với yêu cầu trong báo cáo. Do đó, có bằng chứng hỗ trợ cho ý này.",
+          "evidenceIds": [
+            "E0180"
+          ],
+          "originalEvidenceIds": [
+            "E0180"
+          ],
+          "citationNormalization": [],
+          "citationValid": true,
+          "rejectionReason": null,
+          "attempts": [
+            {
+              "attempt": 1,
+              "valid": true
+            }
+          ],
+          "sourceTestRows": [],
+          "text": "Đổi type hint path_or_file của send_file thành t.IO[bytes]",
+          "rawStatus": "SUPPORTED",
+          "effectiveStatus": "SUPPORTED",
+          "policyReason": null
+        },
+        {
+          "claimId": "C2.2",
+          "claimQuote": "đã đo được tốc độ gửi file tăng 30%.",
+          "status": "INSUFFICIENT",
+          "explanation": "Báo cáo khẳng định rằng đã đo được tốc độ gửi file tăng 30%. Tuy nhiên, trong code mới, chỉ có thay đổi kiểu hint của tham số `path_or_file` từ `os.PathLike[t.AnyStr] | str | t.BinaryIO` thành `os.PathLike[t.AnyStr] | str | t.IO[bytes]`. Không có thông tin về việc đo lường tốc độ gửi file hay có sự thay đổi nào liên quan đến tốc độ gửi file. Do đó, không có bằng chứng để xác nhận hoặc phủ định khẳng định trong báo cáo.",
+          "evidenceIds": [],
+          "originalEvidenceIds": [],
+          "citationNormalization": [],
+          "citationValid": true,
+          "rejectionReason": null,
+          "attempts": [
+            {
+              "attempt": 1,
+              "valid": true
+            }
+          ],
+          "sourceTestRows": [],
+          "text": "đã đo được tốc độ gửi file tăng 30%.",
+          "rawStatus": "INSUFFICIENT",
+          "effectiveStatus": "INSUFFICIENT",
+          "policyReason": "Đầu vào chỉ có mã nguồn, không có log thực thi hoặc kết quả đo."
+        }
+      ],
+      "text": "Đổi type hint path_or_file của send_file thành t.IO[bytes] và đã đo được tốc độ gửi file tăng 30%.",
+      "explanation": "C2.1: Báo cáo khẳng định rằng đã đổi type hint path_or_file của send_file thành t.IO[bytes]. Trong code mới, ta thấy rằng type hint của path_or_file đã được thay đổi thành os.PathLike[t.AnyStr] | str | t.IO[bytes], điều này tương ứng với yêu cầu trong báo cáo. Do đó, có bằng chứng hỗ trợ cho ý này. C2.2: Báo cáo khẳng định rằng đã đo được tốc độ gửi file tăng 30%. Tuy nhiên, trong code mới, chỉ có thay đổi kiểu hint của tham số `path_or_file` từ `os.PathLike[t.AnyStr] | str | t.BinaryIO` thành `os.PathLike[t.AnyStr] | str | t.IO[bytes]`. Không có thông tin về việc đo lường tốc độ gửi file hay có sự thay đổi nào liên quan đến tốc độ gửi file. Do đó, không có bằng chứng để xác nhận hoặc phủ định khẳng định trong báo cáo.",
+      "evidenceIds": [
+        "E0180"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "expected": "PARTIAL",
+      "reason": "Thay đổi kiểu có bằng chứng; không có kết quả đo tốc độ trong dữ liệu."
+    },
+    {
+      "claimId": "C3",
+      "status": "CONTRADICTED",
+      "rawStatus": "CONTRADICTED",
+      "atoms": [
+        {
+          "claimId": "C3.1",
+          "claimQuote": "Trong FlaskClient.open, danh sách context được khôi phục bằng pop() từ cuối danh sách như phiên bản cũ, không thay đổi vòng lặp.",
+          "status": "CONTRADICTED",
+          "explanation": "Báo cáo khẳng định rằng danh sách context được khôi phục bằng pop() từ cuối danh sách như phiên bản cũ, không thay đổi vòng lặp. Tuy nhiên, code mới sử dụng vòng lặp for để khôi phục các context từ danh sách _new_contexts, và sau khi khôi phục, nó xóa sạch danh sách bằng cách gọi self._new_contexts.clear(). Điều này trái với khẳng định trong báo cáo.",
+          "evidenceIds": [
+            "E0307",
+            "E0310"
+          ],
+          "originalEvidenceIds": [
+            "E0307",
+            "E0310"
+          ],
+          "citationNormalization": [],
+          "citationValid": true,
+          "rejectionReason": null,
+          "attempts": [
+            {
+              "attempt": 1,
+              "valid": true
+            }
+          ],
+          "sourceTestRows": [],
+          "text": "Trong FlaskClient.open, danh sách context được khôi phục bằng pop() từ cuối danh sách như phiên bản cũ, không thay đổi vòng lặp.",
+          "rawStatus": "CONTRADICTED",
+          "effectiveStatus": "CONTRADICTED",
+          "policyReason": null
+        }
+      ],
+      "text": "Trong FlaskClient.open, danh sách context được khôi phục bằng pop() từ cuối danh sách như phiên bản cũ, không thay đổi vòng lặp.",
+      "explanation": "C3.1: Báo cáo khẳng định rằng danh sách context được khôi phục bằng pop() từ cuối danh sách như phiên bản cũ, không thay đổi vòng lặp. Tuy nhiên, code mới sử dụng vòng lặp for để khôi phục các context từ danh sách _new_contexts, và sau khi khôi phục, nó xóa sạch danh sách bằng cách gọi self._new_contexts.clear(). Điều này trái với khẳng định trong báo cáo.",
+      "evidenceIds": [
+        "E0307",
+        "E0310"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "expected": "CONTRADICTED",
+      "reason": "Diff xóa while/pop và thay bằng for theo thứ tự danh sách, sau đó clear."
+    },
+    {
+      "claimId": "C4",
+      "status": "INSUFFICIENT",
+      "rawStatus": "SUPPORTED",
+      "atoms": [
+        {
+          "claimId": "C4.1",
+          "claimQuote": "Toàn bộ test của dự án đã chạy và pass trên Windows sau bản sửa.",
+          "status": "SUPPORTED",
+          "explanation": "Báo cáo khẳng định rằng toàn bộ test của dự án đã chạy và pass trên Windows sau bản sửa. Trong code, có thể thấy rằng các hàm test như `test_redirect_session` và `test_session_transactions` đã được thêm vào và có thể đã được chạy và pass. Ngoài ra, có thể thấy rằng các hàm test như `test_redirect_keep_session` và `test_session_transactions` vẫn giữ nguyên và có thể đã được chạy và pass. Do đó, có bằng chứng cho thấy rằng toàn bộ test của dự án đã chạy và pass trên Windows sau bản sửa.",
+          "evidenceIds": [
+            "E0360",
+            "E0363",
+            "E0400",
+            "E0401",
+            "E0325",
+            "E0339",
+            "E0341",
+            "E0345",
+            "E0348"
+          ],
+          "originalEvidenceIds": [
+            "E0360",
+            "E0363",
+            "E0400",
+            "E0401",
+            "E0325",
+            "E0339",
+            "E0341",
+            "E0345",
+            "E0348"
+          ],
+          "citationNormalization": [],
+          "citationValid": true,
+          "rejectionReason": null,
+          "attempts": [
+            {
+              "attempt": 1,
+              "valid": false,
+              "error": "Thiếu hoặc quá nhiều mã bằng chứng",
+              "answer": {
+                "claimId": "C4.1",
+                "claimQuote": "Toàn bộ test của dự án đã chạy và pass trên Windows sau bản sửa.",
+                "status": "SUPPORTED",
+                "explanation": "Báo cáo khẳng định rằng toàn bộ test của dự án đã chạy và pass trên Windows sau bản sửa. Trong code, có thể thấy rằng các hàm test đã được thêm vào và sửa đổi, nhưng không có thông tin cụ thể về việc chạy hoặc kết quả của các test. Tuy nhiên, không có bằng chứng nào cho thấy các test không chạy hoặc không pass. Do đó, có thể kết luận rằng các test đã chạy và pass trên Windows sau bản sửa.",
+                "evidenceIds": []
+              }
+            },
+            {
+              "attempt": 2,
+              "valid": true
+            }
+          ],
+          "sourceTestRows": [
+            {
+              "evidenceId": "E0360",
+              "quote": "        assert ctx.request.blueprint == bp.name"
+            },
+            {
+              "evidenceId": "E0363",
+              "quote": "    assert rv.data == b\"http://xxx.example.com:1234/foo/\""
+            },
+            {
+              "evidenceId": "E0400",
+              "quote": "        assert flask.session[\"redirect\"] is True"
+            },
+            {
+              "evidenceId": "E0401",
+              "quote": "        assert flask.session[\"target\"] is True"
+            },
+            {
+              "evidenceId": "E0325",
+              "quote": "        assert rv.data == b\"flask\""
+            },
+            {
+              "evidenceId": "E0339",
+              "quote": "        client.get().close()"
+            },
+            {
+              "evidenceId": "E0341",
+              "quote": "        assert client.get().text == \"flask\""
+            },
+            {
+              "evidenceId": "E0345",
+              "quote": "            client.get().close()"
+            },
+            {
+              "evidenceId": "E0348",
+              "quote": "            assert client.get().text == \"flask\""
+            }
+          ],
+          "text": "Toàn bộ test của dự án đã chạy và pass trên Windows sau bản sửa.",
+          "rawStatus": "SUPPORTED",
+          "effectiveStatus": "INSUFFICIENT",
+          "policyReason": "Đầu vào chỉ có mã nguồn, không có log thực thi hoặc kết quả đo."
+        }
+      ],
+      "text": "Toàn bộ test của dự án đã chạy và pass trên Windows sau bản sửa.",
+      "explanation": "C4.1: Báo cáo khẳng định rằng toàn bộ test của dự án đã chạy và pass trên Windows sau bản sửa. Trong code, có thể thấy rằng các hàm test như `test_redirect_session` và `test_session_transactions` đã được thêm vào và có thể đã được chạy và pass. Ngoài ra, có thể thấy rằng các hàm test như `test_redirect_keep_session` và `test_session_transactions` vẫn giữ nguyên và có thể đã được chạy và pass. Do đó, có bằng chứng cho thấy rằng toàn bộ test của dự án đã chạy và pass trên Windows sau bản sửa.",
+      "evidenceIds": [
+        "E0360",
+        "E0363",
+        "E0400",
+        "E0401",
+        "E0325",
+        "E0339",
+        "E0341",
+        "E0345",
+        "E0348"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "expected": "INSUFFICIENT",
+      "reason": "Có mã test nhưng không có log chạy test hay hệ điều hành của lần chạy."
+    },
+    {
+      "claimId": "C5",
+      "status": "PARTIAL",
+      "rawStatus": "PARTIAL",
+      "atoms": [
+        {
+          "claimId": "C5.1",
+          "claimQuote": "Thêm test async view cho stream_with_context, có trường hợp đóng response chưa đọc stream",
+          "status": "INSUFFICIENT",
+          "explanation": "Báo cáo khẳng định thêm một trường hợp kiểm tra cho việc đóng response chưa đọc stream. Tuy nhiên, trong code mới chỉ có một trường hợp kiểm tra đơn giản về việc đọc nội dung trả về, không có trường hợp đóng response chưa đọc stream được kiểm tra.",
+          "evidenceIds": [
+            "E0341"
+          ],
+          "originalEvidenceIds": [
+            "E0341"
+          ],
+          "citationNormalization": [],
+          "citationValid": true,
+          "rejectionReason": null,
+          "attempts": [
+            {
+              "attempt": 1,
+              "valid": true
+            }
+          ],
+          "sourceTestRows": [
+            {
+              "evidenceId": "E0325",
+              "quote": "        assert rv.data == b\"flask\""
+            },
+            {
+              "evidenceId": "E0339",
+              "quote": "        client.get().close()"
+            },
+            {
+              "evidenceId": "E0341",
+              "quote": "        assert client.get().text == \"flask\""
+            },
+            {
+              "evidenceId": "E0345",
+              "quote": "            client.get().close()"
+            },
+            {
+              "evidenceId": "E0348",
+              "quote": "            assert client.get().text == \"flask\""
+            }
+          ],
+          "text": "Thêm test async view cho stream_with_context, có trường hợp đóng response chưa đọc stream",
+          "rawStatus": "INSUFFICIENT",
+          "effectiveStatus": "INSUFFICIENT",
+          "policyReason": null
+        },
+        {
+          "claimId": "C5.2",
+          "claimQuote": "Thêm test async view cho stream_with_context, có trường hợp đọc nội dung trả về.",
+          "status": "SUPPORTED",
+          "explanation": "Báo cáo khẳng định thêm test async view cho stream_with_context, có trường hợp đọc nội dung trả về. Trong code mới, có một hàm test `test_async_view` được thêm vào lớp `TestHelpers`, trong đó có hai trường hợp kiểm tra: một trường hợp đóng response chưa đọc stream và một trường hợp đọc nội dung trả về. Cả hai trường hợp đều được kiểm tra thông qua việc gọi `client.get().text == 'flask'`, cho thấy code thực hiện đúng yêu cầu của báo cáo.",
+          "evidenceIds": [
+            "E0341",
+            "E0348"
+          ],
+          "originalEvidenceIds": [
+            "E0341",
+            "E0348"
+          ],
+          "citationNormalization": [],
+          "citationValid": true,
+          "rejectionReason": null,
+          "attempts": [
+            {
+              "attempt": 1,
+              "valid": true
+            }
+          ],
+          "sourceTestRows": [
+            {
+              "evidenceId": "E0325",
+              "quote": "        assert rv.data == b\"flask\""
+            },
+            {
+              "evidenceId": "E0339",
+              "quote": "        client.get().close()"
+            },
+            {
+              "evidenceId": "E0341",
+              "quote": "        assert client.get().text == \"flask\""
+            },
+            {
+              "evidenceId": "E0345",
+              "quote": "            client.get().close()"
+            },
+            {
+              "evidenceId": "E0348",
+              "quote": "            assert client.get().text == \"flask\""
+            }
+          ],
+          "text": "Thêm test async view cho stream_with_context, có trường hợp đọc nội dung trả về.",
+          "rawStatus": "SUPPORTED",
+          "effectiveStatus": "SUPPORTED",
+          "policyReason": null
+        }
+      ],
+      "text": "Thêm test async view cho stream_with_context, có trường hợp đóng response chưa đọc stream và trường hợp đọc nội dung trả về.",
+      "explanation": "C5.1: Báo cáo khẳng định thêm một trường hợp kiểm tra cho việc đóng response chưa đọc stream. Tuy nhiên, trong code mới chỉ có một trường hợp kiểm tra đơn giản về việc đọc nội dung trả về, không có trường hợp đóng response chưa đọc stream được kiểm tra. C5.2: Báo cáo khẳng định thêm test async view cho stream_with_context, có trường hợp đọc nội dung trả về. Trong code mới, có một hàm test `test_async_view` được thêm vào lớp `TestHelpers`, trong đó có hai trường hợp kiểm tra: một trường hợp đóng response chưa đọc stream và một trường hợp đọc nội dung trả về. Cả hai trường hợp đều được kiểm tra thông qua việc gọi `client.get().text == 'flask'`, cho thấy code thực hiện đúng yêu cầu của báo cáo.",
+      "evidenceIds": [
+        "E0341",
+        "E0348"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "expected": "SUPPORTED",
+      "reason": "tests/test_helpers.py có test mới và các thao tác tương ứng."
+    },
+    {
+      "claimId": "C6",
+      "status": "CONTRADICTED",
+      "rawStatus": "CONTRADICTED",
+      "atoms": [
+        {
+          "claimId": "C6.1",
+          "claimQuote": "Type hint path_or_file của send_file được đổi từ t.BinaryIO sang t.IO[str].",
+          "status": "CONTRADICTED",
+          "explanation": "Báo cáo khẳng định rằng type hint path_or_file của send_file được đổi từ t.BinaryIO sang t.IO[str]. Tuy nhiên, code mới chỉ thay đổi type hint từ t.BinaryIO sang t.IO[bytes], không phải t.IO[str]. Do đó, có sự trái ngược giữa báo cáo và code.",
+          "evidenceIds": [
+            "E0180"
+          ],
+          "originalEvidenceIds": [
+            "E0180"
+          ],
+          "citationNormalization": [],
+          "citationValid": true,
+          "rejectionReason": null,
+          "attempts": [
+            {
+              "attempt": 1,
+              "valid": true
+            }
+          ],
+          "sourceTestRows": [],
+          "text": "Type hint path_or_file của send_file được đổi từ t.BinaryIO sang t.IO[str].",
+          "rawStatus": "CONTRADICTED",
+          "effectiveStatus": "CONTRADICTED",
+          "policyReason": null
+        }
+      ],
+      "text": "Type hint path_or_file của send_file được đổi từ t.BinaryIO sang t.IO[str].",
+      "explanation": "C6.1: Báo cáo khẳng định rằng type hint path_or_file của send_file được đổi từ t.BinaryIO sang t.IO[str]. Tuy nhiên, code mới chỉ thay đổi type hint từ t.BinaryIO sang t.IO[bytes], không phải t.IO[str]. Do đó, có sự trái ngược giữa báo cáo và code.",
+      "evidenceIds": [
+        "E0180"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "expected": "CONTRADICTED",
+      "reason": "Kiểu mới là t.IO[bytes], không phải t.IO[str]."
+    }
+  ]
+}

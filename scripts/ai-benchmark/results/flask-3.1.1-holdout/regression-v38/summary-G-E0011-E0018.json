@@ -1,0 +1,26 @@
+{
+  "signature": "2b825c5cb969453f2978a116207df5e9074308c99c40efa60caf783708c2b7fc",
+  "result": [
+    {
+      "source": "uncovered",
+      "groupId": "G-E0011-E0018",
+      "title": "Nhóm chưa được diễn giải",
+      "category": "unreviewed",
+      "description": "AI trả items rỗng; chưa có diễn giải cho nhóm này.",
+      "before": "Chưa diễn giải",
+      "after": "Chưa diễn giải",
+      "evidenceIds": [],
+      "citationValid": false,
+      "rejectionReason": "Chưa được bao phủ",
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": []
+          }
+        }
+      ]
+    }
+  ]
+}

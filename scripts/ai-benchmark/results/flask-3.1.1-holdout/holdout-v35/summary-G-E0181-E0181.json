@@ -1,0 +1,39 @@
+{
+  "signature": "773f8a42d86d4085556196fc8e1d4bbbc2a960dafcc3fda8f135d82300138443",
+  "result": [
+    {
+      "groupId": "G-E0181-E0181",
+      "category": "documentation",
+      "title": "Thêm import collections.abc",
+      "description": "Đã thêm import collections.abc as cabc vào file src/flask/typing.py.",
+      "source": "ollama",
+      "before": "(không có dòng xóa)",
+      "after": "import collections.abc as cabc",
+      "beforeEvidenceIds": [],
+      "afterEvidenceIds": [
+        "E0181"
+      ],
+      "evidenceIds": [
+        "E0181"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0181-E0181",
+                "category": "documentation",
+                "title": "Thêm import collections.abc",
+                "description": "Đã thêm import collections.abc as cabc vào file src/flask/typing.py."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "signature": "901b0accab1d32d890c8e9d7f8d3d00ea9efffd6e75f8720fa3dc774af65f709",
+  "result": [
+    {
+      "groupId": "G-E0068-E0074",
+      "category": "logic",
+      "title": "Đổi dấu ngoặc kép trong chuỗi",
+      "description": "Đã thay đổi dấu ngoặc kép trong chuỗi từ 'Hello ' sang \"Hello \", từ request.args['name'] sang request.args[\"name\"], và từ '!' sang \"!\".",
+      "source": "ollama",
+      "before": "                yield 'Hello '\n                yield request.args['name']\n                yield '!'",
+      "after": "                yield \"Hello \"\n                yield request.args[\"name\"]\n                yield \"!\"\n",
+      "beforeEvidenceIds": [
+        "E0068",
+        "E0069",
+        "E0070"
+      ],
+      "afterEvidenceIds": [
+        "E0071",
+        "E0072",
+        "E0073",
+        "E0074"
+      ],
+      "evidenceIds": [
+        "E0068",
+        "E0069",
+        "E0070",
+        "E0071",
+        "E0072",
+        "E0073",
+        "E0074"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0068-E0074",
+                "category": "logic",
+                "title": "Đổi dấu ngoặc kép trong chuỗi",
+                "description": "Đã thay đổi dấu ngoặc kép trong chuỗi từ 'Hello ' sang \"Hello \", từ request.args['name'] sang request.args[\"name\"], và từ '!' sang \"!\"."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

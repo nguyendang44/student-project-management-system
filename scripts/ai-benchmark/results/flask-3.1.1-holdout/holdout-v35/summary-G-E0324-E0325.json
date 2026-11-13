@@ -1,0 +1,42 @@
+{
+  "signature": "773f8a42d86d4085556196fc8e1d4bbbc2a960dafcc3fda8f135d82300138443",
+  "result": [
+    {
+      "groupId": "G-E0324-E0325",
+      "category": "logic",
+      "title": "Thay đổi tham số hàm",
+      "description": "Trong hàm `test_installed_package_paths`, tham số `limit_loader` đã được loại bỏ trong phiên bản mới.",
+      "source": "ollama",
+      "before": "    limit_loader, modules_tmp_path, modules_tmp_path_prefix, purge_module, monkeypatch",
+      "after": "    modules_tmp_path, modules_tmp_path_prefix, purge_module, monkeypatch",
+      "beforeEvidenceIds": [
+        "E0324"
+      ],
+      "afterEvidenceIds": [
+        "E0325"
+      ],
+      "evidenceIds": [
+        "E0324",
+        "E0325"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0324-E0325",
+                "category": "logic",
+                "title": "Thay đổi tham số hàm",
+                "description": "Trong hàm `test_installed_package_paths`, tham số `limit_loader` đã được loại bỏ trong phiên bản mới."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

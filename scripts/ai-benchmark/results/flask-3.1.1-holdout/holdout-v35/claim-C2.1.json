@@ -1,0 +1,24 @@
+{
+  "signature": "e7cd68ab03b781e0a44ea4c9f262eff9feb6d150c18bcd1a5659a15e16345d96",
+  "result": {
+    "claimId": "C2.1",
+    "claimQuote": "FlaskCliRunner.invoke đổi type hint trả về thành Result",
+    "status": "SUPPORTED",
+    "explanation": "Báo cáo khẳng định rằng FlaskCliRunner.invoke đã đổi type hint trả về thành Result. Trong code mới, hàm invoke đã được thêm type hint trả về là Result, điều này được thể hiện ở dòng E0170 trong file src/flask/testing.py. Vì vậy, báo cáo và code đều đồng nhất và được hỗ trợ.",
+    "evidenceIds": [
+      "E0170"
+    ],
+    "originalEvidenceIds": [
+      "E0170"
+    ],
+    "citationNormalization": [],
+    "citationValid": true,
+    "rejectionReason": null,
+    "attempts": [
+      {
+        "attempt": 1,
+        "valid": true
+      }
+    ]
+  }
+}

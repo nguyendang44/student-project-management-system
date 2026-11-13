@@ -49,6 +49,9 @@ export interface GitProgressRejectionDiagnostics {
   groupedFeatureDetail?: number
 }
 export interface GitProgressAiDiagnostics {
+  contextStatus?: 'sampled' | 'partial' | 'unavailable' | 'empty' | null
+  contextExcerpts?: number
+  contextFiles?: number
   sentFiles: number
   modelItems: number
   parsedCandidates: number

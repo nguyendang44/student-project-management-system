@@ -1,0 +1,32 @@
+{
+  "signature": "a915e9a007dcaaae7e5a599b759b41f496ad2e70c4eaa7af47eac8c6b4f3d11b",
+  "result": [
+    {
+      "title": "Thêm thuộc tính `static_folder`",
+      "description": "Trong phiên bản mới, thuộc tính `static_folder` được thêm vào hàm constructor của lớp. Điều này cho phép chỉ định đường dẫn đến thư mục chứa các tệp tĩnh (như CSS, JavaScript, hình ảnh). Trước đó, thuộc tính này không tồn tại.",
+      "evidenceIds": [
+        "E0234"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    },
+    {
+      "title": "Sửa lỗi kiểu dữ liệu cho `static_folder`",
+      "description": "Trong phiên bản mới, kiểu dữ liệu cho `static_folder` được sửa từ `str | os.PathLike[str] | None = None` thành `str | None = None`. Điều này loại bỏ yêu cầu `static_folder` phải là một đối tượng `PathLike`, làm cho thuộc tính trở nên linh hoạt hơn.",
+      "evidenceIds": [
+        "E0225"
+      ],
+      "citationValid": false,
+      "rejectionReason": "Chỉ dẫn code giữ nguyên, chưa chứng minh thay đổi"
+    },
+    {
+      "title": "Sửa lỗi kiểu dữ liệu cho `template_folder`",
+      "description": "Trong phiên bản mới, kiểu dữ liệu cho `template_folder` được sửa từ `str | os.PathLike[str] | None = None` thành `str | os.PathLike[str] | None = None`. Điều này đảm bảo rằng `template_folder` có thể là một chuỗi hoặc một đối tượng `PathLike`, đồng thời cho phép nó là `None` nếu không cần thiết.",
+      "evidenceIds": [
+        "E0226"
+      ],
+      "citationValid": false,
+      "rejectionReason": "Chỉ dẫn code giữ nguyên, chưa chứng minh thay đổi"
+    }
+  ]
+}

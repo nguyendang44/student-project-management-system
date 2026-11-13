@@ -1,0 +1,75 @@
+{
+  "signature": "dacab784dce4c9a9db198692ca4ff37aaf80b25827923f2bfdb206d185766081",
+  "result": [
+    {
+      "groupId": "G-E0141-E0141",
+      "source": "comment-rule",
+      "category": "documentation",
+      "title": "Thay đổi chú thích mã nguồn",
+      "before": "(không có dòng xóa)",
+      "after": "                # Clean up in case the user wrapped a WSGI iterator.",
+      "description": "Phần mã ngoài chú thích trong nhóm này không đổi; không có căn cứ gọi đây là thêm hàm, thêm tham số hoặc sửa logic chạy.",
+      "beforeEvidenceIds": [],
+      "afterEvidenceIds": [
+        "E0141"
+      ],
+      "evidenceIds": [
+        "E0141"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    },
+    {
+      "groupId": "G-E0145-E0151",
+      "source": "comment-rule",
+      "category": "documentation",
+      "title": "Thay đổi chú thích mã nguồn",
+      "before": "    # The trick is to start the generator.  Then the code execution runs until\n    # the first dummy None is yielded at which point the context was already\n    # pushed.  This item is discarded.  Then when the iteration continues the\n    # real generator is executed.",
+      "after": "    # Execute the generator to the sentinel value. This ensures the context is\n    # preserved in the generator's state. Further iteration will push the\n    # context and yield from the original iterator.",
+      "description": "Phần mã ngoài chú thích trong nhóm này không đổi; không có căn cứ gọi đây là thêm hàm, thêm tham số hoặc sửa logic chạy.",
+      "beforeEvidenceIds": [
+        "E0145",
+        "E0146",
+        "E0147",
+        "E0148"
+      ],
+      "afterEvidenceIds": [
+        "E0149",
+        "E0150",
+        "E0151"
+      ],
+      "evidenceIds": [
+        "E0145",
+        "E0146",
+        "E0147",
+        "E0148",
+        "E0149",
+        "E0150",
+        "E0151"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    },
+    {
+      "groupId": "G-E0154-E0155",
+      "source": "comment-rule",
+      "category": "type_annotation",
+      "title": "Thay đổi chú thích kiểm tra kiểu",
+      "before": "    return wrapped_g  # type: ignore[return-value]",
+      "after": "    return wrapped_g",
+      "description": "Phần mã ngoài chú thích trong nhóm này không đổi; không có căn cứ gọi đây là thêm hàm, thêm tham số hoặc sửa logic chạy.",
+      "beforeEvidenceIds": [
+        "E0154"
+      ],
+      "afterEvidenceIds": [
+        "E0155"
+      ],
+      "evidenceIds": [
+        "E0154",
+        "E0155"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    }
+  ]
+}

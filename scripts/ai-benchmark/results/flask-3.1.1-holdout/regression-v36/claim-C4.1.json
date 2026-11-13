@@ -1,0 +1,20 @@
+{
+  "signature": "d64c30e7b1bd83cc28a09578ceba7b0161e191426be2b4e3bb7ffab9982025aa",
+  "result": {
+    "claimId": "C4.1",
+    "claimQuote": "Thay đổi này làm tốc độ chạy ứng dụng tăng 30% qua benchmark thực tế.",
+    "status": "INSUFFICIENT",
+    "explanation": "Báo cáo khẳng định rằng thay đổi này làm tăng tốc độ chạy ứng dụng lên 30% so với benchmark thực tế. Tuy nhiên, trong code không thấy bất kỳ thay đổi nào liên quan đến hiệu suất hoặc tốc độ chạy ứng dụng. Không có bằng chứng nào trong code để hỗ trợ hoặc phản bác ý này.",
+    "evidenceIds": [],
+    "originalEvidenceIds": [],
+    "citationNormalization": [],
+    "citationValid": true,
+    "rejectionReason": null,
+    "attempts": [
+      {
+        "attempt": 1,
+        "valid": true
+      }
+    ]
+  }
+}

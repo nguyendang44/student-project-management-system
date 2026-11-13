@@ -1,0 +1,1136 @@
+{
+  "claim": {
+    "id": "C3.1",
+    "text": "Trong FlaskClient.open, danh sách context được khôi phục bằng pop() từ cuối danh sách như phiên bản cũ, không thay đổi vòng lặp.",
+    "originalText": "Trong FlaskClient.open, danh sách context được khôi phục bằng pop() từ cuối danh sách như phiên bản cũ, không thay đổi vòng lặp.",
+    "terms": [
+      "self._new_contexts",
+      "self._context_stack"
+    ]
+  },
+  "packets": [
+    {
+      "file": "src/flask/testing.py",
+      "lines": [
+        {
+          "id": "E0297",
+          "kind": "context",
+          "beforeLine": 235,
+          "afterLine": 235,
+          "text": "        response = super().open(",
+          "structure": {
+            "before": {
+              "id": "E0297",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 235,
+              "text": "        response = super().open(",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 235,
+                  "endLine": 239,
+                  "code": "super().open(\n            request,\n            buffered=buffered,\n            follow_redirects=follow_redirects,\n        )"
+                },
+                {
+                  "kind": "Call",
+                  "startLine": 235,
+                  "endLine": 235,
+                  "code": "super()"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0297",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 235,
+              "text": "        response = super().open(",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 235,
+                  "endLine": 239,
+                  "code": "super().open(\n            request,\n            buffered=buffered,\n            follow_redirects=follow_redirects,\n        )"
+                },
+                {
+                  "kind": "Call",
+                  "startLine": 235,
+                  "endLine": 235,
+                  "code": "super()"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0298",
+          "kind": "context",
+          "beforeLine": 236,
+          "afterLine": 236,
+          "text": "            request,",
+          "structure": {
+            "before": {
+              "id": "E0298",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 236,
+              "text": "            request,",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 235,
+                  "endLine": 239,
+                  "code": "super().open(\n            request,\n            buffered=buffered,\n            follow_redirects=follow_redirects,\n        )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0298",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 236,
+              "text": "            request,",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 235,
+                  "endLine": 239,
+                  "code": "super().open(\n            request,\n            buffered=buffered,\n            follow_redirects=follow_redirects,\n        )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0299",
+          "kind": "context",
+          "beforeLine": 237,
+          "afterLine": 237,
+          "text": "            buffered=buffered,",
+          "structure": {
+            "before": {
+              "id": "E0299",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 237,
+              "text": "            buffered=buffered,",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 235,
+                  "endLine": 239,
+                  "code": "super().open(\n            request,\n            buffered=buffered,\n            follow_redirects=follow_redirects,\n        )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0299",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 237,
+              "text": "            buffered=buffered,",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 235,
+                  "endLine": 239,
+                  "code": "super().open(\n            request,\n            buffered=buffered,\n            follow_redirects=follow_redirects,\n        )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0300",
+          "kind": "context",
+          "beforeLine": 238,
+          "afterLine": 238,
+          "text": "            follow_redirects=follow_redirects,",
+          "structure": {
+            "before": {
+              "id": "E0300",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 238,
+              "text": "            follow_redirects=follow_redirects,",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 235,
+                  "endLine": 239,
+                  "code": "super().open(\n            request,\n            buffered=buffered,\n            follow_redirects=follow_redirects,\n        )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0300",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 238,
+              "text": "            follow_redirects=follow_redirects,",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 235,
+                  "endLine": 239,
+                  "code": "super().open(\n            request,\n            buffered=buffered,\n            follow_redirects=follow_redirects,\n        )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0301",
+          "kind": "context",
+          "beforeLine": 239,
+          "afterLine": 239,
+          "text": "        )",
+          "structure": {
+            "before": {
+              "id": "E0301",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 239,
+              "text": "        )",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 235,
+                  "endLine": 239,
+                  "code": "super().open(\n            request,\n            buffered=buffered,\n            follow_redirects=follow_redirects,\n        )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0301",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 239,
+              "text": "        )",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 235,
+                  "endLine": 239,
+                  "code": "super().open(\n            request,\n            buffered=buffered,\n            follow_redirects=follow_redirects,\n        )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0302",
+          "kind": "context",
+          "beforeLine": 240,
+          "afterLine": 240,
+          "text": "        response.json_module = self.application.json  # type: ignore[assignment]",
+          "structure": {
+            "before": {
+              "id": "E0302",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 240,
+              "text": "        response.json_module = self.application.json  # type: ignore[assignment]",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0302",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 240,
+              "text": "        response.json_module = self.application.json  # type: ignore[assignment]",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0303",
+          "kind": "context",
+          "beforeLine": 241,
+          "afterLine": 241,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0303",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 241,
+              "text": "",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0303",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 241,
+              "text": "",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0304",
+          "kind": "context",
+          "beforeLine": 242,
+          "afterLine": 242,
+          "text": "        # Re-push contexts that were preserved during the request.",
+          "structure": {
+            "before": {
+              "id": "E0304",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 242,
+              "text": "        # Re-push contexts that were preserved during the request.",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0304",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 242,
+              "text": "        # Re-push contexts that were preserved during the request.",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0305",
+          "kind": "removed",
+          "beforeLine": 243,
+          "afterLine": null,
+          "text": "        while self._new_contexts:",
+          "structure": {
+            "before": {
+              "id": "E0305",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 243,
+              "text": "        while self._new_contexts:",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0306",
+          "kind": "removed",
+          "beforeLine": 244,
+          "afterLine": null,
+          "text": "            cm = self._new_contexts.pop()",
+          "structure": {
+            "before": {
+              "id": "E0306",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 244,
+              "text": "            cm = self._new_contexts.pop()",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 244,
+                  "endLine": 244,
+                  "code": "self._new_contexts.pop()"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0307",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 243,
+          "text": "        for cm in self._new_contexts:",
+          "structure": {
+            "after": {
+              "id": "E0307",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 243,
+              "text": "        for cm in self._new_contexts:",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0308",
+          "kind": "context",
+          "beforeLine": 245,
+          "afterLine": 244,
+          "text": "            self._context_stack.enter_context(cm)",
+          "structure": {
+            "before": {
+              "id": "E0308",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 245,
+              "text": "            self._context_stack.enter_context(cm)",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 245,
+                  "endLine": 245,
+                  "code": "self._context_stack.enter_context(cm)"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0308",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 244,
+              "text": "            self._context_stack.enter_context(cm)",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 244,
+                  "endLine": 244,
+                  "code": "self._context_stack.enter_context(cm)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0309",
+          "kind": "context",
+          "beforeLine": 246,
+          "afterLine": 245,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0309",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 246,
+              "text": "",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0309",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 245,
+              "text": "",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0310",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 246,
+          "text": "        self._new_contexts.clear()",
+          "structure": {
+            "after": {
+              "id": "E0310",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 246,
+              "text": "        self._new_contexts.clear()",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 246,
+                  "endLine": 246,
+                  "code": "self._new_contexts.clear()"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0311",
+          "kind": "context",
+          "beforeLine": 247,
+          "afterLine": 247,
+          "text": "        return response",
+          "structure": {
+            "before": {
+              "id": "E0311",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 247,
+              "text": "        return response",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0311",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 247,
+              "text": "        return response",
+              "function": {
+                "name": "FlaskClient.open",
+                "startLine": 204,
+                "endLine": 247,
+                "parameters": {
+                  "self": null,
+                  "buffered": "bool",
+                  "follow_redirects": "bool",
+                  "args": "t.Any",
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0312",
+          "kind": "context",
+          "beforeLine": 248,
+          "afterLine": 248,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0312",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 248,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0312",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 248,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0313",
+          "kind": "context",
+          "beforeLine": 249,
+          "afterLine": 249,
+          "text": "    def __enter__(self) -> FlaskClient:",
+          "structure": {
+            "before": {
+              "id": "E0313",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 249,
+              "text": "    def __enter__(self) -> FlaskClient:",
+              "function": {
+                "name": "FlaskClient.__enter__",
+                "startLine": 249,
+                "endLine": 253,
+                "parameters": {
+                  "self": null
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0313",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 249,
+              "text": "    def __enter__(self) -> FlaskClient:",
+              "function": {
+                "name": "FlaskClient.__enter__",
+                "startLine": 249,
+                "endLine": 253,
+                "parameters": {
+                  "self": null
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0314",
+          "kind": "context",
+          "beforeLine": 250,
+          "afterLine": 250,
+          "text": "        if self.preserve_context:",
+          "structure": {
+            "before": {
+              "id": "E0314",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 250,
+              "text": "        if self.preserve_context:",
+              "function": {
+                "name": "FlaskClient.__enter__",
+                "startLine": 249,
+                "endLine": 253,
+                "parameters": {
+                  "self": null
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0314",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 250,
+              "text": "        if self.preserve_context:",
+              "function": {
+                "name": "FlaskClient.__enter__",
+                "startLine": 249,
+                "endLine": 253,
+                "parameters": {
+                  "self": null
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0315",
+          "kind": "context",
+          "beforeLine": 251,
+          "afterLine": 251,
+          "text": "            raise RuntimeError(\"Cannot nest client invocations\")",
+          "structure": {
+            "before": {
+              "id": "E0315",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 251,
+              "text": "            raise RuntimeError(\"Cannot nest client invocations\")",
+              "function": {
+                "name": "FlaskClient.__enter__",
+                "startLine": 249,
+                "endLine": 253,
+                "parameters": {
+                  "self": null
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 251,
+                  "endLine": 251,
+                  "code": "RuntimeError(\"Cannot nest client invocations\")"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0315",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 251,
+              "text": "            raise RuntimeError(\"Cannot nest client invocations\")",
+              "function": {
+                "name": "FlaskClient.__enter__",
+                "startLine": 249,
+                "endLine": 253,
+                "parameters": {
+                  "self": null
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 251,
+                  "endLine": 251,
+                  "code": "RuntimeError(\"Cannot nest client invocations\")"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0316",
+          "kind": "context",
+          "beforeLine": 252,
+          "afterLine": 252,
+          "text": "        self.preserve_context = True",
+          "structure": {
+            "before": {
+              "id": "E0316",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 252,
+              "text": "        self.preserve_context = True",
+              "function": {
+                "name": "FlaskClient.__enter__",
+                "startLine": 249,
+                "endLine": 253,
+                "parameters": {
+                  "self": null
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0316",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 252,
+              "text": "        self.preserve_context = True",
+              "function": {
+                "name": "FlaskClient.__enter__",
+                "startLine": 249,
+                "endLine": 253,
+                "parameters": {
+                  "self": null
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0317",
+          "kind": "context",
+          "beforeLine": 253,
+          "afterLine": 253,
+          "text": "        return self",
+          "structure": {
+            "before": {
+              "id": "E0317",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 253,
+              "text": "        return self",
+              "function": {
+                "name": "FlaskClient.__enter__",
+                "startLine": 249,
+                "endLine": 253,
+                "parameters": {
+                  "self": null
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0317",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 253,
+              "text": "        return self",
+              "function": {
+                "name": "FlaskClient.__enter__",
+                "startLine": 249,
+                "endLine": 253,
+                "parameters": {
+                  "self": null
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0318",
+          "kind": "context",
+          "beforeLine": 254,
+          "afterLine": 254,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0318",
+              "file": "src/flask/testing.py",
+              "side": "before",
+              "line": 254,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0318",
+              "file": "src/flask/testing.py",
+              "side": "after",
+              "line": 254,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

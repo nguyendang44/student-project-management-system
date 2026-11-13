@@ -1,0 +1,24 @@
+{
+  "signature": "b11c0ca7e2f0148398c371f5cdb51ad5e19ec1fa91b6fc5870a22b30fdb173ae",
+  "result": {
+    "claimId": "C2.1",
+    "claimQuote": "Đổi type hint path_or_file của send_file thành t.IO[bytes]",
+    "status": "SUPPORTED",
+    "explanation": "Báo cáo khẳng định rằng đã đổi type hint path_or_file của send_file thành t.IO[bytes]. Trong code mới, ta thấy rằng hàm send_file đã được cập nhật để chấp nhận type hint mới cho tham số path_or_file, đó là os.PathLike[t.AnyStr] | str | t.IO[bytes]. Điều này đồng ý với yêu cầu trong báo cáo.",
+    "evidenceIds": [
+      "E0180"
+    ],
+    "originalEvidenceIds": [
+      "E0180"
+    ],
+    "citationNormalization": [],
+    "citationValid": true,
+    "rejectionReason": null,
+    "attempts": [
+      {
+        "attempt": 1,
+        "valid": true
+      }
+    ]
+  }
+}

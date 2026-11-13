@@ -1,0 +1,42 @@
+{
+  "signature": "007480c9d67e971006694a79dce72775c487c0b1ec32e5a4a8b00ed9d4e3f179",
+  "result": [
+    {
+      "groupId": "G-E0378-E0379",
+      "category": "test",
+      "title": "Thêm mới hàm kiểm thử",
+      "description": "Thêm hàm kiểm thử `test_redirect_session` để kiểm tra việc chuyển hướng và lưu trữ trạng thái trong session.",
+      "source": "ollama",
+      "before": "    @app.route(\"/getsession\")",
+      "after": "    @app.route(\"/target\")",
+      "beforeEvidenceIds": [
+        "E0378"
+      ],
+      "afterEvidenceIds": [
+        "E0379"
+      ],
+      "evidenceIds": [
+        "E0378",
+        "E0379"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0378-E0379",
+                "category": "test",
+                "title": "Thêm mới hàm kiểm thử",
+                "description": "Thêm hàm kiểm thử `test_redirect_session` để kiểm tra việc chuyển hướng và lưu trữ trạng thái trong session."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

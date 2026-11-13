@@ -1,0 +1,50 @@
+{
+  "signature": "773f8a42d86d4085556196fc8e1d4bbbc2a960dafcc3fda8f135d82300138443",
+  "result": [
+    {
+      "groupId": "G-E0147-E0152",
+      "category": "logic",
+      "title": "Sửa đổi logic assertion",
+      "description": "Đã thêm assertion mới để kiểm tra điều kiện `base_url is not None` và `subdomain or url_scheme` không được cùng truyền vào hàm `EnvironBuilder.__init__`. Điều này đảm bảo rằng không thể truyền cùng lúc `base_url` và `subdomain` hoặc `url_scheme`.",
+      "source": "ollama",
+      "before": "        ) != bool(\n            subdomain or url_scheme\n        ), 'Cannot pass \"subdomain\" or \"url_scheme\" with \"base_url\".'",
+      "after": "        ) != bool(subdomain or url_scheme), (\n            'Cannot pass \"subdomain\" or \"url_scheme\" with \"base_url\".'\n        )",
+      "beforeEvidenceIds": [
+        "E0147",
+        "E0148",
+        "E0149"
+      ],
+      "afterEvidenceIds": [
+        "E0150",
+        "E0151",
+        "E0152"
+      ],
+      "evidenceIds": [
+        "E0147",
+        "E0148",
+        "E0149",
+        "E0150",
+        "E0151",
+        "E0152"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0147-E0152",
+                "category": "logic",
+                "title": "Sửa đổi logic assertion",
+                "description": "Đã thêm assertion mới để kiểm tra điều kiện `base_url is not None` và `subdomain or url_scheme` không được cùng truyền vào hàm `EnvironBuilder.__init__`. Điều này đảm bảo rằng không thể truyền cùng lúc `base_url` và `subdomain` hoặc `url_scheme`."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

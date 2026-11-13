@@ -1,0 +1,103 @@
+{
+  "signature": "dacab784dce4c9a9db198692ca4ff37aaf80b25827923f2bfdb206d185766081",
+  "result": [
+    {
+      "groupId": "G-E0366-E0369",
+      "category": "test",
+      "title": "Đổi tên hàm và URL",
+      "description": "Đổi tên hàm từ `test_redirect_keep_session` thành `test_redirect_session` và URL từ `/` thành `/redirect`.",
+      "source": "ollama",
+      "before": "def test_redirect_keep_session(app, client, app_ctx):\n    @app.route(\"/\", methods=[\"GET\", \"POST\"])",
+      "after": "def test_redirect_session(app, client, app_ctx):\n    @app.route(\"/redirect\")",
+      "beforeEvidenceIds": [
+        "E0366",
+        "E0367"
+      ],
+      "afterEvidenceIds": [
+        "E0368",
+        "E0369"
+      ],
+      "evidenceIds": [
+        "E0366",
+        "E0367",
+        "E0368",
+        "E0369"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0366-E0369",
+                "category": "test",
+                "title": "Đổi tên hàm và URL",
+                "description": "Đổi tên hàm từ `test_redirect_keep_session` thành `test_redirect_session` và URL từ `/` thành `/redirect`."
+              },
+              {
+                "groupId": "G-E0371-E0376",
+                "category": "test",
+                "title": "Thay đổi logic trong hàm",
+                "description": "Thay đổi logic trong hàm `index` để sử dụng `flask.session[\"redirect\"]` thay vì `flask.session[\"data\"]` và chuyển hướng đến `/target` thay vì `/getsession`."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "groupId": "G-E0371-E0376",
+      "category": "test",
+      "title": "Thay đổi logic trong hàm",
+      "description": "Thay đổi logic trong hàm `index` để sử dụng `flask.session[\"redirect\"]` thay vì `flask.session[\"data\"]` và chuyển hướng đến `/target` thay vì `/getsession`.",
+      "source": "ollama",
+      "before": "        if flask.request.method == \"POST\":\n            return flask.redirect(\"/getsession\")\n        flask.session[\"data\"] = \"foo\"\n        return \"index\"",
+      "after": "        flask.session[\"redirect\"] = True\n        return flask.redirect(\"/target\")",
+      "beforeEvidenceIds": [
+        "E0371",
+        "E0372",
+        "E0373",
+        "E0374"
+      ],
+      "afterEvidenceIds": [
+        "E0375",
+        "E0376"
+      ],
+      "evidenceIds": [
+        "E0371",
+        "E0372",
+        "E0373",
+        "E0374",
+        "E0375",
+        "E0376"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0366-E0369",
+                "category": "test",
+                "title": "Đổi tên hàm và URL",
+                "description": "Đổi tên hàm từ `test_redirect_keep_session` thành `test_redirect_session` và URL từ `/` thành `/redirect`."
+              },
+              {
+                "groupId": "G-E0371-E0376",
+                "category": "test",
+                "title": "Thay đổi logic trong hàm",
+                "description": "Thay đổi logic trong hàm `index` để sử dụng `flask.session[\"redirect\"]` thay vì `flask.session[\"data\"]` và chuyển hướng đến `/target` thay vì `/getsession`."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

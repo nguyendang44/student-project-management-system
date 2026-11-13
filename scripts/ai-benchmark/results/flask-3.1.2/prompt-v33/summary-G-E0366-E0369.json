@@ -1,0 +1,46 @@
+{
+  "signature": "901b0accab1d32d890c8e9d7f8d3d00ea9efffd6e75f8720fa3dc774af65f709",
+  "result": [
+    {
+      "groupId": "G-E0366-E0369",
+      "category": "logic",
+      "title": "Đổi tên hàm và thay đổi route",
+      "description": "Hàm `test_redirect_keep_session` đã được đổi thành `test_redirect_session`. Route đã được thay đổi từ `/` sang `/redirect`.",
+      "source": "ollama",
+      "before": "def test_redirect_keep_session(app, client, app_ctx):\n    @app.route(\"/\", methods=[\"GET\", \"POST\"])",
+      "after": "def test_redirect_session(app, client, app_ctx):\n    @app.route(\"/redirect\")",
+      "beforeEvidenceIds": [
+        "E0366",
+        "E0367"
+      ],
+      "afterEvidenceIds": [
+        "E0368",
+        "E0369"
+      ],
+      "evidenceIds": [
+        "E0366",
+        "E0367",
+        "E0368",
+        "E0369"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0366-E0369",
+                "category": "logic",
+                "title": "Đổi tên hàm và thay đổi route",
+                "description": "Hàm `test_redirect_keep_session` đã được đổi thành `test_redirect_session`. Route đã được thay đổi từ `/` sang `/redirect`."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

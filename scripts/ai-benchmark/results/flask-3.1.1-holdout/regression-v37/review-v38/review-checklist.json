@@ -1,0 +1,868 @@
+{
+  "version": "review-v1",
+  "baseSha": "ab8149664182b662453a563161aa89013c806dc9",
+  "headSha": "7fff56f5172c48b6f3aedf17ee14ef5c2533dfd1",
+  "note": "Cờ chỉ yêu cầu kiểm tra, không tự sửa nhãn hay kết luận AI sai. Không có cờ không có nghĩa nhận xét đúng.",
+  "summary": [
+    {
+      "id": "A1",
+      "source": "ollama",
+      "title": "Thêm điều kiện kiểm tra kiểu",
+      "description": "Đã thêm một điều kiện kiểm tra kiểu `if not t.TYPE_CHECKING:` vào cuối file `src/flask/__init__.py`. Điều này có thể được sử dụng để tránh việc thực hiện một số mã chỉ cần khi kiểm tra kiểu được thực hiện.",
+      "evidenceIds": [
+        "E0009"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A2",
+      "source": "uncovered",
+      "title": "Nhóm chưa được diễn giải",
+      "description": "AI trả items rỗng; chưa có diễn giải cho nhóm này.",
+      "evidenceIds": [],
+      "autoFlags": [],
+      "manual": null
+    },
+    {
+      "id": "A3",
+      "source": "ollama",
+      "title": "Cập nhật thông báo deprecation",
+      "description": "Cập nhật thông báo deprecation từ Flask 3.1 sang Flask 3.2.",
+      "evidenceIds": [
+        "E0020",
+        "E0021",
+        "E0022",
+        "E0023",
+        "E0024",
+        "E0025",
+        "E0026",
+        "E0027",
+        "E0028",
+        "E0029",
+        "E0030",
+        "E0031",
+        "E0032",
+        "E0033",
+        "E0034",
+        "E0035"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A4",
+      "source": "ollama",
+      "title": "Thêm câu lệnh raise AttributeError(name)",
+      "description": "Trong file src/flask/__init__.py, đã thêm câu lệnh raise AttributeError(name) ở dòng 61.",
+      "evidenceIds": [
+        "E0037",
+        "E0038"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A5",
+      "source": "ollama",
+      "title": "Sửa đổi cấu trúc assertion",
+      "description": "Trong hàm Flask.__init__, assertion về `static_host` và `host_matching` đã được chuyển từ một dòng thành ba dòng riêng biệt, cải thiện tính đọc và dễ dàng hơn trong việc kiểm tra.",
+      "evidenceIds": [
+        "E0047",
+        "E0048",
+        "E0049",
+        "E0050",
+        "E0051",
+        "E0052"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A6",
+      "source": "comment-rule",
+      "title": "Thay đổi chú thích mã nguồn",
+      "description": "Phần mã ngoài chú thích trong nhóm này không đổi; không có căn cứ gọi đây là thêm hàm, thêm tham số hoặc sửa logic chạy.",
+      "evidenceIds": [
+        "E0069",
+        "E0070"
+      ],
+      "autoFlags": [],
+      "manual": null
+    },
+    {
+      "id": "A7",
+      "source": "ollama",
+      "title": "Thêm điều kiện mới vào hàm parse_args",
+      "description": "Đã thêm điều kiện mới vào hàm parse_args để kiểm tra xem số lượng tham số đầu vào có bằng 1 và tham số đầu tiên có trong danh sách các tùy chọn giúp đỡ.",
+      "evidenceIds": [
+        "E0087",
+        "E0088",
+        "E0089",
+        "E0090"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A8",
+      "source": "ollama",
+      "title": "Thay đổi giá trị của biến keys",
+      "description": "Trong hàm `get_signing_serializer` của lớp `SecureCookieSessionInterface`, giá trị của biến `keys` đã được thay đổi từ `[app.secret_key]` thành `[]`. Điều này có thể ảnh hưởng đến cách thức mã hóa và giải mã cookie.",
+      "evidenceIds": [
+        "E0107",
+        "E0108"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A9",
+      "source": "ollama",
+      "title": "Thêm mã vào hàm get_signing_serializer",
+      "description": "Trong hàm SecureCookieSessionInterface.get_signing_serializer, đã thêm dòng mã `keys.append(app.secret_key)` vào sau `keys.extend(fallbacks)`. Đây là thay đổi logic để đảm bảo rằng khóa hiện tại được đặt ở đầu danh sách khóa.",
+      "evidenceIds": [
+        "E0113"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A10",
+      "source": "ollama",
+      "title": "Thêm import Result từ click.testing",
+      "description": "Đã thêm import Result từ click.testing vào file src/flask/testing.py.",
+      "evidenceIds": [
+        "E0130"
+      ],
+      "autoFlags": [
+        {
+          "rule": "IMPORT_CATEGORY",
+          "reason": "AST nhận diện import trong bằng chứng; AI phân loại là tài liệu.",
+          "decision": "NEEDS_REVIEW"
+        }
+      ],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A11",
+      "source": "ollama",
+      "title": "Sửa đổi logic assertion",
+      "description": "Đã thêm chuỗi assertion mới vào cuối câu assertion đã tồn tại. Chuỗi assertion mới bao gồm kiểm tra tính đúng của chuỗi 'Cannot pass \"subdomain\" or \"url_scheme\" with \"base_url\".'",
+      "evidenceIds": [
+        "E0147",
+        "E0148",
+        "E0149",
+        "E0150",
+        "E0151",
+        "E0152"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A12",
+      "source": "ollama",
+      "title": "Đổi kiểu trả về của hàm invoke",
+      "description": "Trong nhóm thay đổi này, kiểu trả về của hàm `invoke` đã được thay đổi từ `t.Any` sang `Result`. Điều này có thể ảnh hưởng đến cách hàm được sử dụng và kiểm tra.",
+      "evidenceIds": [
+        "E0169",
+        "E0170"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A13",
+      "source": "ollama",
+      "title": "Thêm import collections.abc",
+      "description": "Đã thêm import collections.abc as cabc vào file src/flask/typing.py.",
+      "evidenceIds": [
+        "E0181"
+      ],
+      "autoFlags": [
+        {
+          "rule": "IMPORT_CATEGORY",
+          "reason": "AST nhận diện import trong bằng chứng; AI phân loại là tài liệu.",
+          "decision": "NEEDS_REVIEW"
+        }
+      ],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A14",
+      "source": "ollama",
+      "title": "Thêm kiểu dữ liệu AsyncIterable",
+      "description": "Đã thêm hai kiểu dữ liệu AsyncIterable[str] và AsyncIterable[bytes] vào định nghĩa kiểu ResponseValue. Điều này có thể liên quan đến việc hỗ trợ Quart, cho đến khi App trở nên chung.",
+      "evidenceIds": [
+        "E0198",
+        "E0199"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A15",
+      "source": "ollama",
+      "title": "Xóa import pkgutil",
+      "description": "Đã xóa import pkgutil từ file tests/conftest.py.",
+      "evidenceIds": [
+        "E0209"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A16",
+      "source": "ollama",
+      "title": "Xóa hàm limit_loader",
+      "description": "Hàm limit_loader đã được xóa khỏi file tests/conftest.py.",
+      "evidenceIds": [
+        "E0226",
+        "E0227",
+        "E0228",
+        "E0229",
+        "E0230",
+        "E0231",
+        "E0232",
+        "E0233",
+        "E0234",
+        "E0235",
+        "E0236",
+        "E0237",
+        "E0238",
+        "E0239",
+        "E0240",
+        "E0241",
+        "E0242",
+        "E0243",
+        "E0244",
+        "E0245",
+        "E0246",
+        "E0247",
+        "E0248",
+        "E0249",
+        "E0250",
+        "E0251",
+        "E0252",
+        "E0253",
+        "E0254",
+        "E0255",
+        "E0256"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A17",
+      "source": "ollama",
+      "title": "Thêm cấu hình khóa bí mật dự phòng",
+      "description": "Thêm đoạn mã để thiết lập khóa bí mật dự phòng cho ứng dụng Flask.",
+      "evidenceIds": [
+        "E0273",
+        "E0274",
+        "E0275",
+        "E0276",
+        "E0277",
+        "E0278"
+      ],
+      "autoFlags": [
+        {
+          "rule": "TEST_SCOPE",
+          "reason": "Các dòng thay đổi thuộc tests/; cần kiểm tra phân loại và phạm vi diễn giải.",
+          "decision": "NEEDS_REVIEW"
+        }
+      ],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A18",
+      "source": "ollama",
+      "title": "Thay đổi giá trị secret key",
+      "description": "Trong hàm `test_session_secret_key_fallbacks`, giá trị của `app.secret_key` đã được thay đổi từ \"new test key\" thành \"? key\".",
+      "evidenceIds": [
+        "E0282",
+        "E0283"
+      ],
+      "autoFlags": [
+        {
+          "rule": "TEST_SCOPE",
+          "reason": "Các dòng thay đổi thuộc tests/; cần kiểm tra phân loại và phạm vi diễn giải.",
+          "decision": "NEEDS_REVIEW"
+        }
+      ],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A19",
+      "source": "ollama",
+      "title": "Đổi tên và mô tả thao tác",
+      "description": "Trong nhóm thay đổi này, có sự thay đổi từ việc thêm một khóa bí mật ban đầu làm fallback sang việc xoay vòng các khóa hợp lệ, cho phép session được tải. Mô tả đã được cập nhật để phản ánh thay đổi này.",
+      "evidenceIds": [
+        "E0285",
+        "E0286",
+        "E0287",
+        "E0288",
+        "E0289",
+        "E0290",
+        "E0291"
+      ],
+      "autoFlags": [
+        {
+          "rule": "TEST_SCOPE",
+          "reason": "Các dòng thay đổi thuộc tests/; cần kiểm tra phân loại và phạm vi diễn giải.",
+          "decision": "NEEDS_REVIEW"
+        }
+      ],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A20",
+      "source": "ollama",
+      "title": "Thêm tham số vào hàm test_installed_module_paths",
+      "description": "Trong hàm test_installed_module_paths, tham số limit_loader đã được loại bỏ trong phiên bản mới.",
+      "evidenceIds": [
+        "E0308",
+        "E0309"
+      ],
+      "autoFlags": [
+        {
+          "rule": "TEST_SCOPE",
+          "reason": "Các dòng thay đổi thuộc tests/; cần kiểm tra phân loại và phạm vi diễn giải.",
+          "decision": "NEEDS_REVIEW"
+        }
+      ],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A21",
+      "source": "ollama",
+      "title": "Thay đổi tham số hàm",
+      "description": "Trong hàm `test_installed_package_paths`, tham số `limit_loader` đã được loại bỏ trong phiên bản mới.",
+      "evidenceIds": [
+        "E0324",
+        "E0325"
+      ],
+      "autoFlags": [
+        {
+          "rule": "TEST_SCOPE",
+          "reason": "Các dòng thay đổi thuộc tests/; cần kiểm tra phân loại và phạm vi diễn giải.",
+          "decision": "NEEDS_REVIEW"
+        }
+      ],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A22",
+      "source": "ollama",
+      "title": "Thay đổi tham số hàm",
+      "description": "Trong hàm `test_prefix_package_paths`, tham số `limit_loader` đã bị loại bỏ trong phiên bản mới.",
+      "evidenceIds": [
+        "E0342",
+        "E0343"
+      ],
+      "autoFlags": [
+        {
+          "rule": "TEST_SCOPE",
+          "reason": "Các dòng thay đổi thuộc tests/; cần kiểm tra phân loại và phạm vi diễn giải.",
+          "decision": "NEEDS_REVIEW"
+        }
+      ],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    }
+  ],
+  "claims": [
+    {
+      "id": "C1",
+      "text": "Đổi cách xây dựng danh sách khóa trong get_signing_serializer: thêm các fallback trước, sau đó append app.secret_key.",
+      "rawStatus": "SUPPORTED",
+      "effectiveStatus": "SUPPORTED",
+      "expected": "SUPPORTED",
+      "labelCheck": {
+        "rawMatches": true,
+        "effectiveMatches": true
+      },
+      "atoms": [
+        {
+          "id": "C1.1",
+          "text": "Đổi cách xây dựng danh sách khóa trong get_signing_serializer: thêm các fallback trước, sau đó append app.secret_key.",
+          "explanation": "Báo cáo khẳng định rằng cần thêm các fallback trước, sau đó append app.secret_key. Trong code mới, trước khi append app.secret_key, đã có đoạn mã để thêm các fallback vào danh sách keys. Điều này phù hợp với yêu cầu trong báo cáo.",
+          "evidenceIds": [
+            "E0108",
+            "E0113"
+          ],
+          "comparisons": [
+            {
+              "claimPart": "thêm các fallback trước, sau đó append app.secret_key",
+              "codeReading": "Trong hàm get_signing_serializer, trước khi append app.secret_key, đã có đoạn mã để thêm các fallback vào danh sách keys.",
+              "codeIds": [
+                "E0108",
+                "E0113"
+              ],
+              "relation": "MATCH",
+              "structureValid": true,
+              "validationIssues": [],
+              "evidenceSources": [
+                {
+                  "id": "E0108",
+                  "file": "src/flask/sessions.py",
+                  "kind": "added",
+                  "versions": [
+                    "AFTER"
+                  ],
+                  "beforeLine": null,
+                  "afterLine": 321
+                },
+                {
+                  "id": "E0113",
+                  "file": "src/flask/sessions.py",
+                  "kind": "added",
+                  "versions": [
+                    "AFTER"
+                  ],
+                  "beforeLine": null,
+                  "afterLine": 326
+                }
+              ],
+              "claimTimeScope": "UNSPECIFIED"
+            }
+          ],
+          "typeCheck": null,
+          "autoFlags": [],
+          "idsExist": true,
+          "manual": {
+            "explanation": "UNREVIEWED",
+            "evidenceRelevance": "UNREVIEWED",
+            "notes": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "FlaskCliRunner.invoke đổi type hint trả về thành Result; toàn bộ kiểm thử đã pass trên Windows.",
+      "rawStatus": "PARTIAL",
+      "effectiveStatus": "PARTIAL",
+      "expected": "PARTIAL",
+      "labelCheck": {
+        "rawMatches": true,
+        "effectiveMatches": true
+      },
+      "atoms": [
+        {
+          "id": "C2.1",
+          "text": "FlaskCliRunner.invoke đổi type hint trả về thành Result",
+          "explanation": "Báo cáo khẳng định rằng FlaskCliRunner.invoke đã thay đổi type hint trả về thành Result. Trong code mới, hàm invoke của FlaskCliRunner đã được cập nhật với type hint mới là Result, khớp với khẳng định trong báo cáo.",
+          "evidenceIds": [
+            "E0170"
+          ],
+          "comparisons": [
+            {
+              "claimPart": "FlaskCliRunner.invoke đổi type hint trả về thành Result",
+              "codeReading": "Trong hàm invoke của FlaskCliRunner, type hint đã được thay đổi từ t.Any sang Result.",
+              "codeIds": [
+                "E0170"
+              ],
+              "relation": "MATCH",
+              "structureValid": true,
+              "validationIssues": [],
+              "evidenceSources": [
+                {
+                  "id": "E0170",
+                  "file": "src/flask/testing.py",
+                  "kind": "added",
+                  "versions": [
+                    "AFTER"
+                  ],
+                  "beforeLine": null,
+                  "afterLine": 277
+                }
+              ],
+              "claimTimeScope": "UNSPECIFIED"
+            }
+          ],
+          "typeCheck": {
+            "file": "src/flask/testing.py",
+            "function": "FlaskCliRunner.invoke",
+            "actual": "Result",
+            "ids": [
+              "E0170"
+            ],
+            "expected": "Result",
+            "source": "AST_RULE",
+            "relation": "MATCH",
+            "limitation": "Chỉ so tên annotation đích theo cú pháp; không suy runtime, alias hay tương đương kiểu. Không chấm toàn bộ câu báo cáo."
+          },
+          "autoFlags": [],
+          "idsExist": true,
+          "manual": {
+            "explanation": "UNREVIEWED",
+            "evidenceRelevance": "UNREVIEWED",
+            "notes": ""
+          }
+        },
+        {
+          "id": "C2.2",
+          "text": "toàn bộ kiểm thử đã pass trên Windows.",
+          "explanation": "Báo cáo khẳng định rằng tất cả kiểm thử đã pass trên Windows, nhưng đoạn mã cung cấp không chứa thông tin cụ thể về việc kiểm thử đã pass hay không trên Windows. Do đó, không có bằng chứng để xác nhận hoặc phủ định khẳng định này.",
+          "evidenceIds": [],
+          "comparisons": [
+            {
+              "claimPart": "tất cả kiểm thử đã pass trên Windows",
+              "codeReading": "Không có thông tin cụ thể về việc kiểm thử đã pass hay không trên Windows trong đoạn mã cung cấp.",
+              "codeIds": [],
+              "relation": "UNKNOWN",
+              "structureValid": false,
+              "validationIssues": [
+                "claimPart không phải trích đoạn nguyên văn của ý báo cáo; diễn đạt đồng nghĩa vẫn cần duyệt trích dẫn"
+              ],
+              "evidenceSources": [],
+              "claimTimeScope": "UNSPECIFIED"
+            }
+          ],
+          "typeCheck": null,
+          "autoFlags": [
+            {
+              "rule": "COMPARISON_INVALID",
+              "reason": "claimPart không phải trích đoạn nguyên văn của ý báo cáo; diễn đạt đồng nghĩa vẫn cần duyệt trích dẫn. Nhãn gốc vẫn được giữ; không dùng dòng này để kiểm tra quan hệ.",
+              "decision": "NEEDS_REVIEW"
+            }
+          ],
+          "idsExist": true,
+          "manual": {
+            "explanation": "UNREVIEWED",
+            "evidenceRelevance": "UNREVIEWED",
+            "notes": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Danh sách khóa mới khởi tạo bằng [app.secret_key] rồi mới extend các fallback như cũ.",
+      "rawStatus": "SUPPORTED",
+      "effectiveStatus": "SUPPORTED",
+      "expected": "CONTRADICTED",
+      "labelCheck": {
+        "rawMatches": false,
+        "effectiveMatches": false
+      },
+      "atoms": [
+        {
+          "id": "C3.1",
+          "text": "Danh sách khóa mới khởi tạo bằng [app.secret_key] rồi mới extend các fallback như cũ.",
+          "explanation": "Báo cáo khẳng định rằng danh sách khóa mới khởi tạo bằng [app.secret_key] rồi mới extend các fallback như cũ. Trong code, trước khi extend fallbacks, đã khởi tạo keys bằng [app.secret_key] và sau đó extend fallbacks vào keys. Điều này khớp với mô tả trong báo cáo.",
+          "evidenceIds": [
+            "E0107",
+            "E0113"
+          ],
+          "comparisons": [
+            {
+              "claimPart": "Danh sách khóa mới khởi tạo bằng [app.secret_key] rồi mới extend các fallback như cũ.",
+              "codeReading": "Trong hàm get_signing_serializer, trước khi extend fallbacks, đã khởi tạo keys bằng [app.secret_key]. Sau đó extend fallbacks vào keys.",
+              "codeIds": [
+                "E0107",
+                "E0113"
+              ],
+              "relation": "MATCH",
+              "structureValid": true,
+              "validationIssues": [],
+              "evidenceSources": [
+                {
+                  "id": "E0107",
+                  "file": "src/flask/sessions.py",
+                  "kind": "removed",
+                  "versions": [
+                    "BEFORE"
+                  ],
+                  "beforeLine": 321,
+                  "afterLine": null
+                },
+                {
+                  "id": "E0113",
+                  "file": "src/flask/sessions.py",
+                  "kind": "added",
+                  "versions": [
+                    "AFTER"
+                  ],
+                  "beforeLine": null,
+                  "afterLine": 326
+                }
+              ],
+              "claimTimeScope": "AFTER"
+            }
+          ],
+          "typeCheck": null,
+          "autoFlags": [
+            {
+              "rule": "REMOVED_EVIDENCE_FOR_AFTER",
+              "reason": "Dòng đối chiếu: khẳng định về trạng thái mới dẫn dòng REMOVED (E0107). Dòng này chỉ tồn tại ở BEFORE; cần kiểm tra có đang dùng để chứng minh AFTER hay chỉ so sánh lịch sử. Không tự đổi nhãn.",
+              "decision": "NEEDS_REVIEW"
+            },
+            {
+              "rule": "REMOVED_EVIDENCE_FOR_AFTER",
+              "reason": "Dẫn chứng nhãn: khẳng định về trạng thái mới dẫn dòng REMOVED (E0107). Dòng này chỉ tồn tại ở BEFORE; cần kiểm tra có đang dùng để chứng minh AFTER hay chỉ so sánh lịch sử. Không tự đổi nhãn.",
+              "decision": "NEEDS_REVIEW"
+            }
+          ],
+          "idsExist": true,
+          "manual": {
+            "explanation": "UNREVIEWED",
+            "evidenceRelevance": "UNREVIEWED",
+            "notes": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Thay đổi này làm tốc độ chạy ứng dụng tăng 30% qua benchmark thực tế.",
+      "rawStatus": "INSUFFICIENT",
+      "effectiveStatus": "INSUFFICIENT",
+      "expected": "INSUFFICIENT",
+      "labelCheck": {
+        "rawMatches": true,
+        "effectiveMatches": true
+      },
+      "atoms": [
+        {
+          "id": "C4.1",
+          "text": "Thay đổi này làm tốc độ chạy ứng dụng tăng 30% qua benchmark thực tế.",
+          "explanation": "Báo cáo khẳng định rằng thay đổi này làm tăng tốc độ chạy ứng dụng lên 30% so với benchmark thực tế. Tuy nhiên, đoạn mã cung cấp không chứa bất kỳ thay đổi nào liên quan đến hiệu suất hoặc tốc độ chạy ứng dụng. Do đó, không có bằng chứng để hỗ trợ hoặc phản bác ý này.",
+          "evidenceIds": [],
+          "comparisons": [
+            {
+              "claimPart": "Thay đổi này làm tốc độ chạy ứng dụng tăng 30% qua benchmark thực tế.",
+              "codeReading": "Không thấy bất kỳ thay đổi nào liên quan đến hiệu suất hoặc tốc độ chạy ứng dụng trong đoạn mã cung cấp.",
+              "codeIds": [],
+              "relation": "UNKNOWN",
+              "structureValid": true,
+              "validationIssues": [],
+              "evidenceSources": [],
+              "claimTimeScope": "UNSPECIFIED"
+            }
+          ],
+          "typeCheck": null,
+          "autoFlags": [],
+          "idsExist": true,
+          "manual": {
+            "explanation": "UNREVIEWED",
+            "evidenceRelevance": "UNREVIEWED",
+            "notes": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "ResponseValue thêm cả cabc.AsyncIterable[str] và cabc.AsyncIterable[bytes].",
+      "rawStatus": "SUPPORTED",
+      "effectiveStatus": "SUPPORTED",
+      "expected": "SUPPORTED",
+      "labelCheck": {
+        "rawMatches": true,
+        "effectiveMatches": true
+      },
+      "atoms": [
+        {
+          "id": "C5.1",
+          "text": "ResponseValue thêm cả cabc.AsyncIterable[str] và cabc.AsyncIterable[bytes].",
+          "explanation": "Báo cáo khẳng định rằng ResponseValue thêm cả cabc.AsyncIterable[str] và cabc.AsyncIterable[bytes]. Trong đoạn code mới, hai dòng sau đã được thêm vào, khớp chính xác với yêu cầu trong báo cáo.",
+          "evidenceIds": [
+            "E0198",
+            "E0199"
+          ],
+          "comparisons": [
+            {
+              "claimPart": "ResponseValue thêm cả cabc.AsyncIterable[str] và cabc.AsyncIterable[bytes].",
+              "codeReading": "Trong đoạn code mới, hai dòng sau đã được thêm vào:",
+              "codeIds": [
+                "E0198",
+                "E0199"
+              ],
+              "relation": "MATCH",
+              "structureValid": true,
+              "validationIssues": [],
+              "evidenceSources": [
+                {
+                  "id": "E0198",
+                  "file": "src/flask/typing.py",
+                  "kind": "added",
+                  "versions": [
+                    "AFTER"
+                  ],
+                  "beforeLine": null,
+                  "afterLine": 21
+                },
+                {
+                  "id": "E0199",
+                  "file": "src/flask/typing.py",
+                  "kind": "added",
+                  "versions": [
+                    "AFTER"
+                  ],
+                  "beforeLine": null,
+                  "afterLine": 22
+                }
+              ],
+              "claimTimeScope": "UNSPECIFIED"
+            }
+          ],
+          "typeCheck": null,
+          "autoFlags": [],
+          "idsExist": true,
+          "manual": {
+            "explanation": "UNREVIEWED",
+            "evidenceRelevance": "UNREVIEWED",
+            "notes": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "C6",
+      "text": "FlaskCliRunner.invoke được đổi type hint trả về từ t.Any sang str.",
+      "rawStatus": "CONTRADICTED",
+      "effectiveStatus": "CONTRADICTED",
+      "expected": "CONTRADICTED",
+      "labelCheck": {
+        "rawMatches": true,
+        "effectiveMatches": true
+      },
+      "atoms": [
+        {
+          "id": "C6.1",
+          "text": "FlaskCliRunner.invoke được đổi type hint trả về từ t.Any sang str.",
+          "explanation": "Báo cáo khẳng định rằng FlaskCliRunner.invoke được đổi type hint trả về từ t.Any sang str. Tuy nhiên, trong code mới, phương thức invoke được định nghĩa với kiểu trả về là Result, không phải str.",
+          "evidenceIds": [
+            "E0170"
+          ],
+          "comparisons": [
+            {
+              "claimPart": "FlaskCliRunner.invoke được đổi type hint trả về từ t.Any sang str.",
+              "codeReading": "Trong code mới, phương thức invoke của FlaskCliRunner được định nghĩa với kiểu trả về là Result.",
+              "codeIds": [
+                "E0170"
+              ],
+              "relation": "CONFLICT",
+              "structureValid": true,
+              "validationIssues": [],
+              "evidenceSources": [
+                {
+                  "id": "E0170",
+                  "file": "src/flask/testing.py",
+                  "kind": "added",
+                  "versions": [
+                    "AFTER"
+                  ],
+                  "beforeLine": null,
+                  "afterLine": 277
+                }
+              ],
+              "claimTimeScope": "TRANSITION"
+            }
+          ],
+          "typeCheck": {
+            "file": "src/flask/testing.py",
+            "function": "FlaskCliRunner.invoke",
+            "actual": "Result",
+            "ids": [
+              "E0170"
+            ],
+            "expected": "str",
+            "source": "AST_RULE",
+            "relation": "CONFLICT",
+            "limitation": "Chỉ so tên annotation đích theo cú pháp; không suy runtime, alias hay tương đương kiểu. Không chấm toàn bộ câu báo cáo."
+          },
+          "autoFlags": [],
+          "idsExist": true,
+          "manual": {
+            "explanation": "UNREVIEWED",
+            "evidenceRelevance": "UNREVIEWED",
+            "notes": ""
+          }
+        }
+      ]
+    }
+  ]
+}

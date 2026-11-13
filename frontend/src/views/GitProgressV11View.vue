@@ -294,6 +294,14 @@ onUnmounted(stopPolling)
               <span v-if="active.partialCoverage">Phạm vi GitHub trả về có thể chưa đầy đủ.</span>
             </p>
             <p v-if="compareLink()"><a :href="compareLink()" target="_blank" rel="noopener noreferrer">Xem đối chiếu gốc trên GitHub</a></p>
+            <p v-if="aiDiagnostics?.contextStatus" class="hint">
+              <template v-if="aiDiagnostics.contextExcerpts">
+                AI đã nhận thêm {{ aiDiagnostics.contextExcerpts }} đoạn code ngữ cảnh của {{ aiDiagnostics.contextFiles }} file
+                tại các commit đã chọn. Đây là mẫu có giới hạn, không phải toàn bộ dự án.
+                <span v-if="aiDiagnostics.contextStatus === 'partial'">Chỉ lấy được ngữ cảnh ở một mốc; chưa đủ để đối chiếu cả hai phiên bản.</span>
+              </template>
+              <template v-else>Không lấy được code ngữ cảnh phù hợp; kết quả chỉ dựa trên diff.</template>
+            </p>
             <details class="gp-ai-diagnostics">
               <summary>Chi tiết kiểm tra AI {{ aiDiagnostics ? `(${aiDiagnostics.verified}/${aiDiagnostics.parsedCandidates} nhận xét hợp lệ)` : '(báo cáo cũ)' }}</summary>
               <p>{{ aiDiagnosticSummary }}</p>

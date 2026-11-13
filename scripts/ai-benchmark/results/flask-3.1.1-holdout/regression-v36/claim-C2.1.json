@@ -1,0 +1,24 @@
+{
+  "signature": "9ebb74af49b0129be2479d54649a9cd7e81699c026162f6f21ab3beea7d9a003",
+  "result": {
+    "claimId": "C2.1",
+    "claimQuote": "FlaskCliRunner.invoke đổi type hint trả về thành Result",
+    "status": "SUPPORTED",
+    "explanation": "Trong code mới, hàm invoke của FlaskCliRunner đã được thêm type hint trả về Result. Điều này được thể hiện trong dòng mới số 277 của file src/flask/testing.py.",
+    "evidenceIds": [
+      "E0170"
+    ],
+    "originalEvidenceIds": [
+      "E0170"
+    ],
+    "citationNormalization": [],
+    "citationValid": true,
+    "rejectionReason": null,
+    "attempts": [
+      {
+        "attempt": 1,
+        "valid": true
+      }
+    ]
+  }
+}

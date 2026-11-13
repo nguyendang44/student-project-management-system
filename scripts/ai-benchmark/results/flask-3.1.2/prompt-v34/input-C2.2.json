@@ -1,0 +1,1281 @@
+{
+  "claim": {
+    "id": "C2.2",
+    "text": "đã đo được tốc độ gửi file tăng 30%.",
+    "originalText": "Đổi type hint path_or_file của send_file thành t.IO[bytes] và đã đo được tốc độ gửi file tăng 30%.",
+    "terms": [
+      "path_or_file",
+      "send_file"
+    ]
+  },
+  "packets": [
+    {
+      "file": "src/flask/helpers.py",
+      "lines": [
+        {
+          "id": "E0164",
+          "kind": "context",
+          "beforeLine": 387,
+          "afterLine": 394,
+          "text": "def _prepare_send_file_kwargs(**kwargs: t.Any) -> dict[str, t.Any]:",
+          "structure": {
+            "before": {
+              "id": "E0164",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 387,
+              "text": "def _prepare_send_file_kwargs(**kwargs: t.Any) -> dict[str, t.Any]:",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 387,
+                "endLine": 397,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0164",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 394,
+              "text": "def _prepare_send_file_kwargs(**kwargs: t.Any) -> dict[str, t.Any]:",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 394,
+                "endLine": 404,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0165",
+          "kind": "context",
+          "beforeLine": 388,
+          "afterLine": 395,
+          "text": "    if kwargs.get(\"max_age\") is None:",
+          "structure": {
+            "before": {
+              "id": "E0165",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 388,
+              "text": "    if kwargs.get(\"max_age\") is None:",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 387,
+                "endLine": 397,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 388,
+                  "endLine": 388,
+                  "code": "kwargs.get(\"max_age\")"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0165",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 395,
+              "text": "    if kwargs.get(\"max_age\") is None:",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 394,
+                "endLine": 404,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 395,
+                  "endLine": 395,
+                  "code": "kwargs.get(\"max_age\")"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0166",
+          "kind": "context",
+          "beforeLine": 389,
+          "afterLine": 396,
+          "text": "        kwargs[\"max_age\"] = current_app.get_send_file_max_age",
+          "structure": {
+            "before": {
+              "id": "E0166",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 389,
+              "text": "        kwargs[\"max_age\"] = current_app.get_send_file_max_age",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 387,
+                "endLine": 397,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0166",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 396,
+              "text": "        kwargs[\"max_age\"] = current_app.get_send_file_max_age",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 394,
+                "endLine": 404,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0167",
+          "kind": "context",
+          "beforeLine": 390,
+          "afterLine": 397,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0167",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 390,
+              "text": "",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 387,
+                "endLine": 397,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0167",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 397,
+              "text": "",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 394,
+                "endLine": 404,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0168",
+          "kind": "context",
+          "beforeLine": 391,
+          "afterLine": 398,
+          "text": "    kwargs.update(",
+          "structure": {
+            "before": {
+              "id": "E0168",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 391,
+              "text": "    kwargs.update(",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 387,
+                "endLine": 397,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 391,
+                  "endLine": 396,
+                  "code": "kwargs.update(\n        environ=request.environ,\n        use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],\n        response_class=current_app.response_class,\n        _root_path=current_app.root_path,  # type: ignore\n    )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0168",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 398,
+              "text": "    kwargs.update(",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 394,
+                "endLine": 404,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 398,
+                  "endLine": 403,
+                  "code": "kwargs.update(\n        environ=request.environ,\n        use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],\n        response_class=current_app.response_class,\n        _root_path=current_app.root_path,\n    )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0169",
+          "kind": "context",
+          "beforeLine": 392,
+          "afterLine": 399,
+          "text": "        environ=request.environ,",
+          "structure": {
+            "before": {
+              "id": "E0169",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 392,
+              "text": "        environ=request.environ,",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 387,
+                "endLine": 397,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 391,
+                  "endLine": 396,
+                  "code": "kwargs.update(\n        environ=request.environ,\n        use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],\n        response_class=current_app.response_class,\n        _root_path=current_app.root_path,  # type: ignore\n    )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0169",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 399,
+              "text": "        environ=request.environ,",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 394,
+                "endLine": 404,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 398,
+                  "endLine": 403,
+                  "code": "kwargs.update(\n        environ=request.environ,\n        use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],\n        response_class=current_app.response_class,\n        _root_path=current_app.root_path,\n    )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0170",
+          "kind": "context",
+          "beforeLine": 393,
+          "afterLine": 400,
+          "text": "        use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],",
+          "structure": {
+            "before": {
+              "id": "E0170",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 393,
+              "text": "        use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 387,
+                "endLine": 397,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 391,
+                  "endLine": 396,
+                  "code": "kwargs.update(\n        environ=request.environ,\n        use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],\n        response_class=current_app.response_class,\n        _root_path=current_app.root_path,  # type: ignore\n    )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0170",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 400,
+              "text": "        use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 394,
+                "endLine": 404,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 398,
+                  "endLine": 403,
+                  "code": "kwargs.update(\n        environ=request.environ,\n        use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],\n        response_class=current_app.response_class,\n        _root_path=current_app.root_path,\n    )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0171",
+          "kind": "context",
+          "beforeLine": 394,
+          "afterLine": 401,
+          "text": "        response_class=current_app.response_class,",
+          "structure": {
+            "before": {
+              "id": "E0171",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 394,
+              "text": "        response_class=current_app.response_class,",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 387,
+                "endLine": 397,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 391,
+                  "endLine": 396,
+                  "code": "kwargs.update(\n        environ=request.environ,\n        use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],\n        response_class=current_app.response_class,\n        _root_path=current_app.root_path,  # type: ignore\n    )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0171",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 401,
+              "text": "        response_class=current_app.response_class,",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 394,
+                "endLine": 404,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 398,
+                  "endLine": 403,
+                  "code": "kwargs.update(\n        environ=request.environ,\n        use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],\n        response_class=current_app.response_class,\n        _root_path=current_app.root_path,\n    )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0172",
+          "kind": "removed",
+          "beforeLine": 395,
+          "afterLine": null,
+          "text": "        _root_path=current_app.root_path,  # type: ignore",
+          "structure": {
+            "before": {
+              "id": "E0172",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 395,
+              "text": "        _root_path=current_app.root_path,  # type: ignore",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 387,
+                "endLine": 397,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 391,
+                  "endLine": 396,
+                  "code": "kwargs.update(\n        environ=request.environ,\n        use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],\n        response_class=current_app.response_class,\n        _root_path=current_app.root_path,  # type: ignore\n    )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0173",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 402,
+          "text": "        _root_path=current_app.root_path,",
+          "structure": {
+            "after": {
+              "id": "E0173",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 402,
+              "text": "        _root_path=current_app.root_path,",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 394,
+                "endLine": 404,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 398,
+                  "endLine": 403,
+                  "code": "kwargs.update(\n        environ=request.environ,\n        use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],\n        response_class=current_app.response_class,\n        _root_path=current_app.root_path,\n    )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0174",
+          "kind": "context",
+          "beforeLine": 396,
+          "afterLine": 403,
+          "text": "    )",
+          "structure": {
+            "before": {
+              "id": "E0174",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 396,
+              "text": "    )",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 387,
+                "endLine": 397,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 391,
+                  "endLine": 396,
+                  "code": "kwargs.update(\n        environ=request.environ,\n        use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],\n        response_class=current_app.response_class,\n        _root_path=current_app.root_path,  # type: ignore\n    )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0174",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 403,
+              "text": "    )",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 394,
+                "endLine": 404,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 398,
+                  "endLine": 403,
+                  "code": "kwargs.update(\n        environ=request.environ,\n        use_x_sendfile=current_app.config[\"USE_X_SENDFILE\"],\n        response_class=current_app.response_class,\n        _root_path=current_app.root_path,\n    )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0175",
+          "kind": "context",
+          "beforeLine": 397,
+          "afterLine": 404,
+          "text": "    return kwargs",
+          "structure": {
+            "before": {
+              "id": "E0175",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 397,
+              "text": "    return kwargs",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 387,
+                "endLine": 397,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0175",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 404,
+              "text": "    return kwargs",
+              "function": {
+                "name": "_prepare_send_file_kwargs",
+                "startLine": 394,
+                "endLine": 404,
+                "parameters": {
+                  "kwargs": "t.Any"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0176",
+          "kind": "context",
+          "beforeLine": 398,
+          "afterLine": 405,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0176",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 398,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0176",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 405,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0177",
+          "kind": "context",
+          "beforeLine": 399,
+          "afterLine": 406,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0177",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 399,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0177",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 406,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0178",
+          "kind": "context",
+          "beforeLine": 400,
+          "afterLine": 407,
+          "text": "def send_file(",
+          "structure": {
+            "before": {
+              "id": "E0178",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 400,
+              "text": "def send_file(",
+              "function": {
+                "name": "send_file",
+                "startLine": 400,
+                "endLine": 523,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.BinaryIO",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0178",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 407,
+              "text": "def send_file(",
+              "function": {
+                "name": "send_file",
+                "startLine": 407,
+                "endLine": 530,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.IO[bytes]",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0179",
+          "kind": "removed",
+          "beforeLine": 401,
+          "afterLine": null,
+          "text": "    path_or_file: os.PathLike[t.AnyStr] | str | t.BinaryIO,",
+          "structure": {
+            "before": {
+              "id": "E0179",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 401,
+              "text": "    path_or_file: os.PathLike[t.AnyStr] | str | t.BinaryIO,",
+              "function": {
+                "name": "send_file",
+                "startLine": 400,
+                "endLine": 523,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.BinaryIO",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0180",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 408,
+          "text": "    path_or_file: os.PathLike[t.AnyStr] | str | t.IO[bytes],",
+          "structure": {
+            "after": {
+              "id": "E0180",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 408,
+              "text": "    path_or_file: os.PathLike[t.AnyStr] | str | t.IO[bytes],",
+              "function": {
+                "name": "send_file",
+                "startLine": 407,
+                "endLine": 530,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.IO[bytes]",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0181",
+          "kind": "context",
+          "beforeLine": 402,
+          "afterLine": 409,
+          "text": "    mimetype: str | None = None,",
+          "structure": {
+            "before": {
+              "id": "E0181",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 402,
+              "text": "    mimetype: str | None = None,",
+              "function": {
+                "name": "send_file",
+                "startLine": 400,
+                "endLine": 523,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.BinaryIO",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0181",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 409,
+              "text": "    mimetype: str | None = None,",
+              "function": {
+                "name": "send_file",
+                "startLine": 407,
+                "endLine": 530,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.IO[bytes]",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0182",
+          "kind": "context",
+          "beforeLine": 403,
+          "afterLine": 410,
+          "text": "    as_attachment: bool = False,",
+          "structure": {
+            "before": {
+              "id": "E0182",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 403,
+              "text": "    as_attachment: bool = False,",
+              "function": {
+                "name": "send_file",
+                "startLine": 400,
+                "endLine": 523,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.BinaryIO",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0182",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 410,
+              "text": "    as_attachment: bool = False,",
+              "function": {
+                "name": "send_file",
+                "startLine": 407,
+                "endLine": 530,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.IO[bytes]",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0183",
+          "kind": "context",
+          "beforeLine": 404,
+          "afterLine": 411,
+          "text": "    download_name: str | None = None,",
+          "structure": {
+            "before": {
+              "id": "E0183",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 404,
+              "text": "    download_name: str | None = None,",
+              "function": {
+                "name": "send_file",
+                "startLine": 400,
+                "endLine": 523,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.BinaryIO",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0183",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 411,
+              "text": "    download_name: str | None = None,",
+              "function": {
+                "name": "send_file",
+                "startLine": 407,
+                "endLine": 530,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.IO[bytes]",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0184",
+          "kind": "context",
+          "beforeLine": 405,
+          "afterLine": 412,
+          "text": "    conditional: bool = True,",
+          "structure": {
+            "before": {
+              "id": "E0184",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 405,
+              "text": "    conditional: bool = True,",
+              "function": {
+                "name": "send_file",
+                "startLine": 400,
+                "endLine": 523,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.BinaryIO",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0184",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 412,
+              "text": "    conditional: bool = True,",
+              "function": {
+                "name": "send_file",
+                "startLine": 407,
+                "endLine": 530,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.IO[bytes]",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0185",
+          "kind": "context",
+          "beforeLine": 406,
+          "afterLine": 413,
+          "text": "    etag: bool | str = True,",
+          "structure": {
+            "before": {
+              "id": "E0185",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 406,
+              "text": "    etag: bool | str = True,",
+              "function": {
+                "name": "send_file",
+                "startLine": 400,
+                "endLine": 523,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.BinaryIO",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0185",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 413,
+              "text": "    etag: bool | str = True,",
+              "function": {
+                "name": "send_file",
+                "startLine": 407,
+                "endLine": 530,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.IO[bytes]",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0186",
+          "kind": "context",
+          "beforeLine": 407,
+          "afterLine": 414,
+          "text": "    last_modified: datetime | int | float | None = None,",
+          "structure": {
+            "before": {
+              "id": "E0186",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 407,
+              "text": "    last_modified: datetime | int | float | None = None,",
+              "function": {
+                "name": "send_file",
+                "startLine": 400,
+                "endLine": 523,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.BinaryIO",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0186",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 414,
+              "text": "    last_modified: datetime | int | float | None = None,",
+              "function": {
+                "name": "send_file",
+                "startLine": 407,
+                "endLine": 530,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.IO[bytes]",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0187",
+          "kind": "context",
+          "beforeLine": 408,
+          "afterLine": 415,
+          "text": "    max_age: None | (int | t.Callable[[str | None], int | None]) = None,",
+          "structure": {
+            "before": {
+              "id": "E0187",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 408,
+              "text": "    max_age: None | (int | t.Callable[[str | None], int | None]) = None,",
+              "function": {
+                "name": "send_file",
+                "startLine": 400,
+                "endLine": 523,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.BinaryIO",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0187",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 415,
+              "text": "    max_age: None | (int | t.Callable[[str | None], int | None]) = None,",
+              "function": {
+                "name": "send_file",
+                "startLine": 407,
+                "endLine": 530,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.IO[bytes]",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0188",
+          "kind": "context",
+          "beforeLine": 409,
+          "afterLine": 416,
+          "text": ") -> Response:",
+          "structure": {
+            "before": {
+              "id": "E0188",
+              "file": "src/flask/helpers.py",
+              "side": "before",
+              "line": 409,
+              "text": ") -> Response:",
+              "function": {
+                "name": "send_file",
+                "startLine": 400,
+                "endLine": 523,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.BinaryIO",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0188",
+              "file": "src/flask/helpers.py",
+              "side": "after",
+              "line": 416,
+              "text": ") -> Response:",
+              "function": {
+                "name": "send_file",
+                "startLine": 407,
+                "endLine": 530,
+                "parameters": {
+                  "path_or_file": "os.PathLike[t.AnyStr] | str | t.IO[bytes]",
+                  "mimetype": "str | None",
+                  "as_attachment": "bool",
+                  "download_name": "str | None",
+                  "conditional": "bool",
+                  "etag": "bool | str",
+                  "last_modified": "datetime | int | float | None",
+                  "max_age": "None | (int | t.Callable[[str | None], int | None])"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "signature": "493b473338cd2a86927dcb868598b5df2a594659b6729bd3a89f0596a914f3af",
+  "result": [
+    {
+      "groupId": "G-E0226-E0256",
+      "category": "test",
+      "title": "Xóa hàm limit_loader",
+      "description": "Hàm limit_loader đã được xóa khỏi file tests/conftest.py.",
+      "source": "ollama",
+      "before": "@pytest.fixture(params=(True, False))\ndef limit_loader(request, monkeypatch):\n    \"\"\"Patch pkgutil.get_loader to give loader without get_filename or archive.\n\n    This provides for tests where a system has custom loaders, e.g. Google App\n    Engine's HardenedModulesHook, which have neither the `get_filename` method\n    nor the `archive` attribute.\n\n    This fixture will run the testcase twice, once with and once without the\n    limitation/mock.\n    \"\"\"\n    if not request.param:\n        return\n\n    class LimitedLoader:\n        def __init__(self, loader):\n            self.loader = loader\n\n        def __getattr__(self, name):\n            if name in {\"archive\", \"get_filename\"}:\n                raise AttributeError(f\"Mocking a loader which does not have {name!r}.\")\n            return getattr(self.loader, name)\n\n    old_get_loader = pkgutil.get_loader\n\n    def get_loader(*args, **kwargs):\n        return LimitedLoader(old_get_loader(*args, **kwargs))\n\n    monkeypatch.setattr(pkgutil, \"get_loader\", get_loader)\n\n",
+      "after": "(không có dòng thêm)",
+      "beforeEvidenceIds": [
+        "E0226",
+        "E0227",
+        "E0228",
+        "E0229",
+        "E0230",
+        "E0231",
+        "E0232",
+        "E0233",
+        "E0234",
+        "E0235",
+        "E0236",
+        "E0237",
+        "E0238",
+        "E0239",
+        "E0240",
+        "E0241",
+        "E0242",
+        "E0243",
+        "E0244",
+        "E0245",
+        "E0246",
+        "E0247",
+        "E0248",
+        "E0249",
+        "E0250",
+        "E0251",
+        "E0252",
+        "E0253",
+        "E0254",
+        "E0255",
+        "E0256"
+      ],
+      "afterEvidenceIds": [],
+      "evidenceIds": [
+        "E0226",
+        "E0227",
+        "E0228",
+        "E0229",
+        "E0230",
+        "E0231",
+        "E0232",
+        "E0233",
+        "E0234",
+        "E0235",
+        "E0236",
+        "E0237",
+        "E0238",
+        "E0239",
+        "E0240",
+        "E0241",
+        "E0242",
+        "E0243",
+        "E0244",
+        "E0245",
+        "E0246",
+        "E0247",
+        "E0248",
+        "E0249",
+        "E0250",
+        "E0251",
+        "E0252",
+        "E0253",
+        "E0254",
+        "E0255",
+        "E0256"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0226-E0256",
+                "category": "test",
+                "title": "Xóa hàm limit_loader",
+                "description": "Hàm limit_loader đã được xóa khỏi file tests/conftest.py."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

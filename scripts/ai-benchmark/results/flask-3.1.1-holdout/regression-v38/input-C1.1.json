@@ -1,0 +1,1189 @@
+{
+  "claim": {
+    "id": "C1.1",
+    "text": "Đổi cách xây dựng danh sách khóa trong get_signing_serializer: thêm các fallback trước, sau đó append app.secret_key.",
+    "originalText": "Đổi cách xây dựng danh sách khóa trong get_signing_serializer: thêm các fallback trước, sau đó append app.secret_key.",
+    "terms": [
+      "keys.extend",
+      "keys.append",
+      "keys: list"
+    ]
+  },
+  "packets": [
+    {
+      "file": "src/flask/sessions.py",
+      "lines": [
+        {
+          "id": "E0099",
+          "kind": "context",
+          "beforeLine": 313,
+          "afterLine": 313,
+          "text": "    #: such as datetime objects or tuples.",
+          "structure": {
+            "before": {
+              "id": "E0099",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 313,
+              "text": "    #: such as datetime objects or tuples.",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0099",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 313,
+              "text": "    #: such as datetime objects or tuples.",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0100",
+          "kind": "context",
+          "beforeLine": 314,
+          "afterLine": 314,
+          "text": "    serializer = session_json_serializer",
+          "structure": {
+            "before": {
+              "id": "E0100",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 314,
+              "text": "    serializer = session_json_serializer",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Assign",
+                  "startLine": 314,
+                  "endLine": 314,
+                  "code": "serializer = session_json_serializer"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0100",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 314,
+              "text": "    serializer = session_json_serializer",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Assign",
+                  "startLine": 314,
+                  "endLine": 314,
+                  "code": "serializer = session_json_serializer"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0101",
+          "kind": "context",
+          "beforeLine": 315,
+          "afterLine": 315,
+          "text": "    session_class = SecureCookieSession",
+          "structure": {
+            "before": {
+              "id": "E0101",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 315,
+              "text": "    session_class = SecureCookieSession",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Assign",
+                  "startLine": 315,
+                  "endLine": 315,
+                  "code": "session_class = SecureCookieSession"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0101",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 315,
+              "text": "    session_class = SecureCookieSession",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Assign",
+                  "startLine": 315,
+                  "endLine": 315,
+                  "code": "session_class = SecureCookieSession"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0102",
+          "kind": "context",
+          "beforeLine": 316,
+          "afterLine": 316,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0102",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 316,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0102",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 316,
+              "text": "",
+              "function": null,
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0103",
+          "kind": "context",
+          "beforeLine": 317,
+          "afterLine": 317,
+          "text": "    def get_signing_serializer(self, app: Flask) -> URLSafeTimedSerializer | None:",
+          "structure": {
+            "before": {
+              "id": "E0103",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 317,
+              "text": "    def get_signing_serializer(self, app: Flask) -> URLSafeTimedSerializer | None:",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0103",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 317,
+              "text": "    def get_signing_serializer(self, app: Flask) -> URLSafeTimedSerializer | None:",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0104",
+          "kind": "context",
+          "beforeLine": 318,
+          "afterLine": 318,
+          "text": "        if not app.secret_key:",
+          "structure": {
+            "before": {
+              "id": "E0104",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 318,
+              "text": "        if not app.secret_key:",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0104",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 318,
+              "text": "        if not app.secret_key:",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0105",
+          "kind": "context",
+          "beforeLine": 319,
+          "afterLine": 319,
+          "text": "            return None",
+          "structure": {
+            "before": {
+              "id": "E0105",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 319,
+              "text": "            return None",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0105",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 319,
+              "text": "            return None",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0106",
+          "kind": "context",
+          "beforeLine": 320,
+          "afterLine": 320,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0106",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 320,
+              "text": "",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0106",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 320,
+              "text": "",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0107",
+          "kind": "removed",
+          "beforeLine": 321,
+          "afterLine": null,
+          "text": "        keys: list[str | bytes] = [app.secret_key]",
+          "structure": {
+            "before": {
+              "id": "E0107",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 321,
+              "text": "        keys: list[str | bytes] = [app.secret_key]",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "AnnAssign",
+                  "startLine": 321,
+                  "endLine": 321,
+                  "code": "keys: list[str | bytes] = [app.secret_key]"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0108",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 321,
+          "text": "        keys: list[str | bytes] = []",
+          "structure": {
+            "after": {
+              "id": "E0108",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 321,
+              "text": "        keys: list[str | bytes] = []",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "AnnAssign",
+                  "startLine": 321,
+                  "endLine": 321,
+                  "code": "keys: list[str | bytes] = []"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0109",
+          "kind": "context",
+          "beforeLine": 322,
+          "afterLine": 322,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0109",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 322,
+              "text": "",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0109",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 322,
+              "text": "",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0110",
+          "kind": "context",
+          "beforeLine": 323,
+          "afterLine": 323,
+          "text": "        if fallbacks := app.config[\"SECRET_KEY_FALLBACKS\"]:",
+          "structure": {
+            "before": {
+              "id": "E0110",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 323,
+              "text": "        if fallbacks := app.config[\"SECRET_KEY_FALLBACKS\"]:",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0110",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 323,
+              "text": "        if fallbacks := app.config[\"SECRET_KEY_FALLBACKS\"]:",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0111",
+          "kind": "context",
+          "beforeLine": 324,
+          "afterLine": 324,
+          "text": "            keys.extend(fallbacks)",
+          "structure": {
+            "before": {
+              "id": "E0111",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 324,
+              "text": "            keys.extend(fallbacks)",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 324,
+                  "endLine": 324,
+                  "code": "keys.extend(fallbacks)"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0111",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 324,
+              "text": "            keys.extend(fallbacks)",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 324,
+                  "endLine": 324,
+                  "code": "keys.extend(fallbacks)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0112",
+          "kind": "context",
+          "beforeLine": 325,
+          "afterLine": 325,
+          "text": "",
+          "structure": {
+            "before": {
+              "id": "E0112",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 325,
+              "text": "",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            },
+            "after": {
+              "id": "E0112",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 325,
+              "text": "",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": []
+            }
+          }
+        },
+        {
+          "id": "E0113",
+          "kind": "added",
+          "beforeLine": null,
+          "afterLine": 326,
+          "text": "        keys.append(app.secret_key)  # itsdangerous expects current key at top",
+          "structure": {
+            "after": {
+              "id": "E0113",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 326,
+              "text": "        keys.append(app.secret_key)  # itsdangerous expects current key at top",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 326,
+                  "endLine": 326,
+                  "code": "keys.append(app.secret_key)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0114",
+          "kind": "context",
+          "beforeLine": 326,
+          "afterLine": 327,
+          "text": "        return URLSafeTimedSerializer(",
+          "structure": {
+            "before": {
+              "id": "E0114",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 326,
+              "text": "        return URLSafeTimedSerializer(",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 326,
+                  "endLine": 334,
+                  "code": "URLSafeTimedSerializer(\n            keys,  # type: ignore[arg-type]\n            salt=self.salt,\n            serializer=self.serializer,\n            signer_kwargs={\n                \"key_derivation\": self.key_derivation,\n                \"digest_method\": self.digest_method,\n            },\n        )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0114",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 327,
+              "text": "        return URLSafeTimedSerializer(",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 327,
+                  "endLine": 335,
+                  "code": "URLSafeTimedSerializer(\n            keys,  # type: ignore[arg-type]\n            salt=self.salt,\n            serializer=self.serializer,\n            signer_kwargs={\n                \"key_derivation\": self.key_derivation,\n                \"digest_method\": self.digest_method,\n            },\n        )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0115",
+          "kind": "context",
+          "beforeLine": 327,
+          "afterLine": 328,
+          "text": "            keys,  # type: ignore[arg-type]",
+          "structure": {
+            "before": {
+              "id": "E0115",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 327,
+              "text": "            keys,  # type: ignore[arg-type]",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 326,
+                  "endLine": 334,
+                  "code": "URLSafeTimedSerializer(\n            keys,  # type: ignore[arg-type]\n            salt=self.salt,\n            serializer=self.serializer,\n            signer_kwargs={\n                \"key_derivation\": self.key_derivation,\n                \"digest_method\": self.digest_method,\n            },\n        )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0115",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 328,
+              "text": "            keys,  # type: ignore[arg-type]",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 327,
+                  "endLine": 335,
+                  "code": "URLSafeTimedSerializer(\n            keys,  # type: ignore[arg-type]\n            salt=self.salt,\n            serializer=self.serializer,\n            signer_kwargs={\n                \"key_derivation\": self.key_derivation,\n                \"digest_method\": self.digest_method,\n            },\n        )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0116",
+          "kind": "context",
+          "beforeLine": 328,
+          "afterLine": 329,
+          "text": "            salt=self.salt,",
+          "structure": {
+            "before": {
+              "id": "E0116",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 328,
+              "text": "            salt=self.salt,",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 326,
+                  "endLine": 334,
+                  "code": "URLSafeTimedSerializer(\n            keys,  # type: ignore[arg-type]\n            salt=self.salt,\n            serializer=self.serializer,\n            signer_kwargs={\n                \"key_derivation\": self.key_derivation,\n                \"digest_method\": self.digest_method,\n            },\n        )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0116",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 329,
+              "text": "            salt=self.salt,",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 327,
+                  "endLine": 335,
+                  "code": "URLSafeTimedSerializer(\n            keys,  # type: ignore[arg-type]\n            salt=self.salt,\n            serializer=self.serializer,\n            signer_kwargs={\n                \"key_derivation\": self.key_derivation,\n                \"digest_method\": self.digest_method,\n            },\n        )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0117",
+          "kind": "context",
+          "beforeLine": 329,
+          "afterLine": 330,
+          "text": "            serializer=self.serializer,",
+          "structure": {
+            "before": {
+              "id": "E0117",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 329,
+              "text": "            serializer=self.serializer,",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 326,
+                  "endLine": 334,
+                  "code": "URLSafeTimedSerializer(\n            keys,  # type: ignore[arg-type]\n            salt=self.salt,\n            serializer=self.serializer,\n            signer_kwargs={\n                \"key_derivation\": self.key_derivation,\n                \"digest_method\": self.digest_method,\n            },\n        )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0117",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 330,
+              "text": "            serializer=self.serializer,",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 327,
+                  "endLine": 335,
+                  "code": "URLSafeTimedSerializer(\n            keys,  # type: ignore[arg-type]\n            salt=self.salt,\n            serializer=self.serializer,\n            signer_kwargs={\n                \"key_derivation\": self.key_derivation,\n                \"digest_method\": self.digest_method,\n            },\n        )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0118",
+          "kind": "context",
+          "beforeLine": 330,
+          "afterLine": 331,
+          "text": "            signer_kwargs={",
+          "structure": {
+            "before": {
+              "id": "E0118",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 330,
+              "text": "            signer_kwargs={",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 326,
+                  "endLine": 334,
+                  "code": "URLSafeTimedSerializer(\n            keys,  # type: ignore[arg-type]\n            salt=self.salt,\n            serializer=self.serializer,\n            signer_kwargs={\n                \"key_derivation\": self.key_derivation,\n                \"digest_method\": self.digest_method,\n            },\n        )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0118",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 331,
+              "text": "            signer_kwargs={",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 327,
+                  "endLine": 335,
+                  "code": "URLSafeTimedSerializer(\n            keys,  # type: ignore[arg-type]\n            salt=self.salt,\n            serializer=self.serializer,\n            signer_kwargs={\n                \"key_derivation\": self.key_derivation,\n                \"digest_method\": self.digest_method,\n            },\n        )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0119",
+          "kind": "context",
+          "beforeLine": 331,
+          "afterLine": 332,
+          "text": "                \"key_derivation\": self.key_derivation,",
+          "structure": {
+            "before": {
+              "id": "E0119",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 331,
+              "text": "                \"key_derivation\": self.key_derivation,",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 326,
+                  "endLine": 334,
+                  "code": "URLSafeTimedSerializer(\n            keys,  # type: ignore[arg-type]\n            salt=self.salt,\n            serializer=self.serializer,\n            signer_kwargs={\n                \"key_derivation\": self.key_derivation,\n                \"digest_method\": self.digest_method,\n            },\n        )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0119",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 332,
+              "text": "                \"key_derivation\": self.key_derivation,",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 327,
+                  "endLine": 335,
+                  "code": "URLSafeTimedSerializer(\n            keys,  # type: ignore[arg-type]\n            salt=self.salt,\n            serializer=self.serializer,\n            signer_kwargs={\n                \"key_derivation\": self.key_derivation,\n                \"digest_method\": self.digest_method,\n            },\n        )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0120",
+          "kind": "context",
+          "beforeLine": 332,
+          "afterLine": 333,
+          "text": "                \"digest_method\": self.digest_method,",
+          "structure": {
+            "before": {
+              "id": "E0120",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 332,
+              "text": "                \"digest_method\": self.digest_method,",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 326,
+                  "endLine": 334,
+                  "code": "URLSafeTimedSerializer(\n            keys,  # type: ignore[arg-type]\n            salt=self.salt,\n            serializer=self.serializer,\n            signer_kwargs={\n                \"key_derivation\": self.key_derivation,\n                \"digest_method\": self.digest_method,\n            },\n        )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0120",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 333,
+              "text": "                \"digest_method\": self.digest_method,",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 327,
+                  "endLine": 335,
+                  "code": "URLSafeTimedSerializer(\n            keys,  # type: ignore[arg-type]\n            salt=self.salt,\n            serializer=self.serializer,\n            signer_kwargs={\n                \"key_derivation\": self.key_derivation,\n                \"digest_method\": self.digest_method,\n            },\n        )"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "E0121",
+          "kind": "context",
+          "beforeLine": 333,
+          "afterLine": 334,
+          "text": "            },",
+          "structure": {
+            "before": {
+              "id": "E0121",
+              "file": "src/flask/sessions.py",
+              "side": "before",
+              "line": 333,
+              "text": "            },",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 334,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 326,
+                  "endLine": 334,
+                  "code": "URLSafeTimedSerializer(\n            keys,  # type: ignore[arg-type]\n            salt=self.salt,\n            serializer=self.serializer,\n            signer_kwargs={\n                \"key_derivation\": self.key_derivation,\n                \"digest_method\": self.digest_method,\n            },\n        )"
+                }
+              ]
+            },
+            "after": {
+              "id": "E0121",
+              "file": "src/flask/sessions.py",
+              "side": "after",
+              "line": 334,
+              "text": "            },",
+              "function": {
+                "name": "SecureCookieSessionInterface.get_signing_serializer",
+                "startLine": 317,
+                "endLine": 335,
+                "returnAnnotation": "URLSafeTimedSerializer | None",
+                "parameters": {
+                  "self": null,
+                  "app": "Flask"
+                }
+              },
+              "docstring": false,
+              "docstringOwner": null,
+              "operations": [
+                {
+                  "kind": "Call",
+                  "startLine": 327,
+                  "endLine": 335,
+                  "code": "URLSafeTimedSerializer(\n            keys,  # type: ignore[arg-type]\n            salt=self.salt,\n            serializer=self.serializer,\n            signer_kwargs={\n                \"key_derivation\": self.key_derivation,\n                \"digest_method\": self.digest_method,\n            },\n        )"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

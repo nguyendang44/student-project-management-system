@@ -1,0 +1,70 @@
+{
+  "signature": "901b0accab1d32d890c8e9d7f8d3d00ea9efffd6e75f8720fa3dc774af65f709",
+  "result": [
+    {
+      "groupId": "G-E0386-E0401",
+      "category": "test",
+      "title": "Thay đổi hành vi kiểm thử",
+      "description": "Đã loại bỏ các yêu cầu kiểm thử không liên quan và thêm yêu cầu kiểm thử mới về việc kiểm tra trạng thái của session sau khi gọi `/redirect`.",
+      "source": "ollama",
+      "before": "        rv = client.get(\"/getsession\")\n        assert rv.data == b\"<missing>\"\n\n        rv = client.get(\"/\")\n        assert rv.data == b\"index\"\n        assert flask.session.get(\"data\") == \"foo\"\n\n        rv = client.post(\"/\", data={}, follow_redirects=True)\n        assert rv.data == b\"foo\"\n        assert flask.session.get(\"data\") == \"foo\"\n\n        rv = client.get(\"/getsession\")\n        assert rv.data == b\"foo\"",
+      "after": "        client.get(\"/redirect\", follow_redirects=True)\n        assert flask.session[\"redirect\"] is True\n        assert flask.session[\"target\"] is True",
+      "beforeEvidenceIds": [
+        "E0386",
+        "E0387",
+        "E0388",
+        "E0389",
+        "E0390",
+        "E0391",
+        "E0392",
+        "E0393",
+        "E0394",
+        "E0395",
+        "E0396",
+        "E0397",
+        "E0398"
+      ],
+      "afterEvidenceIds": [
+        "E0399",
+        "E0400",
+        "E0401"
+      ],
+      "evidenceIds": [
+        "E0386",
+        "E0387",
+        "E0388",
+        "E0389",
+        "E0390",
+        "E0391",
+        "E0392",
+        "E0393",
+        "E0394",
+        "E0395",
+        "E0396",
+        "E0397",
+        "E0398",
+        "E0399",
+        "E0400",
+        "E0401"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0386-E0401",
+                "category": "test",
+                "title": "Thay đổi hành vi kiểm thử",
+                "description": "Đã loại bỏ các yêu cầu kiểm thử không liên quan và thêm yêu cầu kiểm thử mới về việc kiểm tra trạng thái của session sau khi gọi `/redirect`."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

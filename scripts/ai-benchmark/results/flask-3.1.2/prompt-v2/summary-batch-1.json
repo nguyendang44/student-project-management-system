@@ -1,0 +1,27 @@
+{
+  "signature": "d7f6da740d15c208302868fe8dc2a6fab5d6462bed1de885c01728812ade93b2",
+  "result": [
+    {
+      "category": "logic",
+      "title": "Thêm mã vào hàm wrapper",
+      "before": "with ctx:  # type: ignore[union-attr]\n    return ctx.app.ensure_sync(f)(*args, **kwargs)  # type: ignore[union-attr]",
+      "after": "with ctx:\n    return ctx.app.ensure_sync(f)(*args, **kwargs)",
+      "description": "Đã thêm mã vào hàm wrapper để đảm bảo rằng hàm `f` được gọi trong ngữ cảnh request context.",
+      "beforeEvidenceIds": [
+        "E0010",
+        "E0011"
+      ],
+      "afterEvidenceIds": [
+        "E0011",
+        "E0012"
+      ],
+      "evidenceIds": [
+        "E0010",
+        "E0011",
+        "E0012"
+      ],
+      "citationValid": false,
+      "rejectionReason": "Dẫn nhầm phiên bản trước/sau"
+    }
+  ]
+}

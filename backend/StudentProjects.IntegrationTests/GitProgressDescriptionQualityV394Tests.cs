@@ -88,7 +88,7 @@ public sealed class GitProgressDescriptionQualityV394Tests
             [new ProgressFile(ApiFile, "added", 1, 0, ApiLine)], false);
 
         var result = await ai.AnalyzeAsync(diff, CancellationToken.None);
-        Assert.Contains("gp-actions-v3.9.7", ai.AnalysisKey);
+        Assert.Contains("gp-context-v4.0", ai.AnalysisKey);
         Assert.Equal(1, result.CandidateCount);
         // Valid AI evidence that duplicates the main API fact is grouped,
         // not shown as a second independent change.

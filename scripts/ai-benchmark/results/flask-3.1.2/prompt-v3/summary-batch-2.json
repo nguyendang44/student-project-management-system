@@ -1,0 +1,17 @@
+{
+  "signature": "9337e33d33471043a6f8f281e2b680bb138d0aeab78e19919e36c7d51d552476",
+  "result": [
+    {
+      "source": "model-error",
+      "category": "formatting",
+      "title": "Lỗi phản hồi tổng hợp",
+      "before": "Chưa xác nhận",
+      "after": "Chưa xác nhận",
+      "description": "Không có kết quả tổng hợp đúng cấu trúc sau 3 lần thử.",
+      "evidenceIds": [],
+      "citationValid": false,
+      "rejectionReason": "Thiếu mô tả trước/sau hoặc phân loại",
+      "responseError": true
+    }
+  ]
+}

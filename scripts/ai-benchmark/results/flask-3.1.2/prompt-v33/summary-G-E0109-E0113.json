@@ -1,0 +1,48 @@
+{
+  "signature": "901b0accab1d32d890c8e9d7f8d3d00ea9efffd6e75f8720fa3dc774af65f709",
+  "result": [
+    {
+      "groupId": "G-E0109-E0113",
+      "category": "logic",
+      "title": "Đổi tên biến",
+      "description": "Biến `ctx` đã được đổi thành `req_ctx` trong hàm `generator`.",
+      "source": "ollama",
+      "before": "    def generator() -> t.Iterator[t.AnyStr | None]:\n        ctx = _cv_request.get(None)\n        if ctx is None:",
+      "after": "    def generator() -> t.Iterator[t.AnyStr]:\n        if (req_ctx := _cv_request.get(None)) is None:",
+      "beforeEvidenceIds": [
+        "E0109",
+        "E0110",
+        "E0111"
+      ],
+      "afterEvidenceIds": [
+        "E0112",
+        "E0113"
+      ],
+      "evidenceIds": [
+        "E0109",
+        "E0110",
+        "E0111",
+        "E0112",
+        "E0113"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0109-E0113",
+                "category": "logic",
+                "title": "Đổi tên biến",
+                "description": "Biến `ctx` đã được đổi thành `req_ctx` trong hàm `generator`."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "signature": "f1d3299b9cf97f7f08b5d471b26404b51588e1c873021137f14430fbb5e62de4",
+  "result": {
+    "claimId": "C5.1",
+    "claimQuote": "Thêm test async view cho stream_with_context, có trường hợp đóng response chưa đọc stream",
+    "status": "INSUFFICIENT",
+    "explanation": "Báo cáo khẳng định thêm một trường hợp kiểm tra cho việc đóng response chưa đọc stream. Tuy nhiên, trong code mới chỉ có một trường hợp kiểm tra đơn giản về việc đọc nội dung trả về, không có trường hợp đóng response chưa đọc stream được kiểm tra.",
+    "evidenceIds": [
+      "E0341"
+    ],
+    "originalEvidenceIds": [
+      "E0341"
+    ],
+    "citationNormalization": [],
+    "citationValid": true,
+    "rejectionReason": null,
+    "attempts": [
+      {
+        "attempt": 1,
+        "valid": true
+      }
+    ]
+  }
+}

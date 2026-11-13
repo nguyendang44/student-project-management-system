@@ -40,7 +40,8 @@ public sealed class GitHubSnapshotClient(HttpClient http, IConfiguration config)
             throw new AnalysisInputException("v0.11 chỉ hỗ trợ repository public.");
     }
 
-    public async Task<RepositorySnapshot> ReadAtCommitAsync(string owner, string repo, string sha, CancellationToken ct)
+    public async Task<RepositorySnapshot> ReadAtCommitAsync(string owner, string repo, string sha, CancellationToken ct,
+        IReadOnlyList<string>? changedPaths = null)
     {
         if (!ValidSha.IsMatch(sha)) throw new AnalysisInputException("SHA không hợp lệ.");
         // A commit SHA is not necessarily a tree SHA. Resolve the tree explicitly.
@@ -61,12 +62,15 @@ public sealed class GitHubSnapshotClient(HttpClient http, IConfiguration config)
             var path = item.GetProperty("path").GetString() ?? "";
             var blobSha = item.GetProperty("sha").GetString() ?? "";
             var size = item.TryGetProperty("size", out var s) ? s.GetInt64() : 0;
-            if (AllowedFile(path) && size > 0 && size <= FileLimit && ValidSha.IsMatch(blobSha))
+            if (AllowedFile(path) && GitProgressEvidencePolicy.SafePath(path) && size > 0 &&
+                size <= (changedPaths is null ? FileLimit : 200_000) && ValidSha.IsMatch(blobSha))
                 candidates.Add((path, blobSha, size));
         }
         // Choose related files (API, service, contracts, frontend, tests, shared context)
         // from the same bounded, size/secret-filtered candidate list.
-        var selectedPaths = AiRelatedFileSelector.SelectPaths(candidates.Select(c => c.Path), MaxFiles);
+        var selectedPaths = changedPaths is null
+            ? AiRelatedFileSelector.SelectPaths(candidates.Select(c => c.Path), MaxFiles)
+            : RepositoryContextBuilder.SelectPaths(candidates.Select(c => c.Path), changedPaths);
         var candidateMap = candidates.ToDictionary(c => c.Path, StringComparer.Ordinal);
         var selected = selectedPaths.Select(p => candidateMap[p]).ToArray();
         var files = new List<SourceFile>();
@@ -80,7 +84,7 @@ public sealed class GitHubSnapshotClient(HttpClient http, IConfiguration config)
             try
             {
                 var bytes = Convert.FromBase64String(blob.GetProperty("content").GetString() ?? "");
-                if (bytes.Length > FileLimit) { skipped++; continue; }
+                if (bytes.Length > (changedPaths is null ? FileLimit : 200_000)) { skipped++; continue; }
                 source = new UTF8Encoding(false, true).GetString(bytes);
             }
             catch (Exception e) when (e is FormatException or DecoderFallbackException) { skipped++; continue; }

@@ -1,0 +1,28 @@
+{
+  "signature": "d7f6da740d15c208302868fe8dc2a6fab5d6462bed1de885c01728812ade93b2",
+  "result": [
+    {
+      "category": "logic",
+      "title": "Thay đổi vòng lặp và làm sạch danh sách",
+      "before": "while self._new_contexts:",
+      "after": "for cm in self._new_contexts:",
+      "description": "Thay đổi từ vòng lặp while sang vòng lặp for để xử lý từng phần tử trong danh sách _new_contexts. Sau khi xử lý xong, gọi clear() để làm sạch danh sách.",
+      "beforeEvidenceIds": [
+        "E0305",
+        "E0306"
+      ],
+      "afterEvidenceIds": [
+        "E0307",
+        "E0310"
+      ],
+      "evidenceIds": [
+        "E0305",
+        "E0306",
+        "E0307",
+        "E0310"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    }
+  ]
+}

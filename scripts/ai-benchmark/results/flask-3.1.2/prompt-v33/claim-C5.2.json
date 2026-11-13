@@ -1,0 +1,26 @@
+{
+  "signature": "a94431326ce3a1adaf00ce56ba282277526002042f5fac506a9cb66efc3e35b8",
+  "result": {
+    "claimId": "C5.2",
+    "claimQuote": "Thêm test async view cho stream_with_context, có trường hợp đọc nội dung trả về.",
+    "status": "SUPPORTED",
+    "explanation": "Báo cáo khẳng định thêm test async view cho stream_with_context, có trường hợp đọc nội dung trả về. Trong code mới, có một hàm test `test_async_view` được thêm vào lớp `TestHelpers`, trong đó có hai trường hợp kiểm tra: một trường hợp đóng response chưa đọc stream và một trường hợp đọc nội dung trả về. Cả hai trường hợp đều được kiểm tra thông qua việc gọi `client.get().text == 'flask'`, cho thấy code thực hiện đúng yêu cầu của báo cáo.",
+    "evidenceIds": [
+      "E0341",
+      "E0348"
+    ],
+    "originalEvidenceIds": [
+      "E0341",
+      "E0348"
+    ],
+    "citationNormalization": [],
+    "citationValid": true,
+    "rejectionReason": null,
+    "attempts": [
+      {
+        "attempt": 1,
+        "valid": true
+      }
+    ]
+  }
+}

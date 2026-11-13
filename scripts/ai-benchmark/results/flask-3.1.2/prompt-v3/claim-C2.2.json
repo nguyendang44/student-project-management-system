@@ -1,0 +1,18 @@
+{
+  "signature": "7aa0747a1daf89d77e5bdfbbc618cd93af16447affd9f0565f932d72408650c2",
+  "result": {
+    "claimId": "C2.2",
+    "claimQuote": "đã đo được tốc độ gửi file tăng 30%.",
+    "status": "INSUFFICIENT",
+    "explanation": "Báo cáo khẳng định rằng đã đo được tốc độ gửi file tăng 30%. Tuy nhiên, code chỉ thay đổi kiểu hint của tham số `path_or_file` trong hàm `send_file` từ `os.PathLike[t.AnyStr] | str | t.BinaryIO` thành `os.PathLike[t.AnyStr] | str | t.IO[bytes]`. Không có thông tin về việc đo lường tốc độ gửi file hay có sự thay đổi nào liên quan đến tốc độ gửi file trong code mới.",
+    "evidenceIds": [],
+    "citationValid": true,
+    "rejectionReason": null,
+    "attempts": [
+      {
+        "attempt": 1,
+        "valid": true
+      }
+    ]
+  }
+}

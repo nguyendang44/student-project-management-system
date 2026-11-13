@@ -1,0 +1,41 @@
+{
+  "signature": "61a7ed707b7b2ea71913e14d92027235ba471d830d94b854a648aa800f637023",
+  "result": [
+    {
+      "groupId": "G-E0198-E0199",
+      "category": "documentation",
+      "title": "Thêm kiểu dữ liệu AsyncIterable",
+      "description": "Đã thêm hai kiểu dữ liệu AsyncIterable[str] và AsyncIterable[bytes] vào danh sách kiểu dữ liệu cho phép.",
+      "source": "ollama",
+      "before": "(không có dòng xóa)",
+      "after": "    cabc.AsyncIterable[str],  # for Quart, until App is generic.\n    cabc.AsyncIterable[bytes],",
+      "beforeEvidenceIds": [],
+      "afterEvidenceIds": [
+        "E0198",
+        "E0199"
+      ],
+      "evidenceIds": [
+        "E0198",
+        "E0199"
+      ],
+      "citationValid": true,
+      "rejectionReason": null,
+      "attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "answer": {
+            "items": [
+              {
+                "groupId": "G-E0198-E0199",
+                "category": "documentation",
+                "title": "Thêm kiểu dữ liệu AsyncIterable",
+                "description": "Đã thêm hai kiểu dữ liệu AsyncIterable[str] và AsyncIterable[bytes] vào danh sách kiểu dữ liệu cho phép."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

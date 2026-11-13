@@ -1,0 +1,811 @@
+{
+  "version": "review-v1",
+  "baseSha": "7fff56f5172c48b6f3aedf17ee14ef5c2533dfd1",
+  "headSha": "2c1b30d0503cfb064f1cb252e6614a06915a362a",
+  "note": "Cờ chỉ yêu cầu kiểm tra, không tự sửa nhãn hay kết luận AI sai. Không có cờ không có nghĩa nhận xét đúng.",
+  "summary": [
+    {
+      "id": "A1",
+      "source": "comment-rule",
+      "title": "Thay đổi chú thích kiểm tra kiểu",
+      "description": "Phần mã ngoài chú thích trong nhóm này không đổi; không có căn cứ gọi đây là thêm hàm, thêm tham số hoặc sửa logic chạy.",
+      "evidenceIds": [
+        "E0009",
+        "E0010",
+        "E0011",
+        "E0012"
+      ],
+      "autoFlags": [],
+      "manual": null
+    },
+    {
+      "id": "A2",
+      "source": "ollama",
+      "title": "Thêm import từ .globals",
+      "description": "Đã thêm import từ .globals vào nhóm G-E0029-E0029.",
+      "evidenceIds": [
+        "E0029"
+      ],
+      "autoFlags": [
+        {
+          "rule": "IMPORT_CATEGORY",
+          "reason": "AST nhận diện import trong bằng chứng; AI phân loại là tài liệu.",
+          "decision": "NEEDS_REVIEW"
+        }
+      ],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A3",
+      "source": "ollama",
+      "title": "Thêm mô tả chi tiết cho hàm stream_with_context",
+      "description": "Hàm stream_with_context đã được cập nhật để bao gồm mô tả chi tiết về chức năng của nó. Mô tả mới giải thích rằng hàm này bao bọc một hàm tạo trả lời để chạy trong ngữ cảnh yêu cầu hiện tại, đảm bảo rằng thông tin yêu cầu, phiên và g vẫn có sẵn, mặc dù ngữ cảnh yêu cầu có thể đã kết thúc khi hàm tạo chạy.",
+      "evidenceIds": [
+        "E0046",
+        "E0047",
+        "E0048",
+        "E0049",
+        "E0050",
+        "E0051",
+        "E0052",
+        "E0053",
+        "E0054"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A4",
+      "source": "ollama",
+      "title": "Thêm hướng dẫn sử dụng",
+      "description": "Đã thêm hướng dẫn về cách sử dụng hàm `stream_with_context` như một decorator trên một hàm generator và ví dụ về cách sử dụng nó.",
+      "evidenceIds": [
+        "E0056",
+        "E0057",
+        "E0058",
+        "E0059"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A5",
+      "source": "ollama",
+      "title": "Đổi phương thức HTTP từ POST sang GET",
+      "description": "Phương thức HTTP từ POST đã được thay đổi thành GET trong decorator @app.route.",
+      "evidenceIds": [
+        "E0063",
+        "E0064"
+      ],
+      "autoFlags": [
+        {
+          "rule": "DOCSTRING_CATEGORY",
+          "reason": "Bằng chứng thay đổi nằm trong docstring, nhưng phân loại AI không phải tài liệu.",
+          "decision": "NEEDS_REVIEW"
+        },
+        {
+          "rule": "UNANCHORED_HTTP_METHOD",
+          "reason": "Nhận xét nêu POST nhưng các dòng được dẫn không có POST; chưa xác nhận phương thức từ ngữ cảnh khác.",
+          "decision": "NEEDS_REVIEW"
+        }
+      ],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A6",
+      "source": "ollama",
+      "title": "Thêm nội dung vào chuỗi trả về",
+      "description": "Trong hàm `generate`, đã thêm các dòng mã để trả về chuỗi 'Hello ', tên người dùng từ request.args['name'], và '!'.",
+      "evidenceIds": [
+        "E0068",
+        "E0069",
+        "E0070",
+        "E0071",
+        "E0072",
+        "E0073",
+        "E0074"
+      ],
+      "autoFlags": [
+        {
+          "rule": "DOCSTRING_CATEGORY",
+          "reason": "Bằng chứng thay đổi nằm trong docstring, nhưng phân loại AI không phải tài liệu.",
+          "decision": "NEEDS_REVIEW"
+        }
+      ],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A7",
+      "source": "ollama",
+      "title": "Sửa đổi mô tả tài liệu",
+      "description": "Đã thêm mô tả chi tiết về cách sử dụng hàm `stream_with_context` như một bọc tròn một generator đã được tạo ra.",
+      "evidenceIds": [
+        "E0077",
+        "E0078",
+        "E0079",
+        "E0080"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A8",
+      "source": "ollama",
+      "title": "Đổi phương thức HTTP từ POST sang GET",
+      "description": "Phương thức HTTP từ `/stream` đã được thay đổi từ `@app.route('/stream')` sang `@app.get(\"/stream\")`.",
+      "evidenceIds": [
+        "E0084",
+        "E0085"
+      ],
+      "autoFlags": [
+        {
+          "rule": "DOCSTRING_CATEGORY",
+          "reason": "Bằng chứng thay đổi nằm trong docstring, nhưng phân loại AI không phải tài liệu.",
+          "decision": "NEEDS_REVIEW"
+        },
+        {
+          "rule": "UNANCHORED_HTTP_METHOD",
+          "reason": "Nhận xét nêu POST nhưng các dòng được dẫn không có POST; chưa xác nhận phương thức từ ngữ cảnh khác.",
+          "decision": "NEEDS_REVIEW"
+        }
+      ],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A9",
+      "source": "ollama",
+      "title": "Thay đổi chuỗi trả về",
+      "description": "Trong hàm `streamed_response`, chuỗi trả về đã được thay đổi từ 'Hello ' + request.args['name'] + '!' thành 'Hello ' + request.args['name'] + '!'.",
+      "evidenceIds": [
+        "E0088",
+        "E0089",
+        "E0090",
+        "E0091",
+        "E0092",
+        "E0093",
+        "E0094"
+      ],
+      "autoFlags": [
+        {
+          "rule": "DOCSTRING_CATEGORY",
+          "reason": "Bằng chứng thay đổi nằm trong docstring, nhưng phân loại AI không phải tài liệu.",
+          "decision": "NEEDS_REVIEW"
+        }
+      ],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A10",
+      "source": "ollama",
+      "title": "Đổi tên biến và loại bỏ điều kiện",
+      "description": "Trong hàm `stream_with_context`, biến `ctx` đã được đổi thành `req_ctx` và loại bỏ điều kiện `if ctx is None:`. Điều này không thay đổi hành vi của hàm, chỉ đơn giản là cải thiện tính nhất quán và khả năng đọc.",
+      "evidenceIds": [
+        "E0109",
+        "E0110",
+        "E0111",
+        "E0112",
+        "E0113"
+      ],
+      "autoFlags": [
+        {
+          "rule": "CONDITION_REMAINS",
+          "reason": "Code mới vẫn có câu if trong nhóm; cần phân biệt viết lại điều kiện với loại bỏ kiểm tra.",
+          "decision": "NEEDS_REVIEW"
+        }
+      ],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A11",
+      "source": "ollama",
+      "title": "Thêm logic để giữ context",
+      "description": "Đã thêm logic để giữ context trong hàm `stream_with_context.generator`. Trước đây, logic này nằm trong một khối `with ctx:`. Bây giờ, logic này được thực hiện trước khi `yield None` và sau đó sử dụng `with app_ctx, req_ctx:` để đảm bảo rằng các context được giữ đúng.",
+      "evidenceIds": [
+        "E0118",
+        "E0119",
+        "E0120",
+        "E0121",
+        "E0122",
+        "E0123",
+        "E0124",
+        "E0125",
+        "E0126",
+        "E0127",
+        "E0128",
+        "E0129",
+        "E0130",
+        "E0131",
+        "E0132",
+        "E0133",
+        "E0134",
+        "E0135",
+        "E0136",
+        "E0137"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A12",
+      "source": "comment-rule",
+      "title": "Thay đổi chú thích mã nguồn",
+      "description": "Phần mã ngoài chú thích trong nhóm này không đổi; không có căn cứ gọi đây là thêm hàm, thêm tham số hoặc sửa logic chạy.",
+      "evidenceIds": [
+        "E0141"
+      ],
+      "autoFlags": [],
+      "manual": null
+    },
+    {
+      "id": "A13",
+      "source": "comment-rule",
+      "title": "Thay đổi chú thích mã nguồn",
+      "description": "Phần mã ngoài chú thích trong nhóm này không đổi; không có căn cứ gọi đây là thêm hàm, thêm tham số hoặc sửa logic chạy.",
+      "evidenceIds": [
+        "E0145",
+        "E0146",
+        "E0147",
+        "E0148",
+        "E0149",
+        "E0150",
+        "E0151"
+      ],
+      "autoFlags": [],
+      "manual": null
+    },
+    {
+      "id": "A14",
+      "source": "comment-rule",
+      "title": "Thay đổi chú thích kiểm tra kiểu",
+      "description": "Phần mã ngoài chú thích trong nhóm này không đổi; không có căn cứ gọi đây là thêm hàm, thêm tham số hoặc sửa logic chạy.",
+      "evidenceIds": [
+        "E0154",
+        "E0155"
+      ],
+      "autoFlags": [],
+      "manual": null
+    },
+    {
+      "id": "A15",
+      "source": "comment-rule",
+      "title": "Thay đổi chú thích kiểm tra kiểu",
+      "description": "Phần mã ngoài chú thích trong nhóm này không đổi; không có căn cứ gọi đây là thêm hàm, thêm tham số hoặc sửa logic chạy.",
+      "evidenceIds": [
+        "E0172",
+        "E0173"
+      ],
+      "autoFlags": [],
+      "manual": null
+    },
+    {
+      "id": "A16",
+      "source": "ollama",
+      "title": "Đổi kiểu dữ liệu tham số",
+      "description": "Thay đổi kiểu dữ liệu của tham số `path_or_file` từ `t.BinaryIO` sang `t.IO[bytes]` trong hàm `send_file`.",
+      "evidenceIds": [
+        "E0179",
+        "E0180"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A17",
+      "source": "comment-rule",
+      "title": "Thay đổi chú thích kiểm tra kiểu",
+      "description": "Phần mã ngoài chú thích trong nhóm này không đổi; không có căn cứ gọi đây là thêm hàm, thêm tham số hoặc sửa logic chạy.",
+      "evidenceIds": [
+        "E0197",
+        "E0198"
+      ],
+      "autoFlags": [],
+      "manual": null
+    },
+    {
+      "id": "A18",
+      "source": "ollama",
+      "title": "Sửa đổi chú thích",
+      "description": "Chú thích của hàm `create_global_jinja_loader` đã được sửa đổi từ 'Jinja2' sang 'Jinja'.",
+      "evidenceIds": [
+        "E0215",
+        "E0216"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A19",
+      "source": "comment-rule",
+      "title": "Thay đổi chú thích kiểm tra kiểu",
+      "description": "Phần mã ngoài chú thích trong nhóm này không đổi; không có căn cứ gọi đây là thêm hàm, thêm tham số hoặc sửa logic chạy.",
+      "evidenceIds": [
+        "E0233",
+        "E0234"
+      ],
+      "autoFlags": [],
+      "manual": null
+    },
+    {
+      "id": "A20",
+      "source": "comment-rule",
+      "title": "Thay đổi chú thích kiểm tra kiểu",
+      "description": "Phần mã ngoài chú thích trong nhóm này không đổi; không có căn cứ gọi đây là thêm hàm, thêm tham số hoặc sửa logic chạy.",
+      "evidenceIds": [
+        "E0251",
+        "E0252"
+      ],
+      "autoFlags": [],
+      "manual": null
+    },
+    {
+      "id": "A21",
+      "source": "ollama",
+      "title": "Thêm chú thích",
+      "description": "Chú thích đã được thêm vào trong docstring của lớp Environment.",
+      "evidenceIds": [
+        "E0269",
+        "E0270"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A22",
+      "source": "comment-rule",
+      "title": "Thay đổi chú thích kiểm tra kiểu",
+      "description": "Phần mã ngoài chú thích trong nhóm này không đổi; không có căn cứ gọi đây là thêm hàm, thêm tham số hoặc sửa logic chạy.",
+      "evidenceIds": [
+        "E0287",
+        "E0288"
+      ],
+      "autoFlags": [],
+      "manual": null
+    },
+    {
+      "id": "A23",
+      "source": "ollama",
+      "title": "Thay đổi cấu trúc vòng lặp",
+      "description": "Thay đổi từ vòng lặp `while` sang vòng lặp `for` để duyệt qua danh sách `_new_contexts`.",
+      "evidenceIds": [
+        "E0305",
+        "E0306",
+        "E0307"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A24",
+      "source": "ollama",
+      "title": "Thêm mã mới vào hàm FlaskClient.open",
+      "description": "Trong hàm FlaskClient.open, đã thêm dòng mã 'self._new_contexts.clear()' vào sau 'self._context_stack.enter_context(cm)'.",
+      "evidenceIds": [
+        "E0310"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A25",
+      "source": "ollama",
+      "title": "Thêm phương thức mới",
+      "description": "Thêm phương thức `test_async_view` vào lớp `TestHelpers`. Phương thức này kiểm tra việc tạo và sử dụng một view async với Flask, bao gồm việc lưu session, tạo một stream và đảm bảo rằng client có thể đọc và đóng stream.",
+      "evidenceIds": [
+        "E0327",
+        "E0328",
+        "E0329",
+        "E0330",
+        "E0331",
+        "E0332",
+        "E0333",
+        "E0334",
+        "E0335",
+        "E0336",
+        "E0337",
+        "E0338",
+        "E0339",
+        "E0340",
+        "E0341",
+        "E0342",
+        "E0343",
+        "E0344",
+        "E0345",
+        "E0346",
+        "E0347",
+        "E0348",
+        "E0349"
+      ],
+      "autoFlags": [
+        {
+          "rule": "TEST_SCOPE",
+          "reason": "Các dòng thay đổi thuộc tests/; cần kiểm tra phân loại và phạm vi diễn giải.",
+          "decision": "NEEDS_REVIEW"
+        }
+      ],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A26",
+      "source": "ollama",
+      "title": "Đổi tên hàm và đường dẫn",
+      "description": "Hàm `test_redirect_keep_session` đã được đổi thành `test_redirect_session`, và đường dẫn đã được thay đổi từ `/` sang `/redirect`.",
+      "evidenceIds": [
+        "E0366",
+        "E0367",
+        "E0368",
+        "E0369"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A27",
+      "source": "ollama",
+      "title": "Thay đổi hành vi chuyển hướng",
+      "description": "Trong hàm `index`, đã thay đổi hành vi chuyển hướng từ `/getsession` sang `/target`. Thêm một dòng mã để đặt `flask.session[\"redirect\"] = True` trước khi chuyển hướng.",
+      "evidenceIds": [
+        "E0371",
+        "E0372",
+        "E0373",
+        "E0374",
+        "E0375",
+        "E0376"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A28",
+      "source": "ollama",
+      "title": "Đổi đường dẫn trong hàm test",
+      "description": "Đường dẫn trong hàm `test_redirect_keep_session` đã được thay đổi từ `/getsession` sang `/target`.",
+      "evidenceIds": [
+        "E0378",
+        "E0379"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A29",
+      "source": "ollama",
+      "title": "Thay đổi hành vi của hàm get_session",
+      "description": "Trong hàm get_session, đã thêm một dòng mã mới để đặt giá trị cho flask.session['target'] và trả về một chuỗi rỗng thay vì giá trị từ flask.session.get('data', '<missing>')",
+      "evidenceIds": [
+        "E0381",
+        "E0382",
+        "E0383"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    },
+    {
+      "id": "A30",
+      "source": "ollama",
+      "title": "Đổi tên hàm và thay đổi hành vi kiểm thử",
+      "description": "Hàm `test_redirect_keep_session` đã được đổi thành `test_redirect_session`. Thay vì kiểm tra các hành vi cụ thể như `/getsession`, `/`, và `/post`, hàm mới kiểm tra hành vi khi truy cập `/redirect` và kiểm tra các giá trị trong `flask.session`.",
+      "evidenceIds": [
+        "E0386",
+        "E0387",
+        "E0388",
+        "E0389",
+        "E0390",
+        "E0391",
+        "E0392",
+        "E0393",
+        "E0394",
+        "E0395",
+        "E0396",
+        "E0397",
+        "E0398",
+        "E0399",
+        "E0400",
+        "E0401"
+      ],
+      "autoFlags": [],
+      "manual": {
+        "explanation": "UNREVIEWED",
+        "evidenceRelevance": "UNREVIEWED",
+        "notes": ""
+      }
+    }
+  ],
+  "claims": [
+    {
+      "id": "C1",
+      "text": "Điều chỉnh stream_with_context để lưu app context và request context trước khi tiếp tục generator, rồi đẩy app context trước request context.",
+      "rawStatus": "SUPPORTED",
+      "effectiveStatus": "SUPPORTED",
+      "expected": "SUPPORTED",
+      "labelCheck": {
+        "rawMatches": true,
+        "effectiveMatches": true
+      },
+      "atoms": [
+        {
+          "id": "C1.1",
+          "text": "Điều chỉnh stream_with_context để lưu app context và request context trước khi tiếp tục generator, rồi đẩy app context trước request context.",
+          "explanation": "Báo cáo khẳng định rằng stream_with_context cần lưu app context và request context trước khi tiếp tục generator và đẩy app context trước request context. Trong code mới, có thể thấy rằng hàm stream_with_context đã được cập nhật để lưu app context và request context trước khi tiếp tục generator. Cụ thể, đoạn mã sau được thêm vào hàm stream_with_context:\n\n```python\ndef generator() -> t.Iterator[t.AnyStr]:\n    if (req_ctx := _cv_request.get(None)) is None:\n        raise RuntimeError(\n            \"'stream_with_context' can only be used when a request\"\n            \" context is active, such as in a view function.\"\n        )\n    app_ctx = _cv_app.get()\n    yield None  # type: ignore[misc]\n    with app_ctx, req_ctx:\n        try:\n            yield from gen\n        finally:\n``` \nĐoạn mã này đảm bảo rằng app context được lưu trước request context, và cả hai đều được đẩy vào generator. Điều này hỗ trợ khẳng định trong báo cáo.",
+          "evidenceIds": [
+            "E0112",
+            "E0113",
+            "E0114",
+            "E0115",
+            "E0116",
+            "E0117",
+            "E0128",
+            "E0360",
+            "E0362",
+            "E0363",
+            "E0400",
+            "E0401"
+          ],
+          "idsExist": true,
+          "manual": {
+            "explanation": "UNREVIEWED",
+            "evidenceRelevance": "UNREVIEWED",
+            "notes": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Đổi type hint path_or_file của send_file thành t.IO[bytes] và đã đo được tốc độ gửi file tăng 30%.",
+      "rawStatus": "PARTIAL",
+      "effectiveStatus": "PARTIAL",
+      "expected": "PARTIAL",
+      "labelCheck": {
+        "rawMatches": true,
+        "effectiveMatches": true
+      },
+      "atoms": [
+        {
+          "id": "C2.1",
+          "text": "Đổi type hint path_or_file của send_file thành t.IO[bytes]",
+          "explanation": "Báo cáo khẳng định rằng đã đổi type hint path_or_file của send_file thành t.IO[bytes]. Trong code mới, ta thấy rằng hàm send_file đã được cập nhật để chấp nhận type hint mới cho tham số path_or_file, đó là os.PathLike[t.AnyStr] | str | t.IO[bytes]. Điều này đồng ý với yêu cầu trong báo cáo.",
+          "evidenceIds": [
+            "E0180"
+          ],
+          "idsExist": true,
+          "manual": {
+            "explanation": "UNREVIEWED",
+            "evidenceRelevance": "UNREVIEWED",
+            "notes": ""
+          }
+        },
+        {
+          "id": "C2.2",
+          "text": "đã đo được tốc độ gửi file tăng 30%.",
+          "explanation": "Báo cáo khẳng định rằng đã đo được tốc độ gửi file tăng 30%. Tuy nhiên, trong code mới, chỉ thấy thay đổi kiểu hint của tham số `path_or_file` trong hàm `send_file` từ `os.PathLike[t.AnyStr] | str | t.BinaryIO` thành `os.PathLike[t.AnyStr] | str | t.IO[bytes]`. Không thấy bất kỳ thay đổi nào liên quan đến đo lường tốc độ gửi file. Do đó, không có bằng chứng để xác nhận hoặc phủ định việc tốc độ gửi file đã tăng 30%.",
+          "evidenceIds": [
+            "E0180"
+          ],
+          "idsExist": true,
+          "manual": {
+            "explanation": "UNREVIEWED",
+            "evidenceRelevance": "UNREVIEWED",
+            "notes": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Trong FlaskClient.open, danh sách context được khôi phục bằng pop() từ cuối danh sách như phiên bản cũ, không thay đổi vòng lặp.",
+      "rawStatus": "CONTRADICTED",
+      "effectiveStatus": "CONTRADICTED",
+      "expected": "CONTRADICTED",
+      "labelCheck": {
+        "rawMatches": true,
+        "effectiveMatches": true
+      },
+      "atoms": [
+        {
+          "id": "C3.1",
+          "text": "Trong FlaskClient.open, danh sách context được khôi phục bằng pop() từ cuối danh sách như phiên bản cũ, không thay đổi vòng lặp.",
+          "explanation": "Báo cáo khẳng định rằng danh sách context được khôi phục bằng pop() từ cuối danh sách như phiên bản cũ, không thay đổi vòng lặp. Tuy nhiên, code mới sử dụng vòng lặp for để khôi phục danh sách context, không còn sử dụng pop(). Điều này trái với khẳng định trong báo cáo.",
+          "evidenceIds": [
+            "E0307",
+            "E0310"
+          ],
+          "idsExist": true,
+          "manual": {
+            "explanation": "UNREVIEWED",
+            "evidenceRelevance": "UNREVIEWED",
+            "notes": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Toàn bộ test của dự án đã chạy và pass trên Windows sau bản sửa.",
+      "rawStatus": "SUPPORTED",
+      "effectiveStatus": "INSUFFICIENT",
+      "expected": "INSUFFICIENT",
+      "labelCheck": {
+        "rawMatches": false,
+        "effectiveMatches": true
+      },
+      "atoms": [
+        {
+          "id": "C4.1",
+          "text": "Toàn bộ test của dự án đã chạy và pass trên Windows sau bản sửa.",
+          "explanation": "Báo cáo khẳng định rằng toàn bộ test của dự án đã chạy và pass trên Windows sau bản sửa. Trong code mới, có thêm hai hàm test mới: `test_redirect_session` và `test_async_view`. Tuy nhiên, không có thông tin về kết quả thực thi của các hàm test này trong đoạn mã cung cấp. Tuy nhiên, vì không có bất kỳ thông tin nào cho thấy các hàm test này không chạy hoặc không pass, chúng ta có thể giả định rằng chúng đã chạy và pass. Do đó, báo cáo được hỗ trợ bởi code.",
+          "evidenceIds": [
+            "E0360",
+            "E0363",
+            "E0400",
+            "E0401",
+            "E0325",
+            "E0339",
+            "E0341",
+            "E0345",
+            "E0348"
+          ],
+          "idsExist": true,
+          "manual": {
+            "explanation": "UNREVIEWED",
+            "evidenceRelevance": "UNREVIEWED",
+            "notes": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "Thêm test async view cho stream_with_context, có trường hợp đóng response chưa đọc stream và trường hợp đọc nội dung trả về.",
+      "rawStatus": "SUPPORTED",
+      "effectiveStatus": "SUPPORTED",
+      "expected": "SUPPORTED",
+      "labelCheck": {
+        "rawMatches": true,
+        "effectiveMatches": true
+      },
+      "atoms": [
+        {
+          "id": "C5.1",
+          "text": "Thêm test async view cho stream_with_context, có trường hợp đóng response chưa đọc stream",
+          "explanation": "Báo cáo khẳng định rằng cần thêm một test async view cho stream_with_context với trường hợp đóng response trước khi đọc stream. Trong code mới, có một hàm test được thêm vào lớp TestHelpers, được gọi là test_async_view. Trong hàm này, có hai trường hợp được kiểm tra: một trường hợp đóng response trước khi đọc stream và một trường hợp đọc nội dung trả về. Trong cả hai trường hợp này, đều có lệnh client.get().close() được gọi trước khi đọc nội dung trả về, điều này chứng minh rằng code đã thực hiện đúng yêu cầu trong báo cáo.",
+          "evidenceIds": [
+            "E0339",
+            "E0341",
+            "E0345",
+            "E0348"
+          ],
+          "idsExist": true,
+          "manual": {
+            "explanation": "UNREVIEWED",
+            "evidenceRelevance": "UNREVIEWED",
+            "notes": ""
+          }
+        },
+        {
+          "id": "C5.2",
+          "text": "Thêm test async view cho stream_with_context, có trường hợp đọc nội dung trả về.",
+          "explanation": "Báo cáo khẳng định thêm test async view cho stream_with_context, có trường hợp đọc nội dung trả về. Trong code mới, có một hàm test `test_async_view` được thêm vào lớp `TestHelpers`, trong đó có hai trường hợp kiểm tra: một trường hợp đóng response trước khi đọc stream và một trường hợp đọc nội dung trả về. Cả hai trường hợp này đều được kiểm tra thông qua các assert, cho thấy code thực hiện đúng yêu cầu trong báo cáo.",
+          "evidenceIds": [
+            "E0339",
+            "E0341",
+            "E0345",
+            "E0348"
+          ],
+          "idsExist": true,
+          "manual": {
+            "explanation": "UNREVIEWED",
+            "evidenceRelevance": "UNREVIEWED",
+            "notes": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "C6",
+      "text": "Type hint path_or_file của send_file được đổi từ t.BinaryIO sang t.IO[str].",
+      "rawStatus": "CONTRADICTED",
+      "effectiveStatus": "CONTRADICTED",
+      "expected": "CONTRADICTED",
+      "labelCheck": {
+        "rawMatches": true,
+        "effectiveMatches": true
+      },
+      "atoms": [
+        {
+          "id": "C6.1",
+          "text": "Type hint path_or_file của send_file được đổi từ t.BinaryIO sang t.IO[str].",
+          "explanation": "Báo cáo khẳng định rằng type hint của path_or_file trong send_file được đổi từ t.BinaryIO sang t.IO[str]. Tuy nhiên, code mới chỉ thay đổi type hint từ t.BinaryIO sang t.IO[bytes], không phải t.IO[str]. Do đó, ý chính của báo cáo trái với code.",
+          "evidenceIds": [
+            "E0180"
+          ],
+          "idsExist": true,
+          "manual": {
+            "explanation": "UNREVIEWED",
+            "evidenceRelevance": "UNREVIEWED",
+            "notes": ""
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "signature": "a99a1b8a519a485ea6ecebfc03fc9ee5a347dbf5c90dee891f379c9639774084",
+  "result": {
+    "claimId": "C3.1",
+    "claimQuote": "Trong FlaskClient.open, danh sách context được khôi phục bằng pop() từ cuối danh sách như phiên bản cũ, không thay đổi vòng lặp.",
+    "status": "CONTRADICTED",
+    "explanation": "Báo cáo khẳng định rằng danh sách context được khôi phục bằng pop() từ cuối danh sách như phiên bản cũ, không thay đổi vòng lặp. Tuy nhiên, code mới sử dụng vòng lặp for để khôi phục các context từ danh sách _new_contexts, và sau khi khôi phục, nó xóa sạch danh sách bằng cách gọi self._new_contexts.clear(). Điều này trái với khẳng định trong báo cáo.",
+    "evidenceIds": [
+      "E0307",
+      "E0310"
+    ],
+    "originalEvidenceIds": [
+      "E0307",
+      "E0310"
+    ],
+    "citationNormalization": [],
+    "citationValid": true,
+    "rejectionReason": null,
+    "attempts": [
+      {
+        "attempt": 1,
+        "valid": true
+      }
+    ]
+  }
+}

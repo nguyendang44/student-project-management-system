@@ -56,7 +56,9 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
             await services.GetRequiredService<GitHubSnapshotClient>().EnsurePublicAsync(owner, repo, ct);
             var diff = await services.GetRequiredService<GitHubProgressClient>()
                 .CompareAsync(owner, repo, run.BaseSha, run.HeadSha, ct);
-            var ai = await services.GetRequiredService<AiGitProgressClient>().AnalyzeAsync(diff, ct);
+            var codeContext = await RepositoryContextBuilder.ReadAsync(
+                services.GetRequiredService<GitHubSnapshotClient>(), owner, repo, diff, ct);
+            var ai = await services.GetRequiredService<AiGitProgressClient>().AnalyzeAsync(diff, ct, codeContext);
             logger.LogInformation(
                 "Git progress {RunId}: diff files sent={Sent}, AI candidates={Candidates}, verified={Verified}",
                 id, ai.SentFiles, ai.CandidateCount, ai.RuleBasedFallback ? 0 : ai.Items.Count);
@@ -103,7 +105,7 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
                 try
                 {
                     var explanationResult = await services.GetRequiredService<AiGitProgressClient>()
-                        .ExplainFeaturesWithDiagnosticsAsync(features, ct);
+                        .ExplainFeaturesWithDiagnosticsAsync(features, ct, codeContext);
                     explanations = explanationResult.Items;
                     explanationModelItems = explanationResult.RawItems;
                     explanationCandidates = explanationResult.ParsedItems;
@@ -141,7 +143,8 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
                 ai.RuleBasedFallback ? ai.Items.Count : 0,
                 ai.Diagnostics ?? new GitProgressMeaningPolicy.RejectionDiagnostics(0, 0, 0, 0, 0, 0, 0),
                 features.Count, explanationModelItems, explanationCandidates,
-                explanations.Count, explanationStatus);
+                explanations.Count, explanationStatus, codeContext.Status,
+                codeContext.Excerpts.Count, codeContext.Excerpts.Select(x => x.File).Distinct().Count());
             run.EvidenceJson = GitProgressDiagnostics.Write(observations, reportDiagnostics);
             run.Summary = GitProgressEvidencePolicy.ComposeSummary(diff, ai.SentFiles, aiVerified);
             if (features.Count > 0)

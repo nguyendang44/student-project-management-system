@@ -1,0 +1,26 @@
+{
+  "signature": "dacab784dce4c9a9db198692ca4ff37aaf80b25827923f2bfdb206d185766081",
+  "result": [
+    {
+      "groupId": "G-E0287-E0288",
+      "source": "comment-rule",
+      "category": "type_annotation",
+      "title": "Thay đổi chú thích kiểm tra kiểu",
+      "before": "    def json_dumps(self, obj: t.Any, **kwargs: t.Any) -> str:  # type: ignore",
+      "after": "    def json_dumps(self, obj: t.Any, **kwargs: t.Any) -> str:",
+      "description": "Phần mã ngoài chú thích trong nhóm này không đổi; không có căn cứ gọi đây là thêm hàm, thêm tham số hoặc sửa logic chạy.",
+      "beforeEvidenceIds": [
+        "E0287"
+      ],
+      "afterEvidenceIds": [
+        "E0288"
+      ],
+      "evidenceIds": [
+        "E0287",
+        "E0288"
+      ],
+      "citationValid": true,
+      "rejectionReason": null
+    }
+  ]
+}

@@ -143,7 +143,7 @@ public sealed class GitProgressMeaningfulTests
         Assert.Equal(1, result.Diagnostics?.GroupedFeatureDetail);
         Assert.Contains("\"area\":\"Frontend\"", handler.Prompt);
         Assert.Contains("\"area\":\"API\"", handler.Prompt);
-        Assert.Equal("qwen2.5-coder:7b|gp-actions-v3.9.7", client.AnalysisKey);
+        Assert.Equal("qwen2.5-coder:7b|gp-context-v4.0", client.AnalysisKey);
     }
 
     [Fact]
