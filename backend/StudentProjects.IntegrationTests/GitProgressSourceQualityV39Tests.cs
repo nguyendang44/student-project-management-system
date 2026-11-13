@@ -32,7 +32,7 @@ public sealed class GitProgressSourceQualityV39Tests
     }
 
     [Fact]
-    public void Sampling_does_not_send_backup_or_support_scripts_to_Ollama()
+    public void Legacy_meaningful_line_selector_excludes_scripts_from_production_facts()
     {
         var files = new[]
         {

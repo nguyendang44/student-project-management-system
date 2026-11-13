@@ -74,7 +74,13 @@ public sealed class GitProgressGroundedActionsV397Tests
     public void Rewriting_does_not_infer_test_success_or_a_new_permission()
     {
         const string testModel = "The assertion has status Created and response data in this method.";
-        Assert.Empty(Select(TestPath, CreatedLine, testModel));
+        // A description of the assertion may be normalized to a source-only fact.
+        // Its presence must never become a claim that the test actually passed.
+        var normalized = Assert.Single(Select(TestPath, CreatedLine, testModel));
+        Assert.Equal(CreatedLine, normalized.Evidence);
+        Assert.Equal("Bổ sung phép kiểm tra Assert.Equal trong mã kiểm thử.", normalized.Description);
+        Assert.Empty(Select(TestPath, CreatedLine,
+            "Bổ sung kiểm thử đã chạy thành công và đã pass với trạng thái Created."));
         const string wrongRole = "The lecturer is the actor for the removeLink(r) button in this view.";
         Assert.Empty(Select(UiPath, ButtonLine, wrongRole));
     }
@@ -125,7 +131,7 @@ public sealed class GitProgressGroundedActionsV397Tests
             [new ProgressFile(ApiPath, "added", 1, 0, ApiLine)], false,
             GitFileCount: 19, GitAdditions: 1809, GitDeletions: 10);
         var result = await ai.AnalyzeAsync(diff, CancellationToken.None);
-        Assert.Equal("qwen2.5-coder:7b|gp-context-v4.0", ai.AnalysisKey);
+        Assert.Equal("qwen2.5-coder:7b|gp-web-v5.0", ai.AnalysisKey);
         Assert.Equal(19, diff.RawFileCount);
         Assert.Equal(1809, diff.RawAdditions);
         Assert.Equal(10, diff.RawDeletions);
@@ -133,7 +139,7 @@ public sealed class GitProgressGroundedActionsV397Tests
         Assert.Equal(1, result.Diagnostics?.GroupedFeatureDetail);
         Assert.Equal(0, result.Diagnostics?.Eligible);
         Assert.Empty(result.Items);
-        Assert.Contains("Evidence JSON:", handler.LastPrompt);
+        Assert.Contains("Diff JSON", handler.LastPrompt);
     }
 
     private sealed class FakeOllama(string generated) : HttpMessageHandler

@@ -58,10 +58,17 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
                 .CompareAsync(owner, repo, run.BaseSha, run.HeadSha, ct);
             var codeContext = await RepositoryContextBuilder.ReadAsync(
                 services.GetRequiredService<GitHubSnapshotClient>(), owner, repo, diff, ct);
-            var ai = await services.GetRequiredService<AiGitProgressClient>().AnalyzeAsync(diff, ct, codeContext);
+            var attempt = await GitProgressAiAvailability.RunAsync(
+                token => services.GetRequiredService<AiGitProgressClient>().AnalyzeAsync(diff, token, codeContext), ct);
+            var ai = attempt.Result;
+            if (attempt.Status != "available")
+                logger.LogWarning("Git progress {RunId}: AI unavailable ({Status}); retaining Git facts", id, attempt.Status);
             logger.LogInformation(
-                "Git progress {RunId}: diff files sent={Sent}, AI candidates={Candidates}, verified={Verified}",
-                id, ai.SentFiles, ai.CandidateCount, ai.RuleBasedFallback ? 0 : ai.Items.Count);
+                "Git progress {RunId}: eligible={Eligible}, fullyAnalyzed={Complete}, " +
+                "sent={Sent}, batches={Done}/{Planned}, failedBatches={Failed}, candidates={Candidates}, verified={Verified}",
+                id, ai.EligibleFiles, ai.FullyAnalyzedFiles, ai.SentFiles,
+                ai.CompletedBatches, ai.PlannedBatches, ai.FailedBatches,
+                ai.CandidateCount, ai.RuleBasedFallback ? 0 : ai.Items.Count);
             if (ai.RuleBasedFallback)
                 logger.LogInformation("Git progress {RunId}: ruleBasedFallback={Count} (no verified AI observations)",
                     id, ai.Items.Count);
@@ -79,6 +86,8 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
                     "unsupportedClaim={UnsupportedClaim}, boilerplate={Boilerplate}, missingAction={MissingAction}, testSetupOnly={TestSetupOnly}",
                     id, diagnostics.InvalidLength, diagnostics.UnsupportedClaim,
                     diagnostics.Boilerplate, diagnostics.MissingAction, diagnostics.TestSetupOnly);
+                logger.LogInformation("Git progress {RunId}: semanticMismatch={SemanticMismatch}, supportingDetail={SupportingDetail}",
+                    id, diagnostics.SemanticMismatch, diagnostics.SupportingDetail);
             }
             run.TotalCommits = diff.AheadBy;
             // Persist GitHub's unfiltered comparison totals. The safe subset remains
@@ -94,40 +103,55 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
             // Feature facts are derived from the GitHub diff, independently of the
             // Ollama 10-file sample. Keep old JSON history compatible, no SQL migration.
             var features = GitProgressFeatureSynthesis.Extract(diff.Files);
-            // Optional AI explanation is separate from and cannot replace verified facts.
-            // A failing/slow model must not erase the deterministic progress report.
-            IReadOnlyList<ProgressFeatureExplanation> explanations = [];
-            var explanationStatus = features.Count == 0 ? "no-feature-groups" : "not-requested";
-            var explanationModelItems = 0;
-            var explanationCandidates = 0;
-            if (features.Count > 0)
+            // Ask Ollama to group the verified changed lines into user-facing features.
+            // A release may contain many independent features; related UI/API/service/test
+            // lines should become one feature card with a traceable implementation flow.
+            var featureEvidenceSet = GitProgressFeatureReport.BuildEvidence(ai.FeatureEvidence ?? [], features);
+            var featureEvidence = featureEvidenceSet.Items;
+            var featureReport = new ProgressAiFeatureReportResult([], 0, 0, 0,
+                featureEvidence.Count == 0 ? "empty" : "not-requested");
+            if (featureEvidence.Count > 0 && attempt.Status == "available" && ai.CompletedBatches > 0)
             {
                 try
                 {
-                    var explanationResult = await services.GetRequiredService<AiGitProgressClient>()
-                        .ExplainFeaturesWithDiagnosticsAsync(features, ct, codeContext);
-                    explanations = explanationResult.Items;
-                    explanationModelItems = explanationResult.RawItems;
-                    explanationCandidates = explanationResult.ParsedItems;
-                    explanationStatus = explanations.Count > 0 ? "accepted" :
-                        explanationModelItems == 0 ? "empty" :
-                        explanationCandidates == 0 ? "invalid-items" : "filtered";
+                    featureReport = await services.GetRequiredService<AiGitProgressClient>()
+                        .AnalyzeFeatureReportAsync(featureEvidence, codeContext, ct);
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
                 catch (Exception ex)
                 {
-                    explanationStatus = "error";
-                    logger.LogWarning("Git progress {RunId}: AI explanation unavailable ({Reason})",
+                    featureReport = new ProgressAiFeatureReportResult([], 0, 0, 0, "error");
+                    logger.LogWarning("Git progress {RunId}: feature report unavailable ({Reason})",
                         id, ex.GetType().Name);
                 }
             }
             var aiVerified = ai.RuleBasedFallback ? 0 : ai.Items.Count;
-            // One persisted work item per verified Git feature. AI explanation is
-            // optional CHILD content, never a second work item or a second citation.
-            var observations = GitProgressFeatureReport.Build(features, explanations).ToList();
-            // Show genuinely verified AI comments separately. Suppress the old
-            // one-line fallback whenever grouped feature observations exist.
-            if (aiVerified > 0 || features.Count == 0)
+            // Always ground GitHub V10 operations in exact GET/POST/DELETE route
+            // mappings. The earlier route-only check missed model groups that
+            // mixed one real route with generic cache or interface declarations.
+            var githubRoutes = GitProgressFeatureReport.BuildGitHubRouteReport(diff.Files);
+            var otherAiFeatures = githubRoutes.Count > 0
+                ? featureReport.Items.Where(f => !GitProgressFeatureReport.IsGitHubFeatureClaim(f)).ToArray()
+                : featureReport.Items.ToArray();
+            var routeOnlyAi = githubRoutes.Count == 0 &&
+                GitProgressFeatureReport.IsRouteOnlyReport(featureReport.Items);
+            var routeFallback = githubRoutes.Count == 0 &&
+                (featureReport.Items.Count == 0 || routeOnlyAi)
+                ? GitProgressFeatureReport.BuildRouteEvidenceReport(diff.Files) : [];
+            var displayedFeatures = githubRoutes.Count > 0
+                ? otherAiFeatures.Concat(githubRoutes).ToArray()
+                : routeFallback.Count > 0 ? routeFallback : featureReport.Items;
+            var observations = githubRoutes.Count > 0
+                ? GitProgressFeatureReport.BuildAi(otherAiFeatures).ToList()
+                    .Concat(GitProgressFeatureReport.BuildAi(githubRoutes, "diff-feature-report")).ToList()
+                : displayedFeatures.Count > 0
+                    ? GitProgressFeatureReport.BuildAi(displayedFeatures,
+                        routeFallback.Count > 0 ? "diff-feature-report" : "ai-feature-report").ToList()
+                    : GitProgressFeatureReport.Build(features, []).ToList();
+            // Keep old evidence comments only as a fallback/audit view. When the AI
+            // feature report is available, don't flood the student-facing report with
+            // a second flat list of code-line observations.
+            if (displayedFeatures.Count == 0 && (aiVerified > 0 || features.Count == 0))
                 observations.AddRange(ai.Items.Select(f => (object)new
                 {
                     file = f.File, area = GitProgressMeaningPolicy.AreaForPath(f.File),
@@ -142,20 +166,45 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
                 ai.SentFiles, ai.RawItemCount, ai.CandidateCount, aiVerified,
                 ai.RuleBasedFallback ? ai.Items.Count : 0,
                 ai.Diagnostics ?? new GitProgressMeaningPolicy.RejectionDiagnostics(0, 0, 0, 0, 0, 0, 0),
-                features.Count, explanationModelItems, explanationCandidates,
-                explanations.Count, explanationStatus, codeContext.Status,
-                codeContext.Excerpts.Count, codeContext.Excerpts.Select(x => x.File).Distinct().Count());
+                displayedFeatures.Count > 0 ? displayedFeatures.Count : features.Count,
+                featureReport.RawItems, featureReport.ParsedItems, featureReport.Items.Count,
+                featureReport.Status, codeContext.Status,
+                codeContext.Excerpts.Count, codeContext.Excerpts.Select(x => x.File).Distinct().Count(), attempt.Status,
+                ai.EligibleFiles, ai.FullyAnalyzedFiles, ai.MissingPatchFiles,
+                ai.PlannedBatches, ai.CompletedBatches, ai.FailedBatches,
+                ai.SkippedLines, ai.TruncatedBatches, ai.CoverageStatus,
+                featureReport.RawItems, featureReport.ParsedItems, featureReport.Items.Count,
+                featureReport.RejectedEvidence, featureReport.Status, featureEvidence.Count,
+                featureEvidenceSet.Omitted);
             run.EvidenceJson = GitProgressDiagnostics.Write(observations, reportDiagnostics);
-            run.Summary = GitProgressEvidencePolicy.ComposeSummary(diff, ai.SentFiles, aiVerified);
-            if (features.Count > 0)
-                run.Summary += $" Tổng hợp {features.Count} nhóm công việc từ Git diff theo quy tắc; " +
-                    (explanations.Count > 0
-                        ? $"{explanations.Count} nhóm có thêm diễn giải tham khảo của Ollama."
-                        : "không có diễn giải AI bổ sung đủ căn cứ.");
+            run.Summary = GitProgressEvidencePolicy.ComposeSummary(diff, ai.SentFiles, aiVerified,
+                attempt.Status == "available" && ai.CompletedBatches > 0);
+            if (attempt.Status == "available")
+                run.Summary += $" Phạm vi AI: {ai.FullyAnalyzedFiles}/{ai.EligibleFiles} file văn bản đủ điều kiện " +
+                    $"đã phân tích hết phần patch an toàn, {ai.CompletedBatches}/{ai.PlannedBatches} lượt Ollama hoàn thành." +
+                    (ai.CoverageStatus == "partial"
+                        ? $" Chưa đầy đủ: {ai.MissingPatchFiles} file thiếu patch, " +
+                          $"{ai.SkippedLines} dòng bị ẩn do an toàn/độ dài, " +
+                          $"{ai.TruncatedBatches} đoạn vượt giới hạn, {ai.FailedBatches} lượt chưa hoàn tất."
+                        : ai.CoverageStatus == "no-readable-patch" ? " Không có patch văn bản có thể gửi AI." : "");
+            if (githubRoutes.Count > 0)
+                run.Summary += $" Các nhận xét AI liên quan GitHub được đối chiếu và chuẩn hóa thành {githubRoutes.Count} thao tác API riêng biệt từ Git diff; " +
+                    $"các dòng cấu hình chung không được tính là bằng chứng cho thao tác. " +
+                    $"Đã giữ thêm {otherAiFeatures.Length} nhóm AI không thuộc GitHub nếu có bằng chứng. Chưa chứng minh chức năng chạy đúng.";
+            else if (routeFallback.Count > 0)
+                run.Summary += routeOnlyAi
+                    ? $" Các nhóm AI chỉ dẫn khai báo định tuyến nên được chuẩn hóa thành {routeFallback.Count} thao tác API có bằng chứng Git; có đối chiếu handler/frontend nếu tìm thấy dòng thêm tương ứng. Chưa chứng minh chức năng chạy đúng."
+                    : $" Các nhóm AI chưa đủ căn cứ; trích riêng {routeFallback.Count} tuyến API thực sự được thêm trong diff và mã liên quan có bằng chứng. Chưa chứng minh chức năng hoàn thành.";
+            else if (featureReport.Items.Count > 0)
+                run.Summary += $" Ollama đã tổng hợp {featureReport.Items.Count} chức năng/công việc theo mục tiêu người dùng; mỗi nhóm có các bước triển khai và dòng Git đối chiếu. Không suy ra hoàn thành nếu chưa có kết quả kiểm thử thực tế.";
+            else if (features.Count > 0)
+                run.Summary += $" AI chưa nhóm được chức năng đủ căn cứ; giữ {features.Count} nhóm bằng chứng Git dự phòng để đối chiếu.";
             else if (ai.RuleBasedFallback)
                 run.Summary += " Chưa xác định được nhóm chức năng từ diff; xem danh sách file thay đổi để đối chiếu.";
-            logger.LogInformation("Git progress {RunId}: groupedFeatures={Features}, verifiedAi={AiVerified}, aiFeatureExplanations={Explained}",
-                id, features.Count, aiVerified, explanations.Count);
+            logger.LogInformation("Git progress {RunId}: aiFeatureGroups={FeatureGroups}, featureEvidence={FeatureEvidence}, verifiedAiDetails={AiVerified}, featureReportStatus={FeatureReportStatus}",
+                id, featureReport.Items.Count, featureEvidence.Count, aiVerified, featureReport.Status);
+            if (attempt.Status != "available")
+                run.Summary += " Ollama chưa hoàn tất; báo cáo này chỉ giữ dữ kiện Git. Có thể gửi lại yêu cầu để thử AI.";
             run.Status = "COMPLETED";
             run.CompletedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(ct);

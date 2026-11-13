@@ -20,7 +20,24 @@ public sealed record ProgressReportDiagnostics(
     string ExplanationStatus,
     string? ContextStatus = null,
     int ContextExcerpts = 0,
-    int ContextFiles = 0);
+    int ContextFiles = 0,
+    string? AnalysisStatus = null,
+    int EligibleFiles = 0,
+    int FullyAnalyzedFiles = 0,
+    int MissingPatchFiles = 0,
+    int PlannedBatches = 0,
+    int CompletedBatches = 0,
+    int FailedBatches = 0,
+    int SkippedLines = 0,
+    int TruncatedBatches = 0,
+    string? CoverageStatus = null,
+    int FeatureReportModelItems = 0,
+    int FeatureReportCandidates = 0,
+    int FeatureReportAccepted = 0,
+    int FeatureReportRejectedEvidence = 0,
+    string? FeatureReportStatus = null,
+    int FeatureEvidenceLines = 0,
+    int FeatureEvidenceOmitted = 0);
 
 /// <summary>
 /// A private metadata element in the existing EvidenceJson array avoids a DB migration.

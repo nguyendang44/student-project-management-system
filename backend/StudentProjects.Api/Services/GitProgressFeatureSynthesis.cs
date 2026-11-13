@@ -268,12 +268,24 @@ public static class GitProgressFeatureSynthesis
                     !GitProgressMeaningPolicy.IsLowValueTestSetupLine(x.File, x.Text));
             if (request is not null) citations.Add(request.Citation);
             if (assertion is not null) citations.Add(assertion.Citation);
+            // Show a real changed GET-commits assertion when it exists in the
+            // same added test body. The test name alone is weaker evidence.
+            var commitRead = body.FirstOrDefault(x =>
+                x.Text.Contains("GetAsync(", StringComparison.Ordinal) &&
+                x.Text.Contains("/commits", StringComparison.OrdinalIgnoreCase) &&
+                x.Text.Contains("Assert.", StringComparison.Ordinal) &&
+                x.Text.Contains("HttpStatusCode.OK", StringComparison.Ordinal));
+            if (commitRead is not null)
+            {
+                citations.Add(commitRead.Citation);
+            }
             if (names.Count >= 2 || citations.Count >= 6) break;
         }
         if (names.Count == 0) return;
+        var selectedCitations = Distinct(citations, 6);
         // A group may cite a request and its assertion, but must NEVER claim
         // they executed successfully. Only mention the status seen in a cited line.
-        var requestKinds = citations.Where(c => c.Evidence.Contains("AsJsonAsync(", StringComparison.Ordinal) ||
+        var requestKinds = selectedCitations.Where(c => c.Evidence.Contains("AsJsonAsync(", StringComparison.Ordinal) ||
                 c.Evidence.Contains("GetAsync(", StringComparison.Ordinal) ||
                 c.Evidence.Contains("DeleteAsync(", StringComparison.Ordinal))
             .Select(c => c.Evidence.Contains("PostAsJsonAsync(", StringComparison.Ordinal) ? "POST" :
@@ -281,15 +293,20 @@ public static class GitProgressFeatureSynthesis
                 c.Evidence.Contains("DeleteAsync(", StringComparison.Ordinal) ? "DELETE" : "GET")
             .Distinct().ToArray();
         var statusNames = new[] { "Created", "Unauthorized", "Forbidden", "BadRequest", "NotFound", "OK", "NoContent" }
-            .Where(status => citations.Any(c => c.Evidence.Contains("HttpStatusCode." + status, StringComparison.Ordinal)))
+            .Where(status => selectedCitations.Any(c => c.Evidence.Contains("HttpStatusCode." + status, StringComparison.Ordinal)))
             .ToArray();
         var detail = requestKinds.Length > 0 && statusNames.Length > 0
             ? $"; có dòng gửi yêu cầu {string.Join("/", requestKinds)} và assertion đối chiếu HTTP {string.Join("/", statusNames)}"
             : "";
+        var commitDetail = selectedCitations.Any(c =>
+            c.Evidence.Contains("GetAsync(", StringComparison.Ordinal) &&
+            c.Evidence.Contains("/commits", StringComparison.OrdinalIgnoreCase) &&
+            c.Evidence.Contains("HttpStatusCode.OK", StringComparison.Ordinal))
+            ? "; có dòng kiểm tra GET /commits với HTTP OK" : "";
         result.Add(new ProgressFeatureFact("Kiểm thử", "Bổ sung kiểm thử tự động",
             "Bổ sung mã kiểm thử hành vi, trong đó có các phương thức " + string.Join(", ", names) +
-            detail + "; đây là thay đổi của test, không phải bằng chứng API production mới hay xác nhận kiểm thử đã chạy thành công.",
-            Distinct(citations, 6)));
+            detail + commitDetail + "; đây là thay đổi của test, không phải bằng chứng API production mới hay xác nhận kiểm thử đã chạy thành công.",
+            selectedCitations));
     }
 
     private static string FileName(string path) => path.Split('/')[^1];

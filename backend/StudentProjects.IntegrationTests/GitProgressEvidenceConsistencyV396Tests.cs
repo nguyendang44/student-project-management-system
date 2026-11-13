@@ -147,7 +147,7 @@ public sealed class GitProgressEvidenceConsistencyV396Tests
         var diff = new ProgressDiff(new string('a', 40), new string('b', 40), 1, [file], false,
             GitFileCount: 19, GitAdditions: 1809, GitDeletions: 10);
         var result = await ai.AnalyzeAsync(diff, CancellationToken.None);
-        Assert.Equal("qwen2.5-coder:7b|gp-context-v4.0", ai.AnalysisKey);
+        Assert.Equal("qwen2.5-coder:7b|gp-web-v5.0", ai.AnalysisKey);
         Assert.Equal(19, diff.RawFileCount);
         Assert.Equal(1809, diff.RawAdditions);
         Assert.Equal(10, diff.RawDeletions);
@@ -155,7 +155,7 @@ public sealed class GitProgressEvidenceConsistencyV396Tests
         Assert.Empty(result.Items);
         Assert.True(result.Diagnostics?.GroupedTestDetail > 0);
         Assert.Equal(0, result.Diagnostics?.Eligible);
-        Assert.Contains("Evidence JSON:", handler.LastPrompt);
+        Assert.Contains("Diff JSON", handler.LastPrompt);
     }
 
     [Fact]

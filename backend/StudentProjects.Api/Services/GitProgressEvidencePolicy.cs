@@ -20,7 +20,11 @@ public sealed record ProgressEvidenceReference(string Id, string File, string Ev
 public sealed record ProgressEvidenceSelection(string EvidenceId, string Description);
 public sealed record ProgressAiResult(IReadOnlyList<ProgressEvidence> Items, int SentFiles, int CandidateCount = 0,
     GitProgressMeaningPolicy.RejectionDiagnostics? Diagnostics = null,
-    bool RuleBasedFallback = false, int RawItemCount = 0);
+    bool RuleBasedFallback = false, int RawItemCount = 0,
+    int EligibleFiles = 0, int FullyAnalyzedFiles = 0, int MissingPatchFiles = 0,
+    int PlannedBatches = 0, int CompletedBatches = 0, int FailedBatches = 0,
+    int SkippedLines = 0, int TruncatedBatches = 0, string CoverageStatus = "unknown",
+    IReadOnlyList<ProgressEvidenceReference>? FeatureEvidence = null);
 
 /// <summary>Only exact code changes provided to the model can support a progress claim.</summary>
 public static class GitProgressEvidencePolicy
@@ -68,6 +72,14 @@ public static class GitProgressEvidencePolicy
         return true;
     }
 
+    // Do not leak likely credentials (including patch context or removed lines) to Ollama.
+    // Overlong source lines cannot fit safely in a small model prompt and are counted
+    // separately instead of silently describing the file as fully analyzed.
+    public static bool IsAiSafeDiffLine(string line) =>
+        line.Length <= 1_600 && !SensitiveValue.IsMatch(line);
+
+    public static IReadOnlyList<string> AllEvidenceLines(ProgressFile file) => EvidenceLines(file, 100_000);
+
     public static IReadOnlyList<string> EvidenceLines(ProgressFile file, int maxLines = 160)
     {
         if (!SafePath(file.Path) || string.IsNullOrEmpty(file.Patch)) return [];
@@ -77,7 +89,7 @@ public static class GitProgressEvidencePolicy
             if (line.Length < 8 || line.Length > 210 ||
                 !(line.StartsWith('+') || line.StartsWith('-')) ||
                 line.StartsWith("+++") || line.StartsWith("---") || SensitiveValue.IsMatch(line)) continue;
-            if (items.Count < Math.Clamp(maxLines, 1, 500)) items.Add(line);
+            if (items.Count < Math.Clamp(maxLines, 1, 100_000)) items.Add(line);
         }
         return items;
     }
@@ -129,7 +141,7 @@ public static class GitProgressEvidencePolicy
             .Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase));
     }
 
-    public static string ComposeSummary(ProgressDiff diff, int sentFiles, int groundedFindings)
+    public static string ComposeSummary(ProgressDiff diff, int sentFiles, int groundedFindings, bool aiAvailable = true)
     {
         // Raw totals are read BEFORE security/backup filtering in GitHubProgressClient.
         // Never infer API truncation merely from the number of files screened out.
@@ -154,7 +166,9 @@ public static class GitProgressEvidencePolicy
             $"loại {excludedCount} file theo chính sách đường dẫn/bản sao lưu; " +
             $"mã nguồn ứng dụng/kiểm thử: {sourceCount} file, file khác: {otherCount}. " +
             (breakdown.Length == 0 ? "" : $"Phân loại trong {retainedCount} file giữ lại: {breakdown}. ") +
-            $"Đã gửi các đoạn diff của {sentFiles} file cho AI; {groundedFindings} nhận xét khớp dòng diff. " +
+            (aiAvailable
+                ? $"Đã gửi diff của {sentFiles} file cho AI; báo cáo chỉ giữ nội dung có dòng bằng chứng khớp thay đổi Git. "
+                : "Lượt gọi AI chưa hoàn tất; chưa có báo cáo chức năng được xác minh. ") +
             scope + "Đây là bằng chứng thay đổi mã nguồn, không chứng minh chức năng đã chạy đúng hoặc hoàn thành đồ án.";
     }
 }

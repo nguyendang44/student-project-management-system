@@ -88,7 +88,7 @@ public sealed class GitProgressDescriptionQualityV394Tests
             [new ProgressFile(ApiFile, "added", 1, 0, ApiLine)], false);
 
         var result = await ai.AnalyzeAsync(diff, CancellationToken.None);
-        Assert.Contains("gp-context-v4.0", ai.AnalysisKey);
+        Assert.Contains("gp-web-v5.0", ai.AnalysisKey);
         Assert.Equal(1, result.CandidateCount);
         // Valid AI evidence that duplicates the main API fact is grouped,
         // not shown as a second independent change.
@@ -97,9 +97,9 @@ public sealed class GitProgressDescriptionQualityV394Tests
         Assert.False(result.RuleBasedFallback);
         Assert.Empty(result.Items);
         Assert.Contains("TIẾNG VIỆT", handler.LastPrompt);
-        Assert.Contains("EnsureCreatedAsync", handler.LastPrompt);
-        Assert.Contains("MỖI item", handler.LastPrompt);
-        Assert.Contains("Evidence JSON:", handler.LastPrompt);
+        Assert.DoesNotContain("EnsureCreatedAsync", handler.LastPrompt);
+        Assert.Contains("CHỈ trích ID", handler.LastPrompt);
+        Assert.Contains("Diff JSON", handler.LastPrompt);
     }
 
     [Fact]

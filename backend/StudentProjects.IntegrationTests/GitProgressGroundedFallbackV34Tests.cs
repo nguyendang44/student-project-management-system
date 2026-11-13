@@ -62,7 +62,7 @@ public sealed class GitProgressGroundedFallbackV34Tests
         Assert.Empty(result.Items);
         Assert.Single(GitProgressFeatureSynthesis.Extract(Diff(line).Files));
         Assert.Equal(1, result.Diagnostics!.Boilerplate);
-        Assert.Equal("qwen2.5-coder:7b|gp-context-v4.0", client.AnalysisKey);
+        Assert.Equal("qwen2.5-coder:7b|gp-web-v5.0", client.AnalysisKey);
     }
 
     [Fact]

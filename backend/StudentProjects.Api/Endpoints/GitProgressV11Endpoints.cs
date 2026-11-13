@@ -53,7 +53,11 @@ public static class GitProgressV11Endpoints
             x.BaseSha == before && x.HeadSha == after && x.ModelName == ai.AnalysisKey, ct);
         if (existing is not null)
         {
-            if (existing.Status == "FAILED")
+            // Retry incomplete AI while leaving persisted Git evidence intact until the worker saves.
+            var diagnostics = GitProgressDiagnostics.Read(existing.EvidenceJson);
+            if (existing.Status == "FAILED" || (existing.Status == "COMPLETED" &&
+                (diagnostics?.AnalysisStatus is "timeout" or "connection-error" or "invalid-response" ||
+                 diagnostics?.FeatureReportStatus == "error")))
             {
                 existing.Status = "PENDING";
                 existing.StartedAt = null;

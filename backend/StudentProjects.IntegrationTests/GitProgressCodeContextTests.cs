@@ -59,7 +59,7 @@ public sealed class GitProgressCodeContextTests
     }
 
     [Fact]
-    public async Task Sends_context_to_ollama_but_rejects_context_only_evidence_ids()
+    public async Task Keeps_context_out_of_primary_diff_batches_and_rejects_context_only_evidence_ids()
     {
         var handler = new CaptureHandler();
         var ai = new AiGitProgressClient(new HttpClient(handler) { BaseAddress = new("http://localhost/") },
@@ -70,9 +70,8 @@ public sealed class GitProgressCodeContextTests
         var result = await ai.AnalyzeAsync(Diff(), CancellationToken.None, context);
         using var body = JsonDocument.Parse(handler.Body!);
         var prompt = body.RootElement.GetProperty("prompt").GetString()!;
-        Assert.Contains(Before, prompt);
-        Assert.Contains(After, prompt);
-        Assert.Contains("existing code", prompt);
+        Assert.DoesNotContain("existing code", prompt);
+        Assert.Contains("Diff JSON", prompt);
         Assert.Equal("qwen2.5-coder:7b", body.RootElement.GetProperty("model").GetString());
         Assert.Equal(8192, body.RootElement.GetProperty("options").GetProperty("num_ctx").GetInt32());
         Assert.Equal(1, result.Diagnostics!.UnknownId);

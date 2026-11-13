@@ -137,13 +137,14 @@ public sealed class GitProgressMeaningfulTests
         ], false);
         var result = await client.AnalyzeAsync(diff, CancellationToken.None);
         Assert.Equal(2, result.SentFiles);
-        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(2, result.CandidateCount);
+        // Each file is sent in a separate batch; the stub returns one response per batch.
         // This route is already a citation in the deterministic API group.
         Assert.Empty(result.Items);
         Assert.Equal(1, result.Diagnostics?.GroupedFeatureDetail);
         Assert.Contains("\"area\":\"Frontend\"", handler.Prompt);
         Assert.Contains("\"area\":\"API\"", handler.Prompt);
-        Assert.Equal("qwen2.5-coder:7b|gp-context-v4.0", client.AnalysisKey);
+        Assert.Equal("qwen2.5-coder:7b|gp-web-v5.0", client.AnalysisKey);
     }
 
     [Fact]
@@ -212,7 +213,7 @@ public sealed class GitProgressMeaningfulTests
         {
             var payload = await request.Content!.ReadAsStringAsync(ct);
             using var parsed = JsonDocument.Parse(payload);
-            Prompt = parsed.RootElement.GetProperty("prompt").GetString() ?? "";
+            Prompt += "\n" + (parsed.RootElement.GetProperty("prompt").GetString() ?? "");
             var inner = JsonSerializer.Serialize(new { items = new[] {
                 new { evidenceId = "L1", description = "Bổ sung route POST /progress với hàm Start để nhận yêu cầu phân tích." }
             }});

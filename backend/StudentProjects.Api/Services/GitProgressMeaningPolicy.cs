@@ -76,6 +76,7 @@ public static class GitProgressMeaningPolicy
             line.StartsWith("namespace ", StringComparison.Ordinal) ||
             line.StartsWith("export type ", StringComparison.Ordinal) ||
             line.StartsWith("<!--", StringComparison.Ordinal) ||
+            line.StartsWith("--", StringComparison.Ordinal) ||
             line.StartsWith("public class ", StringComparison.Ordinal) ||
             line.StartsWith("public static class ", StringComparison.Ordinal) ||
             line.StartsWith("public sealed class ", StringComparison.Ordinal) ||
@@ -189,7 +190,8 @@ public static class GitProgressMeaningPolicy
         int WeakDescription, int Duplicate, int Eligible,
         int InvalidLength = 0, int UnsupportedClaim = 0, int Boilerplate = 0,
         int MissingAction = 0, int TestSetupOnly = 0, int GroupedTestDetail = 0,
-        int GroupedFeatureDetail = 0);
+        int GroupedFeatureDetail = 0, int SelectionLimit = 0,
+        int SemanticMismatch = 0, int SupportingDetail = 0);
 
     /// <summary>
     /// Count the FIRST reason each parsed AI candidate would be rejected.
@@ -206,7 +208,7 @@ public static class GitProgressMeaningPolicy
         var allowed = sent.GroupBy(f => f.Path, StringComparer.Ordinal)
             .Where(g => g.Count() == 1)
             .ToDictionary(g => g.Key,
-                g => GitProgressEvidencePolicy.EvidenceLines(g.Single()).ToHashSet(StringComparer.Ordinal),
+                g => GitProgressEvidencePolicy.AllEvidenceLines(g.Single()).ToHashSet(StringComparer.Ordinal),
                 StringComparer.Ordinal);
         var valid = new List<ProgressEvidence>();
         var unknownId = 0;
@@ -221,7 +223,9 @@ public static class GitProgressMeaningPolicy
         var boilerplate = 0;
         var missingAction = 0;
         var testSetupOnly = 0;
-        foreach (var candidate in selections.Take(18))
+        var semanticMismatch = 0;
+        var supportingDetail = 0;
+        foreach (var candidate in selections)
         {
             if (!index.TryGetValue(candidate.EvidenceId, out var reference))
             {
@@ -249,6 +253,11 @@ public static class GitProgressMeaningPolicy
                 testSetupOnly++;
                 continue;
             }
+            if (GitProgressSemanticEvidencePolicy.IsSupportingOnlyLine(reference.File, reference.Evidence))
+            {
+                supportingDetail++;
+                continue;
+            }
             var issue = CheckEvidenceDescription(reference.File, reference.Evidence,
                 candidate.Description, out var vietnameseDescription);
             if (issue != DescriptionIssue.None)
@@ -260,6 +269,7 @@ public static class GitProgressMeaningPolicy
                     case DescriptionIssue.UnsupportedClaim: unsupportedClaim++; break;
                     case DescriptionIssue.Boilerplate: boilerplate++; break;
                     case DescriptionIssue.MissingAction: missingAction++; break;
+                    case DescriptionIssue.SemanticMismatch: semanticMismatch++; break;
                 }
                 continue;
             }
@@ -274,7 +284,8 @@ public static class GitProgressMeaningPolicy
         }
         return new RejectionDiagnostics(unknownId, unsentFile, unsentLine,
             nonFunctionalLine, weakDescription, duplicate, eligible,
-            invalidLength, unsupportedClaim, boilerplate, missingAction, testSetupOnly);
+            invalidLength, unsupportedClaim, boilerplate, missingAction, testSetupOnly,
+            SemanticMismatch: semanticMismatch, SupportingDetail: supportingDetail);
     }
 
     // The old v3 keyword list rejected every observation from some valid Ollama
@@ -372,7 +383,21 @@ public static class GitProgressMeaningPolicy
         vietnamese = "";
         if (HasUncitedRoute(description, evidence))
             return DescriptionIssue.UnsupportedClaim;
+
+        // Classify basic description quality before comparing named symbols with
+        // the cited source line. Otherwise generic prose such as "The class
+        // Analyzer is defined" is incorrectly counted as SemanticMismatch just
+        // because the word Analyzer does not occur in an unrelated route line.
+        // Keep semantic verification for descriptions that are otherwise
+        // meaningful; real claims such as "Bổ sung phương thức Actor..." must
+        // still be rejected when Actor is absent from the cited code.
         var issue = CheckDescription(description);
+        if (issue is DescriptionIssue.InvalidLength or DescriptionIssue.UnsupportedClaim or
+            DescriptionIssue.Boilerplate)
+            return issue;
+
+        if (GitProgressSemanticEvidencePolicy.HasUnsupportedClaim(path, evidence, description))
+            return DescriptionIssue.SemanticMismatch;
         if (issue == DescriptionIssue.None)
         {
             if (TryNormalizeToVietnamese(path, evidence, description, out vietnamese))
@@ -387,7 +412,7 @@ public static class GitProgressMeaningPolicy
 
     // Diagnostic taxonomy only. The screening policy below stays identical to v3.2:
     // no widening of allowed evidence, wording, or unsupported claims.
-    public enum DescriptionIssue { None, InvalidLength, UnsupportedClaim, Boilerplate, MissingAction }
+    public enum DescriptionIssue { None, InvalidLength, UnsupportedClaim, Boilerplate, MissingAction, SemanticMismatch }
 
     public static DescriptionIssue CheckDescription(string description)
     {
@@ -447,7 +472,7 @@ public static class GitProgressMeaningPolicy
         var allowed = sent.GroupBy(f => f.Path, StringComparer.Ordinal)
             .Where(g => g.Count() == 1)
             .ToDictionary(g => g.Key,
-                g => GitProgressEvidencePolicy.EvidenceLines(g.Single()).ToHashSet(StringComparer.Ordinal),
+                g => GitProgressEvidencePolicy.AllEvidenceLines(g.Single()).ToHashSet(StringComparer.Ordinal),
                 StringComparer.Ordinal);
         var valid = new List<ProgressEvidence>();
         foreach (var candidate in selections.Take(18))
@@ -458,6 +483,7 @@ public static class GitProgressMeaningPolicy
                 !reference.Evidence.StartsWith('+') ||
                 !IsFunctionalLine(reference.Evidence) ||
                 IsLowValueTestSetupLine(reference.File, reference.Evidence) ||
+                GitProgressSemanticEvidencePolicy.IsSupportingOnlyLine(reference.File, reference.Evidence) ||
                 CheckEvidenceDescription(reference.File, reference.Evidence,
                     candidate.Description, out _) != DescriptionIssue.None) continue;
             CheckEvidenceDescription(reference.File, reference.Evidence,

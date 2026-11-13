@@ -85,7 +85,11 @@ public sealed class GitProgressDiagnosticsV393Tests
         Assert.Equal(1, result.RawItemCount);
         Assert.Equal(1, result.CandidateCount);
         Assert.Equal(1, result.Diagnostics?.UnknownId);
-        Assert.True(result.RuleBasedFallback); // fallback remains separate from verified Ollama items
+        // The route already belongs to the main Git feature; do not duplicate it
+        // as a fallback observation or count the invalid model ID as verified.
+        Assert.False(result.RuleBasedFallback);
+        Assert.Empty(result.Items);
+        Assert.Single(GitProgressFeatureSynthesis.Extract(diff.Files));
     }
 
     [Fact]

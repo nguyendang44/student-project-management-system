@@ -21,6 +21,10 @@ export interface GitProgressEvidenceCitation {
   file: string
   evidence: string
 }
+export interface GitProgressFeatureStep {
+  detail: string
+  citations: GitProgressEvidenceCitation[]
+}
 export interface GitProgressEvidence {
   area?: string
   file: string
@@ -29,8 +33,14 @@ export interface GitProgressEvidence {
   citations?: GitProgressEvidenceCitation[] | null
   description: string
   factId?: string
+  featureId?: string
+  steps?: GitProgressFeatureStep[]
+  components?: string[]
+  technologies?: string[]
+  verificationStatus?: string
+  evidenceCoverage?: string
   aiExplanation?: string | null
-  source?: 'ollama' | 'diff-rule' | 'feature-rule' | 'ollama-feature'
+  source?: 'ollama' | 'diff-rule' | 'feature-rule' | 'ollama-feature' | 'ai-feature-report' | 'diff-feature-report'
 }
 export interface GitProgressRejectionDiagnostics {
   unknownId: number
@@ -47,11 +57,24 @@ export interface GitProgressRejectionDiagnostics {
   testSetupOnly: number
   groupedTestDetail?: number
   groupedFeatureDetail?: number
+  selectionLimit?: number
+  semanticMismatch?: number
+  supportingDetail?: number
 }
 export interface GitProgressAiDiagnostics {
+  analysisStatus?: 'available' | 'timeout' | 'connection-error' | 'invalid-response' | null
   contextStatus?: 'sampled' | 'partial' | 'unavailable' | 'empty' | null
   contextExcerpts?: number
   contextFiles?: number
+  eligibleFiles?: number
+  fullyAnalyzedFiles?: number
+  missingPatchFiles?: number
+  plannedBatches?: number
+  completedBatches?: number
+  failedBatches?: number
+  skippedLines?: number
+  truncatedBatches?: number
+  coverageStatus?: 'complete' | 'partial' | 'no-readable-patch' | 'unknown' | null
   sentFiles: number
   modelItems: number
   parsedCandidates: number
@@ -63,6 +86,13 @@ export interface GitProgressAiDiagnostics {
   explanationCandidates: number
   explanationAccepted: number
   explanationStatus: 'no-feature-groups' | 'not-requested' | 'empty' | 'invalid-items' | 'filtered' | 'accepted' | 'error'
+  featureReportModelItems?: number
+  featureReportCandidates?: number
+  featureReportAccepted?: number
+  featureReportRejectedEvidence?: number
+  featureEvidenceLines?: number
+  featureEvidenceOmitted?: number
+  featureReportStatus?: 'not-requested' | 'empty' | 'invalid-items' | 'filtered' | 'accepted' | 'error'
 }
 export interface GitProgressRun extends GitProgressRunListItem {
   projectId: string

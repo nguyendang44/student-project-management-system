@@ -64,15 +64,20 @@ public static class RepositoryContextBuilder
         foreach (var path in paths)
         {
             patches.TryGetValue(path, out var change);
+            // Pair BEFORE/AFTER across several changed regions, within the global budget.
+            var hunks = Hunk.Matches(change?.Patch ?? "").Take(3).ToArray();
+            for (var region = 0; region < Math.Max(1, hunks.Length); region++)
             foreach (var (snapshot, version, side) in new[] { (before, "before", 1), (after, "after", 2) })
             {
                 var source = snapshot?.Files.FirstOrDefault(f => f.Path == path);
                 if (source is null || remaining < 80) continue;
                 var lines = source.Lines;
-                var match = Hunk.Match(change?.Patch ?? "");
-                var anchor = match.Success && int.TryParse(match.Groups[side].Value, out var line) ? Math.Max(1, line) : 1;
+                var match = hunks.ElementAtOrDefault(region);
+                var anchor = match is not null && int.TryParse(match.Groups[side].Value, out var line) ? Math.Max(1, line) : 1;
                 var start = source.Content.Length <= 750 ? 0
                     : Math.Clamp(anchor - 4, 0, Math.Max(0, lines.Length - 1));
+                if (excerpts.Any(x => x.File == path && x.Version == version &&
+                    x.StartLine <= start + 1 && x.EndLine >= anchor)) continue;
                 var selected = new List<string>();
                 var budget = Math.Min(750, remaining);
                 foreach (var value in lines.Skip(start).Take(45))

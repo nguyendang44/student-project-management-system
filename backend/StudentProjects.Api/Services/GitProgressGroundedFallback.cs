@@ -41,7 +41,7 @@ public static class GitProgressGroundedFallback
         var allowed = sent.GroupBy(f => f.Path, StringComparer.Ordinal)
             .Where(g => g.Count() == 1)
             .ToDictionary(g => g.Key,
-                g => GitProgressEvidencePolicy.EvidenceLines(g.Single()).ToHashSet(StringComparer.Ordinal),
+                g => GitProgressEvidencePolicy.AllEvidenceLines(g.Single()).ToHashSet(StringComparer.Ordinal),
                 StringComparer.Ordinal);
         var candidates = new List<ProgressEvidence>();
         foreach (var reference in references)
@@ -50,6 +50,7 @@ public static class GitProgressGroundedFallback
                 !changed.Contains(reference.Evidence) ||
                 !GitProgressMeaningPolicy.IsFunctionalLine(reference.Evidence) ||
                 GitProgressMeaningPolicy.IsLowValueTestSetupLine(reference.File, reference.Evidence) ||
+                GitProgressSemanticEvidencePolicy.IsSupportingOnlyLine(reference.File, reference.Evidence) ||
                 !TryDescribeAddedLine(reference.File, reference.Evidence, out var description) ||
                 !GitProgressMeaningPolicy.UsefulDescription(description)) continue;
             if (candidates.Any(e => e.File == reference.File && e.Evidence == reference.Evidence)) continue;
