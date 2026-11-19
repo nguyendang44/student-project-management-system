@@ -465,6 +465,12 @@ public static class GitProgressMeaningPolicy
         IEnumerable<ProgressEvidenceSelection> selections,
         IReadOnlyList<ProgressEvidenceReference> references,
         IReadOnlyList<ProgressFile> sent)
+        => SelectForDisplay(ValidateMeaningfulById(selections, references, sent));
+
+    internal static IReadOnlyList<ProgressEvidence> ValidateMeaningfulById(
+        IEnumerable<ProgressEvidenceSelection> selections,
+        IReadOnlyList<ProgressEvidenceReference> references,
+        IReadOnlyList<ProgressFile> sent)
     {
         var index = references.GroupBy(r => r.Id, StringComparer.Ordinal)
             .Where(g => g.Count() == 1)
@@ -485,13 +491,16 @@ public static class GitProgressMeaningPolicy
                 IsLowValueTestSetupLine(reference.File, reference.Evidence) ||
                 GitProgressSemanticEvidencePolicy.IsSupportingOnlyLine(reference.File, reference.Evidence) ||
                 CheckEvidenceDescription(reference.File, reference.Evidence,
-                    candidate.Description, out _) != DescriptionIssue.None) continue;
-            CheckEvidenceDescription(reference.File, reference.Evidence,
-                candidate.Description, out var vietnameseDescription);
+                    candidate.Description, out var vietnameseDescription) != DescriptionIssue.None) continue;
             if (valid.Any(v => v.File == reference.File && (v.Evidence == reference.Evidence ||
                 v.Description.Equals(vietnameseDescription, StringComparison.OrdinalIgnoreCase)))) continue;
             valid.Add(new ProgressEvidence(reference.File, reference.Evidence, vietnameseDescription));
         }
+        return valid;
+    }
+
+    internal static IReadOnlyList<ProgressEvidence> SelectForDisplay(IReadOnlyList<ProgressEvidence> valid)
+    {
         var selected = new List<ProgressEvidence>();
         // First pass: at most one finding from each present work area.
         foreach (var area in AreaPriority)

@@ -98,6 +98,7 @@ onMounted(() => { void refresh() })
     <template v-if="selectedProject">
       <div class="spms-overview-meta">
         <span>Trạng thái dự án: <strong>{{statusName(selectedProject.status)}}</strong></span>
+        <span>Deadline toàn dự án · <strong>{{selectedProject.deadlineAt ? formatDate(selectedProject.deadlineAt) : 'Chưa đặt'}}</strong></span>
         <span>Đã duyệt: <strong>{{selectedProject.approvedCount}}/{{selectedProject.milestoneCount}}</strong></span>
       </div>
       <div class="spms-overview-percent">
@@ -122,15 +123,14 @@ onMounted(() => { void refresh() })
       <p v-if="loadingMilestones">Đang tải Milestone…</p>
       <div v-else class="table-scroller">
         <table class="spms-milestones-table">
-          <thead><tr><th>Milestone</th><th>Hạn hoàn thành</th><th>Tiến độ</th><th>Trạng thái</th></tr></thead>
+          <thead><tr><th>Milestone</th><th>Tiến độ</th><th>Trạng thái</th></tr></thead>
           <tbody>
             <tr v-for="m in milestones" :key="m.id">
               <td><strong>{{m.title}}</strong><div class="spms-desc">{{m.description}}</div></td>
-              <td>{{formatDate(m.deadlineAt)}}</td>
               <td>{{m.percentComplete}}%</td>
               <td>{{milestoneStatus(m)}}</td>
             </tr>
-            <tr v-if="!milestones.length"><td colspan="4" class="spms-empty">Project chưa có Milestone.</td></tr>
+            <tr v-if="!milestones.length"><td colspan="3" class="spms-empty">Project chưa có Milestone.</td></tr>
           </tbody>
         </table>
       </div>

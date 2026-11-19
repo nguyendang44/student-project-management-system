@@ -11,7 +11,7 @@ namespace StudentProjects.Api.Endpoints;
 /// Dedicated /v07 namespace avoids intercepting legacy skeleton endpoints.
 /// Authorization is enforced on every read/write against the Project owner relationship.
 /// </summary>
-public static class ProjectProgressV07Endpoints
+public static partial class ProjectProgressV07Endpoints
 {
     public static void MapProjectProgressV07Endpoints(this IEndpointRouteBuilder app)
     {
@@ -21,12 +21,14 @@ public static class ProjectProgressV07Endpoints
         api.MapPost("/projects/{projectId:guid}/milestones", CreateMilestone);
         api.MapPost("/projects/{projectId:guid}/milestone-plan", CreateMilestonePlan);
         api.MapPut("/milestones/{id:guid}", UpdateMilestone);
-        api.MapPut("/milestones/{id:guid}/deadline", UpdateStudentDeadline); // V095_DEADLINE_CHANGE
+        api.MapPut("/projects/{id:guid}/deadline", UpdateProjectDeadline);
+        api.MapPut("/milestones/{id:guid}/deadline", RetiredMilestoneDeadline);
         api.MapGet("/milestones/{id:guid}/history", History);
         api.MapPost("/milestones/{id:guid}/progress", UpdateProgress);
         api.MapPost("/milestones/{id:guid}/submit", Submit);
         api.MapPost("/milestones/{id:guid}/review", Review);
         api.MapPost("/milestones/{id:guid}/proposal-review", ReviewProposal);
+        MapMilestoneCriteria(api);
     }
 
     private static Guid Actor(ClaimsPrincipal user) =>
@@ -71,7 +73,7 @@ public static class ProjectProgressV07Endpoints
             p.Id, p.TopicId, TopicTitle = topics.GetValueOrDefault(p.TopicId, "Đề tài"),
             p.StudentUserId, StudentName = people.GetValueOrDefault(p.StudentUserId, "Sinh viên"),
             p.LecturerUserId, LecturerName = people.GetValueOrDefault(p.LecturerUserId, "Giảng viên"),
-            Status = p.Status.ToString(), p.Description,
+            Status = p.Status.ToString(), p.Description, p.DeadlineAt,
             MilestoneCount = milestones.Count(m => m.ProjectId == p.Id),
             ApprovedCount = milestones.Count(m => m.ProjectId == p.Id && m.Status == MilestoneStatus.APPROVED),
             PercentComplete = milestones.Any(m => m.ProjectId == p.Id)
@@ -88,20 +90,19 @@ public static class ProjectProgressV07Endpoints
         if (project is null) return Results.NotFound();
         if (!CanRead(project, principal)) return Results.Forbid();
         var records = await db.Milestones.AsNoTracking().Where(m => m.ProjectId == projectId)
-            .OrderBy(m => m.DeadlineAt).ThenBy(m => m.CreatedAt).ToListAsync(ct);
-        var now = DateTimeOffset.UtcNow;
+            .OrderBy(m => m.CreatedAt).ThenBy(m => m.Id).ToListAsync(ct);
         return Results.Ok(records.Select(m => new
         {
-            m.Id, m.ProjectId, m.Title, m.Description, m.StartAt, m.DeadlineAt,
+            m.Id, m.ProjectId, m.Title, m.Description, m.StartAt, DeadlineAt = project.DeadlineAt,
             m.ExpectedResult, m.PercentComplete, Status = m.Status.ToString(),
             m.ProposedByStudent, m.ProposalStatus, m.ProposalFeedback,
-            IsOverdue = m.ProposalStatus == "CONFIRMED" && EndOfDeadlineDay(m.DeadlineAt) < now && m.Status != MilestoneStatus.APPROVED,
+            IsOverdue = false,
             m.CreatedAt, m.UpdatedAt
         }));
     }
 
     public sealed record SaveMilestone(string? Title, string? Description,
-        DateTimeOffset StartAt, DateTimeOffset DeadlineAt, string? ExpectedResult);
+        DateTimeOffset StartAt = default, DateTimeOffset DeadlineAt = default, string? ExpectedResult = null);
 
     // V075_DEADLINE_END_OF_DAY
     // Business deadline = last tick of the selected calendar day in Vietnam (UTC+07:00).
@@ -118,8 +119,6 @@ public static class ProjectProgressV07Endpoints
         if (req is null || Text(req.Title).Length is < 1 or > 300) return "Tên Milestone phải dài từ 1 đến 300 ký tự.";
         if (Text(req.Description).Length > 4000 || Text(req.ExpectedResult).Length > 2000)
             return "Nội dung mô tả hoặc kết quả dự kiến quá dài.";
-        if (req.StartAt == default || req.DeadlineAt == default || EndOfDeadlineDay(req.DeadlineAt) < req.StartAt)
-            return "Ngày Deadline không thể trước ngày bắt đầu.";
         return null;
     }
 
@@ -136,7 +135,7 @@ public static class ProjectProgressV07Endpoints
         var item = new Milestone
         {
             ProjectId = projectId, Title = Text(req!.Title), Description = Text(req.Description),
-            StartAt = req.StartAt, DeadlineAt = EndOfDeadlineDay(req.DeadlineAt), ExpectedResult = Text(req.ExpectedResult),
+            StartAt = DateTimeOffset.UtcNow, DeadlineAt = DateTimeOffset.MaxValue, ExpectedResult = Text(req.ExpectedResult),
             Status = MilestoneStatus.PENDING, PercentComplete = 0,
             ProposedByStudent = creator == "Student",
             ProposalStatus = creator == "Student" ? "PENDING_REVIEW" : "CONFIRMED"
@@ -190,7 +189,7 @@ public static class ProjectProgressV07Endpoints
             var record = new Milestone
             {
                 ProjectId = projectId, Title = Text(item.Title), Description = Text(item.Description),
-                StartAt = item.StartAt, DeadlineAt = EndOfDeadlineDay(item.DeadlineAt),
+                StartAt = DateTimeOffset.UtcNow, DeadlineAt = DateTimeOffset.MaxValue,
                 ExpectedResult = Text(item.ExpectedResult),
                 Status = MilestoneStatus.PENDING, PercentComplete = 0,
                 ProposedByStudent = creator == "Student",
@@ -226,7 +225,6 @@ public static class ProjectProgressV07Endpoints
             return Conflict("Không được sửa Milestone đang nộp chờ duyệt, đã duyệt hoặc Project đã kết thúc.");
         var error = Validate(req); if (error != null) return Invalid(error);
         item.Title = Text(req!.Title); item.Description = Text(req.Description);
-        item.StartAt = req.StartAt; item.DeadlineAt = EndOfDeadlineDay(req.DeadlineAt);
         item.ExpectedResult = Text(req.ExpectedResult); item.UpdatedAt = DateTimeOffset.UtcNow;
         if (studentRevision) item.ProposalStatus = "PENDING_REVIEW";
         Audit(db, Actor(principal), studentRevision ? "MILESTONE_PROPOSAL_RESUBMITTED" : "MILESTONE_UPDATED", "Milestone", id);
@@ -234,46 +232,37 @@ public static class ProjectProgressV07Endpoints
         return Results.Ok(new { item.Id });
     }
 
-    // V095_DEADLINE_CHANGE: allow the owning student to adjust the submission day.
-    // While the plan is pending, the original approval request remains valid and
-    // NO new lecturer notification is generated. Once approved, the new deadline
-    // must be approved again (one audit event = one new lecturer notification).
-    public sealed record StudentDeadlineInput(DateTimeOffset DeadlineAt);
+    public sealed record ProjectDeadlineInput(DateTimeOffset? DeadlineAt);
 
-    private static async Task<IResult> UpdateStudentDeadline(Guid id, StudentDeadlineInput? req,
-        ClaimsPrincipal principal, StudentProjectsDbContext db, CancellationToken ct)
+    private static async Task<IResult> UpdateProjectDeadline(Guid id, ProjectDeadlineInput? req,
+        ClaimsPrincipal user, StudentProjectsDbContext db, CancellationToken ct)
     {
-        var item = await db.Milestones.FirstOrDefaultAsync(m => m.Id == id, ct);
-        if (item is null) return Results.NotFound();
-        var project = await db.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == item.ProjectId, ct);
+        var project = await db.Projects.SingleOrDefaultAsync(p => p.Id == id, ct);
         if (project is null) return Results.NotFound();
-        if (!CanWrite(project, principal, "Student")) return Results.Forbid();
-        if (!Active(project) || item.Status is MilestoneStatus.SUBMITTED or MilestoneStatus.APPROVED)
-            return Conflict("Không được sửa ngày nộp khi Milestone đang chờ đánh giá, đã duyệt kết quả hoặc Project đã kết thúc.");
-        if (req is null || req.DeadlineAt == default)
-            return Invalid("Vui lòng chọn ngày nộp hợp lệ.");
-        var deadline = EndOfDeadlineDay(req.DeadlineAt);
-        if (deadline < item.StartAt)
-            return Invalid("Ngày nộp không thể trước ngày bắt đầu Milestone.");
-        // An unchanged calendar date must never trigger a new approval request.
-        if (deadline == EndOfDeadlineDay(item.DeadlineAt))
-            return Results.Ok(new { item.Id, item.DeadlineAt, item.ProposalStatus, Changed = false });
-
-        var requiresReapproval = item.ProposalStatus == "CONFIRMED";
-        item.DeadlineAt = deadline;
-        item.UpdatedAt = DateTimeOffset.UtcNow;
-        if (requiresReapproval)
-        {
-            item.ProposalStatus = "PENDING_REVIEW";
-            // The former lecturer feedback belongs to the previous plan version.
-            item.ProposalFeedback = null;
-        }
-        Audit(db, Actor(principal), requiresReapproval
-            ? "MILESTONE_DEADLINE_CHANGE_REQUESTED"
-            : "MILESTONE_DEADLINE_UPDATED_PENDING", "Milestone", id);
+        if (!CanWrite(project, user, "Lecturer")) return Results.Forbid();
+        if (!Active(project)) return Conflict("Đồ án đã kết thúc, không thể đổi hạn nộp.");
+        if (req?.DeadlineAt is null || req.DeadlineAt == default(DateTimeOffset))
+            return Invalid("Chọn ngày nộp cuối cùng của toàn đồ án.");
+        if (req.DeadlineAt.Value.UtcDateTime.Year is < 2 or > 9998)
+            return Invalid("Ngày nộp nằm ngoài phạm vi hỗ trợ.");
+        var deadline = EndOfDeadlineDay(req.DeadlineAt.Value);
+        if (deadline == project.DeadlineAt) return Results.Ok(new { project.Id, project.DeadlineAt });
+        project.DeadlineAt = deadline;
+        project.UpdatedAt = DateTimeOffset.UtcNow;
+        Audit(db, Actor(user), "PROJECT_DEADLINE_UPDATED", "Project", project.Id);
         await db.SaveChangesAsync(ct);
-        return Results.Ok(new { item.Id, item.DeadlineAt, item.ProposalStatus,
-            Changed = true, RequiresReapproval = requiresReapproval });
+        return Results.Ok(new { project.Id, project.DeadlineAt });
+    }
+
+    private static async Task<IResult> RetiredMilestoneDeadline(Guid id, ClaimsPrincipal user,
+        StudentProjectsDbContext db, CancellationToken ct)
+    {
+        var milestone = await db.Milestones.AsNoTracking().SingleOrDefaultAsync(m => m.Id == id, ct);
+        if (milestone is null) return Results.NotFound();
+        var project = await db.Projects.AsNoTracking().SingleOrDefaultAsync(p => p.Id == milestone.ProjectId, ct);
+        if (project is null) return Results.NotFound();
+        if (!CanRead(project, user)) return Results.Forbid();
+        return Conflict("Milestone dùng hạn nộp chung của đồ án. Giảng viên cập nhật tại phần Deadline toàn dự án.");
     }
 
     public sealed record ProposalReviewInput(bool IsConfirmed, string? Feedback);
@@ -285,10 +274,8 @@ public static class ProjectProgressV07Endpoints
         var project = await db.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == item.ProjectId, ct);
         if (project is null) return Results.NotFound();
         if (!CanWrite(project, principal, "Lecturer")) return Results.Forbid();
-        // A lecturer-created Milestone can also be awaiting confirmation of a
-        // deadline change proposed by the student; ProposedByStudent remains intact.
         if (!Active(project) || item.ProposalStatus != "PENDING_REVIEW")
-            return Conflict("Chỉ được duyệt kế hoạch hoặc thay đổi ngày nộp đang chờ xác nhận.");
+            return Conflict("Chỉ được duyệt kế hoạch đang chờ xác nhận.");
         if (req is null || Text(req.Feedback).Length > 2000 || (!req.IsConfirmed && Text(req.Feedback).Length == 0))
             return Invalid("Khi yêu cầu sửa cần ghi nhận xét (tối đa 2000 ký tự).");
         item.ProposalStatus = req.IsConfirmed ? "CONFIRMED" : "CHANGES_REQUESTED";
@@ -382,6 +369,26 @@ public static class ProjectProgressV07Endpoints
             return Conflict("Chỉ được đánh giá kết quả Milestone đã xác nhận và ở trạng thái SUBMITTED.");
         if (req is null || Text(req.Feedback).Length > 4000 || (!req.IsApproved && Text(req.Feedback).Length == 0))
             return Invalid("Yêu cầu chỉnh sửa phải có nhận xét. Nhận xét tối đa 4000 ký tự.");
+        await using var transaction = req.IsApproved && db.Database.IsSqlServer()
+            ? await db.Database.BeginTransactionAsync(ct) : null;
+        if (req.IsApproved)
+        {
+            if (transaction is not null)
+            {
+                var locked = await LockCriterionMilestone(db, id, ct);
+                if (locked?.Status != MilestoneStatus.SUBMITTED)
+                    return Conflict("Trạng thái Milestone đã thay đổi, vui lòng tải lại.");
+            }
+            var criteria = await db.MilestoneCriteria.AsNoTracking().Where(x => x.MilestoneId == id && !x.IsDeleted).ToListAsync(ct);
+            if (criteria.Count > 0)
+            {
+                var ids = criteria.Select(x => x.Id).ToArray();
+                var assessments = await db.MilestoneCriterionAssessments.AsNoTracking()
+                    .Where(x => ids.Contains(x.CriterionId) && x.Source == "REVIEW").ToListAsync(ct);
+                if (MilestoneCriterionProgress.Calculate(criteria, assessments).Confirmed != 100)
+                    return Conflict("Xác nhận đủ 100 điểm đầu việc trước khi duyệt Milestone.");
+            }
+        }
         db.ProjectEvaluations.Add(new ProjectEvaluation { ProjectId = project.Id, MilestoneId = id,
             LecturerUserId = Actor(principal), IsApproved = req.IsApproved, Feedback = Text(req.Feedback) });
         item.Status = req.IsApproved ? MilestoneStatus.APPROVED : MilestoneStatus.REVISION_REQUIRED;
@@ -393,6 +400,7 @@ public static class ProjectProgressV07Endpoints
         if (req.IsApproved && all.Count > 0 && all.All(m => m.Status == MilestoneStatus.APPROVED))
         { project.Status = ProjectStatus.COMPLETED; project.UpdatedAt = DateTimeOffset.UtcNow; }
         await db.SaveChangesAsync(ct);
+        if (transaction is not null) await transaction.CommitAsync(ct);
         return Results.Ok(new { item.Id, Status = item.Status.ToString(), ProjectStatus = project.Status.ToString() });
     }
 

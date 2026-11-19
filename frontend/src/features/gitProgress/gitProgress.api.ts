@@ -40,7 +40,7 @@ export interface GitProgressEvidence {
   verificationStatus?: string
   evidenceCoverage?: string
   aiExplanation?: string | null
-  source?: 'ollama' | 'diff-rule' | 'feature-rule' | 'ollama-feature' | 'ai-feature-report' | 'diff-feature-report'
+  source?: 'ollama' | 'diff-rule' | 'feature-rule' | 'ollama-feature' | 'ai-feature-report' | 'diff-feature-report' | 'diff-work-report'
 }
 export interface GitProgressRejectionDiagnostics {
   unknownId: number
@@ -108,12 +108,29 @@ export interface GitProgressRun extends GitProgressRunListItem {
   errorMessage: string | null
   repositoryUrl: string | null
 }
+export interface WordComparisonResult {
+  score: number
+  full: number
+  partial: number
+  missing: number
+  items: {
+    id: number
+    claim: string
+    status: 'full' | 'partial' | 'missing'
+    evidence: (GitProgressEvidenceCitation & { id: number; title: string })[]
+  }[]
+}
 export const gitProgressApi = {
   start: (repositoryId: string, baseSha: string, headSha: string) =>
     request<{ id: string; status: string; cached: boolean }>(`/v11/repositories/${repositoryId}/progress`, {
       method: 'POST', body: JSON.stringify({ baseSha, headSha }),
     }),
-  list: (repositoryId: string) =>
-    request<GitProgressRunListItem[]>(`/v11/repositories/${repositoryId}/progress`),
+  list: (repositoryId: string, signal?: AbortSignal) =>
+    request<GitProgressRunListItem[]>(`/v11/repositories/${repositoryId}/progress`, { signal }),
   get: (id: string) => request<GitProgressRun>(`/v11/progress/${id}`),
+  compareWord: (id: string, file: File, signal: AbortSignal) => {
+    const body = new FormData()
+    body.append('file', file)
+    return request<WordComparisonResult>(`/v11/progress/${id}/word-comparison`, { method: 'POST', body, signal })
+  },
 }

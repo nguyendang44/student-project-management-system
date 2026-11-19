@@ -100,13 +100,13 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
             // Persist metadata and screened citations, never raw Git patches / secrets.
             run.FilesJson = JsonSerializer.Serialize(diff.Files.Take(100).Select(f => new
                 { path = f.Path, status = f.Status, additions = f.Additions, deletions = f.Deletions }));
-            // Feature facts are derived from the GitHub diff, independently of the
-            // Ollama 10-file sample. Keep old JSON history compatible, no SQL migration.
+            // Keep Git-derived facts available as a report fallback.
             var features = GitProgressFeatureSynthesis.Extract(diff.Files);
             // Ask Ollama to group the verified changed lines into user-facing features.
             // A release may contain many independent features; related UI/API/service/test
-            // lines should become one feature card with a traceable implementation flow.
-            var featureEvidenceSet = GitProgressFeatureReport.BuildEvidence(ai.FeatureEvidence ?? [], features);
+            // lines can become one feature card. Only validated observations and their
+            // changed lines are passed to grouping.
+            var featureEvidenceSet = GitProgressFeatureReport.BuildEvidence(ai.FeatureEvidence ?? [], []);
             var featureEvidence = featureEvidenceSet.Items;
             var featureReport = new ProgressAiFeatureReportResult([], 0, 0, 0,
                 featureEvidence.Count == 0 ? "empty" : "not-requested");
@@ -115,7 +115,7 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
                 try
                 {
                     featureReport = await services.GetRequiredService<AiGitProgressClient>()
-                        .AnalyzeFeatureReportAsync(featureEvidence, codeContext, ct);
+                        .AnalyzeFeatureReportAsync(featureEvidence, null, ct);
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
                 catch (Exception ex)
@@ -130,8 +130,12 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
             // mappings. The earlier route-only check missed model groups that
             // mixed one real route with generic cache or interface declarations.
             var githubRoutes = GitProgressFeatureReport.BuildGitHubRouteReport(diff.Files);
+            var githubWork = GitProgressFeatureReport.GroupGitHubWork(githubRoutes, diff.Files);
+            var groupedGitHubWork = githubWork.Count < githubRoutes.Count;
+            var groupedCitations = groupedGitHubWork ? githubWork[0].Citations.ToHashSet() : [];
             var otherAiFeatures = githubRoutes.Count > 0
-                ? featureReport.Items.Where(f => !GitProgressFeatureReport.IsGitHubFeatureClaim(f)).ToArray()
+                ? featureReport.Items.Where(f => !GitProgressFeatureReport.IsGitHubFeatureClaim(f) &&
+                    !f.Citations.All(groupedCitations.Contains)).ToArray()
                 : featureReport.Items.ToArray();
             var routeOnlyAi = githubRoutes.Count == 0 &&
                 GitProgressFeatureReport.IsRouteOnlyReport(featureReport.Items);
@@ -139,11 +143,12 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
                 (featureReport.Items.Count == 0 || routeOnlyAi)
                 ? GitProgressFeatureReport.BuildRouteEvidenceReport(diff.Files) : [];
             var displayedFeatures = githubRoutes.Count > 0
-                ? otherAiFeatures.Concat(githubRoutes).ToArray()
+                ? githubWork.Concat(otherAiFeatures).ToArray()
                 : routeFallback.Count > 0 ? routeFallback : featureReport.Items;
             var observations = githubRoutes.Count > 0
-                ? GitProgressFeatureReport.BuildAi(otherAiFeatures).ToList()
-                    .Concat(GitProgressFeatureReport.BuildAi(githubRoutes, "diff-feature-report")).ToList()
+                ? GitProgressFeatureReport.BuildAi(githubWork,
+                        groupedGitHubWork ? "diff-work-report" : "diff-feature-report")
+                    .Concat(GitProgressFeatureReport.BuildAi(otherAiFeatures, offset: githubWork.Count)).ToList()
                 : displayedFeatures.Count > 0
                     ? GitProgressFeatureReport.BuildAi(displayedFeatures,
                         routeFallback.Count > 0 ? "diff-feature-report" : "ai-feature-report").ToList()
@@ -187,7 +192,11 @@ public sealed class GitProgressWorker(IServiceScopeFactory scopes, ILogger<GitPr
                           $"{ai.SkippedLines} dòng bị ẩn do an toàn/độ dài, " +
                           $"{ai.TruncatedBatches} đoạn vượt giới hạn, {ai.FailedBatches} lượt chưa hoàn tất."
                         : ai.CoverageStatus == "no-readable-patch" ? " Không có patch văn bản có thể gửi AI." : "");
-            if (githubRoutes.Count > 0)
+            if (groupedGitHubWork)
+                run.Summary += $" Đối chiếu {githubRoutes.Count} thao tác API GitHub và trình bày thành {githubWork.Count} mục công việc. " +
+                    "Liên kết và xem danh sách repository được trình bày cùng nhau, kèm mã kiểm thử khi có trong diff. " +
+                    $"Giữ thêm {otherAiFeatures.Length} mục khác do Ollama tổng hợp có bằng chứng.";
+            else if (githubRoutes.Count > 0)
                 run.Summary += $" Các nhận xét AI liên quan GitHub được đối chiếu và chuẩn hóa thành {githubRoutes.Count} thao tác API riêng biệt từ Git diff; " +
                     $"các dòng cấu hình chung không được tính là bằng chứng cho thao tác. " +
                     $"Đã giữ thêm {otherAiFeatures.Length} nhóm AI không thuộc GitHub nếu có bằng chứng. Chưa chứng minh chức năng chạy đúng.";

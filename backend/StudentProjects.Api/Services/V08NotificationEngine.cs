@@ -116,13 +116,25 @@ public sealed class V08NotificationEngine(IServiceScopeFactory scopeFactory, ILo
             var milestones = await db.Milestones.AsNoTracking().Where(m => ids.Contains(m.ProjectId)).ToListAsync(ct);
             var byMilestone = milestones.ToDictionary(m => m.Id);
             var mid = byMilestone.Keys.ToArray();
+            var criteria = await db.MilestoneCriteria.AsNoTracking().Where(c => mid.Contains(c.MilestoneId) && !c.IsDeleted).ToListAsync(ct);
+            var byCriterion = criteria.ToDictionary(c => c.Id);
+            var criterionIds = byCriterion.Keys.ToArray();
+            var confirmed = await db.MilestoneCriterionAssessments.AsNoTracking()
+                .Where(a => criterionIds.Contains(a.CriterionId) && a.Source == "REVIEW")
+                .Select(a => new { a.Id, a.CriterionId, a.Outcome, a.CreatedAt }).ToListAsync(ct);
+            var achieved = confirmed.Where(a => byCriterion.TryGetValue(a.CriterionId, out var c) &&
+                (!c.DefinitionChangedAt.HasValue || a.CreatedAt >= c.DefinitionChangedAt.Value)).GroupBy(a => a.CriterionId).Where(g =>
+                g.OrderByDescending(a => a.CreatedAt).ThenByDescending(a => a.Id).First().Outcome == "full")
+                .Select(g => g.Key).ToHashSet();
             var submissions = await db.MilestoneSubmissions.AsNoTracking()
                 .Where(s => mid.Contains(s.MilestoneId) && s.SubmittedAt >= cutoff).ToListAsync(ct);
             var reviews = await db.ProjectEvaluations.AsNoTracking()
                 .Where(r => ids.Contains(r.ProjectId) && r.CreatedAt >= cutoff).ToListAsync(ct);
             var audits = await db.AuditEntries.AsNoTracking()
                 .Where(a => a.CreatedAt >= cutoff && a.EntityId != null &&
-                    (a.EntityName == "Milestone" || a.EntityName == "GuidanceSession"))
+                    (a.EntityName == "Milestone" || a.EntityName == "GuidanceSession" ||
+                     (a.EntityName == "Project" && a.Action == "PROJECT_DEADLINE_UPDATED") ||
+                     (a.EntityName == "MilestoneCriterion" && a.Action == "CRITERION_DEADLINE_UPDATED")))
                 .ToListAsync(ct);
             var journalIds = audits.Where(a => a.EntityName == "GuidanceSession" && a.EntityId.HasValue)
                 .Select(a => a.EntityId!.Value).Distinct().ToArray();
@@ -139,22 +151,40 @@ public sealed class V08NotificationEngine(IServiceScopeFactory scopeFactory, ILo
                 if (!keys.Add($"{userId:N}:{type}")) return;
                 db.Notifications.Add(new Notification { RecipientUserId = userId, Type = type, Message = message });
             }
-            foreach (var m in milestones)
+            foreach (var p in projects)
             {
-                var p = byProject[m.ProjectId];
-                if (m.ProposalStatus != "CONFIRMED" || m.Status == MilestoneStatus.APPROVED || p.Status == ProjectStatus.COMPLETED)
-                    continue;
-                var deadlineDate = TimeZoneInfo.ConvertTime(m.DeadlineAt, Vietnam).Date;
+                if (p.DeadlineAt is not DateTimeOffset deadline || p.Status == ProjectStatus.COMPLETED) continue;
+                var deadlineDate = TimeZoneInfo.ConvertTime(deadline, Vietnam).Date;
                 var days = (deadlineDate - today).Days;
                 if (days is 7 or 3 or 1)
-                    Queue(p.StudentUserId, $"V08:DUE:{m.Id:N}:{deadlineDate:yyyyMMdd}:{days}",
-                        $"Milestone '{m.Title}' còn {days} ngày đến hạn ({deadlineDate:dd/MM/yyyy}).");
-                if (m.DeadlineAt < now)
+                    Queue(p.StudentUserId, $"V08:PDUE:{p.Id:N}:{deadlineDate:yyyyMMdd}:{days}",
+                        $"Đồ án còn {days} ngày đến hạn nộp ({deadlineDate:dd/MM/yyyy}).");
+                if (deadline < now)
                 {
-                    Queue(p.StudentUserId, $"V08:LATE:{m.Id:N}:{deadlineDate:yyyyMMdd}",
-                        $"Milestone '{m.Title}' đã quá hạn ({deadlineDate:dd/MM/yyyy}).");
-                    Queue(p.LecturerUserId, $"V08:LATE:{m.Id:N}:{deadlineDate:yyyyMMdd}",
-                        $"Milestone '{m.Title}' của sinh viên đang quá hạn ({deadlineDate:dd/MM/yyyy}).");
+                    Queue(p.StudentUserId, $"V08:PLATE:{p.Id:N}:{deadlineDate:yyyyMMdd}",
+                        $"Đồ án đã quá hạn nộp ({deadlineDate:dd/MM/yyyy}).");
+                    Queue(p.LecturerUserId, $"V08:PLATE:{p.Id:N}:{deadlineDate:yyyyMMdd}",
+                        $"Đồ án của sinh viên đã quá hạn nộp ({deadlineDate:dd/MM/yyyy}).");
+                }
+            }
+            foreach (var criterion in criteria)
+            {
+                if (criterion.DeadlineAt is not DateTimeOffset deadline || achieved.Contains(criterion.Id) ||
+                    !byMilestone.TryGetValue(criterion.MilestoneId, out var milestone) ||
+                    milestone.ProposalStatus != "CONFIRMED" || milestone.Status == MilestoneStatus.APPROVED) continue;
+                var project = byProject[milestone.ProjectId];
+                if (project.Status == ProjectStatus.COMPLETED) continue;
+                var date = TimeZoneInfo.ConvertTime(deadline, Vietnam).Date;
+                var days = (date - today).Days;
+                if (days is 7 or 3 or 1)
+                    Queue(project.StudentUserId, $"V08:CDUE:{criterion.Id:N}:{date:yyyyMMdd}:{days}",
+                        $"Đầu việc '{criterion.Title}' thuộc Milestone '{milestone.Title}' còn {days} ngày đến hạn ({date:dd/MM/yyyy}).");
+                if (deadline < now)
+                {
+                    Queue(project.StudentUserId, $"V08:CLATE:{criterion.Id:N}:{date:yyyyMMdd}",
+                        $"Đầu việc '{criterion.Title}' thuộc Milestone '{milestone.Title}' đã quá hạn ({date:dd/MM/yyyy}).");
+                    Queue(project.LecturerUserId, $"V08:CLATE:{criterion.Id:N}:{date:yyyyMMdd}",
+                        $"Đầu việc '{criterion.Title}' của sinh viên đã quá hạn ({date:dd/MM/yyyy}).");
                 }
             }
             foreach (var s in submissions)
@@ -172,21 +202,38 @@ public sealed class V08NotificationEngine(IServiceScopeFactory scopeFactory, ILo
             foreach (var a in audits)
             {
                 if (a.EntityId is not Guid entityId) continue;
-                if (a.EntityName == "Milestone" && byMilestone.TryGetValue(entityId, out var m)
+                if (a.EntityName == "Project" && a.Action == "PROJECT_DEADLINE_UPDATED" &&
+                    byProject.TryGetValue(entityId, out var deadlineProject) &&
+                    deadlineProject.DeadlineAt is DateTimeOffset projectDeadline)
+                {
+                    Queue(deadlineProject.StudentUserId, $"V08:PDEAD:{a.Id:N}",
+                        $"Giảng viên đã cập nhật deadline toàn dự án. Ngày hiện tại là {TimeZoneInfo.ConvertTime(projectDeadline, Vietnam):dd/MM/yyyy}.");
+                }
+                else if (a.EntityName == "MilestoneCriterion" && a.Action == "CRITERION_DEADLINE_UPDATED" &&
+                    byCriterion.TryGetValue(entityId, out var criterion) &&
+                    byMilestone.TryGetValue(criterion.MilestoneId, out var criterionMilestone) &&
+                    criterion.DeadlineAt is DateTimeOffset criterionDeadline)
+                {
+                    Queue(byProject[criterionMilestone.ProjectId].StudentUserId, $"V08:CDEAD:{a.Id:N}",
+                        $"Giảng viên đã đặt deadline đầu việc '{criterion.Title}'. Ngày hiện tại là {TimeZoneInfo.ConvertTime(criterionDeadline, Vietnam):dd/MM/yyyy}.");
+                }
+                else if (a.EntityName == "Milestone" && byMilestone.TryGetValue(entityId, out var m)
                     && byProject.TryGetValue(m.ProjectId, out var p))
                 {
                     var msg = a.Action switch {
                         "MILESTONE_PROPOSED" or "MILESTONE_PROPOSED_FROM_TEMPLATE" or "MILESTONE_PROPOSAL_RESUBMITTED"
                             => $"Sinh viên gửi đề xuất kế hoạch: {m.Title}.",
-                        "MILESTONE_DEADLINE_CHANGE_REQUESTED" =>
-                            $"Sinh viên đề nghị thay đổi ngày nộp Milestone '{m.Title}'. Vui lòng mở Milestone để xác nhận ngày mới nhất.",
                         "MILESTONE_PROPOSAL_CONFIRMED" => $"Giảng viên đã xác nhận kế hoạch: {m.Title}.",
                         "MILESTONE_PROPOSAL_CHANGES_REQUESTED" => $"Giảng viên yêu cầu sửa kế hoạch: {m.Title}.",
+                        "MILESTONE_CREATED" or "MILESTONE_CREATED_FROM_TEMPLATE" => $"Giảng viên đã tạo Milestone: {m.Title}.",
+                        "MILESTONE_UPDATED" => $"Giảng viên đã cập nhật Milestone: {m.Title}.",
+                        "MILESTONE_PROGRESS_UPDATED" => $"Sinh viên đã cập nhật tiến độ Milestone: {m.Title}.",
                         _ => null
                     };
                     if (msg is not null)
                     {
-                        var to = a.Action is "MILESTONE_PROPOSAL_CONFIRMED" or "MILESTONE_PROPOSAL_CHANGES_REQUESTED"
+                        var to = a.Action is "MILESTONE_PROPOSAL_CONFIRMED" or "MILESTONE_PROPOSAL_CHANGES_REQUESTED" or
+                            "MILESTONE_CREATED" or "MILESTONE_CREATED_FROM_TEMPLATE" or "MILESTONE_UPDATED"
                             ? p.StudentUserId : p.LecturerUserId;
                         Queue(to, $"V08:PLAN:{a.Id:N}", msg);
                     }

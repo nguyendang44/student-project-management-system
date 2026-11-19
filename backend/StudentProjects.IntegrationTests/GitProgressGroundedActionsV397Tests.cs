@@ -131,7 +131,7 @@ public sealed class GitProgressGroundedActionsV397Tests
             [new ProgressFile(ApiPath, "added", 1, 0, ApiLine)], false,
             GitFileCount: 19, GitAdditions: 1809, GitDeletions: 10);
         var result = await ai.AnalyzeAsync(diff, CancellationToken.None);
-        Assert.Equal("qwen2.5-coder:7b|gp-web-v5.0", ai.AnalysisKey);
+        Assert.Equal("qwen2.5-coder:7b|gp-web-v5.2", ai.AnalysisKey);
         Assert.Equal(19, diff.RawFileCount);
         Assert.Equal(1809, diff.RawAdditions);
         Assert.Equal(10, diff.RawDeletions);

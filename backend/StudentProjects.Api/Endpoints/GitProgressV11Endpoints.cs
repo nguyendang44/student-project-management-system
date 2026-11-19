@@ -1,4 +1,7 @@
 using System.Security.Claims;
+using System.Text.Json;
+using System.Xml;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using StudentProjects.Domain.Entities;
@@ -17,6 +20,57 @@ public static class GitProgressV11Endpoints
         api.MapPost("/repositories/{id:guid}/progress", Start).RequireRateLimiting("analysis-start");
         api.MapGet("/repositories/{id:guid}/progress", List);
         api.MapGet("/progress/{id:guid}", Get);
+        api.MapPost("/progress/{id:guid}/word-comparison", CompareWord)
+            .RequireAuthorization(p => p.RequireRole("Lecturer")).RequireRateLimiting("analysis-start");
+    }
+
+    private static async Task<IResult> CompareWord(Guid id, HttpRequest request, ClaimsPrincipal user,
+        StudentProjectsDbContext db, AiGitProgressClient ai, CancellationToken ct)
+    {
+        var run = await db.GitProgressRuns.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (run is null) return Results.NotFound();
+        var assigned = await db.Projects.AnyAsync(x => x.Id == run.ProjectId && x.LecturerUserId == Actor(user), ct);
+        if (!assigned) return Results.Forbid();
+        if (run.Status != "COMPLETED") return Results.Conflict(new { message = "Chờ báo cáo Git hoàn tất rồi đối chiếu." });
+
+        const int maxRequest = GitProgressWordComparison.MaxFileBytes + 16 * 1024;
+        if (request.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } limit)
+            limit.MaxRequestBodySize = maxRequest;
+        if (request.ContentLength > maxRequest) return Results.BadRequest(new { message = "File Word tối đa 2 MB." });
+        if (!request.HasFormContentType) return Results.BadRequest(new { message = "Hãy tải một file Word .docx." });
+
+        IReadOnlyList<WordReportLine> claims;
+        try
+        {
+            var form = await request.ReadFormAsync(ct);
+            var file = form.Files.GetFile("file");
+            if (form.Files.Count != 1 || file is null || file.Length <= 0 ||
+                file.Length > GitProgressWordComparison.MaxFileBytes ||
+                !Path.GetExtension(file.FileName).Equals(".docx", StringComparison.OrdinalIgnoreCase))
+                return Results.BadRequest(new { message = "Chọn một file Word .docx tối đa 2 MB." });
+            await using var stream = file.OpenReadStream();
+            claims = GitProgressWordComparison.ReadClaims(stream);
+        }
+        catch (InvalidDataException)
+        {
+            return Results.BadRequest(new { message = "Không đọc được nội dung Word. Dùng file .docx có văn bản, tối đa 20 công việc và 500 ký tự mỗi mục." });
+        }
+        catch (XmlException)
+        {
+            return Results.BadRequest(new { message = "File Word có nội dung XML không hợp lệ." });
+        }
+
+        IReadOnlyList<WordEvidence> evidence;
+        try { evidence = GitProgressWordComparison.ReadEvidence(run.EvidenceJson); }
+        catch (InvalidDataException ex) { return Results.Conflict(new { message = ex.Message }); }
+        if (evidence.Count == 0) return Results.Conflict(new { message = "Báo cáo Git chưa có mục công việc kèm dòng bằng chứng." });
+        try { return Results.Ok(await ai.CompareWordAsync(claims, evidence, ct)); }
+        catch (InvalidDataException ex) { return Results.Json(new { message = ex.Message }, statusCode: 502); }
+        catch (Exception ex) when (!ct.IsCancellationRequested &&
+            ex is HttpRequestException or JsonException or OperationCanceledException)
+        {
+            return Results.Json(new { message = "Ollama chưa trả được kết quả. Kiểm tra Ollama rồi thử lại." }, statusCode: 502);
+        }
     }
 
     private static Guid Actor(ClaimsPrincipal user) =>

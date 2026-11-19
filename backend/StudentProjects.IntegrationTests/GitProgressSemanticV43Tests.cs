@@ -148,7 +148,7 @@ public sealed class GitProgressSemanticV43Tests
             {"items":[{"evidenceId":"L1","description":"Bổ sung dịch vụ cache và client GitHub trong cấu hình dịch vụ."}]}
             """)) { BaseAddress = new Uri("http://127.0.0.1:11434/") };
         var ai = new AiGitProgressClient(http, new ConfigurationBuilder().Build());
-        Assert.EndsWith("gp-web-v5.0", ai.AnalysisKey);
+        Assert.EndsWith("gp-web-v5.2", ai.AnalysisKey);
         var diff = new ProgressDiff(new string('a', 40), new string('b', 40), 1,
             [new ProgressFile("backend/StudentProjects.Api/Program.cs", "modified", 1, 0, source)], false);
         var result = await ai.AnalyzeAsync(diff, CancellationToken.None);

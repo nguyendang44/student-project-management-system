@@ -143,7 +143,7 @@ public sealed class GitProgressReportQualityV395Tests
         Assert.Equal(19, diff.RawFileCount);
         Assert.Equal(1809, diff.RawAdditions);
         Assert.Equal(10, diff.RawDeletions);
-        Assert.Equal("qwen2.5-coder:7b|gp-web-v5.0", ai.AnalysisKey);
+        Assert.Equal("qwen2.5-coder:7b|gp-web-v5.2", ai.AnalysisKey);
         // Removed lines are supplied as context but can never carry a citation ID.
         Assert.Contains("list: (token?: string)", handler.LastPrompt);
         Assert.Contains("projects/${projectId}/repositories", handler.LastPrompt);

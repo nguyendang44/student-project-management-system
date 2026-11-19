@@ -19,12 +19,12 @@ onMounted(load)
       <div><strong>{{ data.pendingPlans }}</strong><span>Kế hoạch chờ duyệt</span></div>
       <div><strong>{{ data.pendingReviews }}</strong><span>Kết quả chờ đánh giá</span></div>
       <div><strong>{{ data.revisions }}</strong><span>Cần chỉnh sửa</span></div>
-      <div><strong>{{ data.overdue }}</strong><span>Milestone quá hạn</span></div>
+      <div><strong>{{ data.overdue }}</strong><span>Đồ án quá hạn</span></div>
       <div><strong>{{ data.pendingGuidance }}</strong><span>Nhật ký chưa xác nhận</span></div>
     </div>
     <h3>Deadline trong 7 ngày tới</h3>
-    <p v-if="!data.upcoming.length">Không có Milestone sắp đến hạn.</p>
-    <ul v-else><li v-for="m in data.upcoming" :key="m.id"><strong>{{ m.title }}</strong> · {{ fmt(m.deadlineAt) }} <RouterLink :to="`/milestones?projectId=${m.projectId}`">Xem Milestone</RouterLink></li></ul>
+    <p v-if="!data.upcoming.length">Không có đồ án sắp đến hạn.</p>
+    <ul v-else><li v-for="m in data.upcoming" :key="m.id"><strong>{{ m.title }}</strong> · {{ fmt(m.deadlineAt) }} <RouterLink :to="`/milestones?projectId=${m.projectId}`">Xem đồ án</RouterLink></li></ul>
     <p><RouterLink to="/notifications">Xem thông báo</RouterLink> · <RouterLink to="/guidance">Nhật ký hướng dẫn</RouterLink> · <RouterLink to="/git-progress">Phân tích tiến độ Git</RouterLink></p>
   </template></section>
 </template>

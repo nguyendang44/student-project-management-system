@@ -29,6 +29,8 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
     public DbSet<CodeAnalysisReport> CodeAnalysisReports => Set<CodeAnalysisReport>();
     public DbSet<CodeAnalysisRun> CodeAnalysisRuns => Set<CodeAnalysisRun>();
     public DbSet<GitProgressRun> GitProgressRuns => Set<GitProgressRun>();
+    public DbSet<MilestoneCriterion> MilestoneCriteria => Set<MilestoneCriterion>();
+    public DbSet<MilestoneCriterionAssessment> MilestoneCriterionAssessments => Set<MilestoneCriterionAssessment>();
     public DbSet<CodeAnalysisFinding> CodeAnalysisFindings => Set<CodeAnalysisFinding>();
     public DbSet<CodeAnalysisReview> CodeAnalysisReviews => Set<CodeAnalysisReview>();
 
@@ -349,6 +351,8 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
         modelBuilder.Entity<LecturerRequest>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<Project>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<Milestone>().ToTable(t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<MilestoneCriterion>().ToTable("MilestoneCriteria", t => t.ExcludeFromMigrations());
+        modelBuilder.Entity<MilestoneCriterionAssessment>().ToTable("MilestoneCriterionAssessments", t => t.ExcludeFromMigrations());
         modelBuilder.Entity<ProgressUpdate>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<MilestoneSubmission>().ToTable(t => t.ExcludeFromMigrations());
         modelBuilder.Entity<ProjectEvaluation>().ToTable(t => t.ExcludeFromMigrations());

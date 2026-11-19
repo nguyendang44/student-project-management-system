@@ -10,7 +10,6 @@ type EditableTemplate = {
   title: string
   description: string
   expectedResult: string
-  deadlineDay: string
 }
 const props = defineProps<{
   projectId: string
@@ -42,11 +41,9 @@ function addCategory() {
     checked: true,
     title: template.title,
     description: template.description,
-    expectedResult: template.expectedResult,
-    deadlineDay: ''
+    expectedResult: template.expectedResult
   }))
   insertPosition.value = -1
-  bulkDay.value = ''
   error.value = ''
 }
 // V079_EXTRA_CUSTOM_MILESTONES
@@ -77,7 +74,7 @@ function addCustomMilestone() {
     ? entries.value.length
     : Math.max(0, Math.min(insertPosition.value, entries.value.length))
   entries.value.splice(position, 0, {
-    key, checked: true, title: '', description: '', expectedResult: '', deadlineDay: ''
+    key, checked: true, title: '', description: '', expectedResult: ''
   })
   // Add the next custom Milestone immediately after the one just inserted.
   if (insertPosition.value >= 0) insertPosition.value = position + 1
@@ -87,18 +84,7 @@ function removeItem(key: string) {
   if (busy.value) return
   entries.value = entries.value.filter(x => x.key !== key)
 }
-function applyOneDate(day: string) {
-  if (!day || busy.value) return
-  entries.value.filter(x => x.checked).forEach(x => { x.deadlineDay = day })
-}
-const bulkDay = ref('')
 function normalName(value: string) { return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase('vi-VN') }
-function validDay(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
-  const [y, m, d] = value.split('-').map(Number)
-  const parsed = new Date(Date.UTC(y, m - 1, d))
-  return parsed.getUTCFullYear() === y && parsed.getUTCMonth() + 1 === m && parsed.getUTCDate() === d
-}
 function payload() : MilestoneForm[] | null {
   const selected = selectedEntries.value
   if (!selected.length) { error.value = 'Hãy chọn ít nhất một Milestone để áp dụng.'; return null }
@@ -114,13 +100,9 @@ function payload() : MilestoneForm[] | null {
     const k = normalName(title)
     if (names.has(k)) { error.value = `Milestone “${title}” đã tồn tại hoặc bị trùng trong bộ mẫu. Hãy đổi tên hoặc bỏ chọn.`; return null }
     names.add(k)
-    if (!validDay(x.deadlineDay)) { error.value = `Vui lòng chọn ngày Deadline hợp lệ cho “${title}”.`; return null }
   }
   return selected.map(x => ({
     title: x.title.trim(), description: x.description.trim(), expectedResult: x.expectedResult.trim(),
-    // Explicit Vietnam civil date. The backend also normalizes deadline to the final tick of this day.
-    startAt: new Date(`${x.deadlineDay}T00:00:00+07:00`).toISOString(),
-    deadlineAt: new Date(`${x.deadlineDay}T23:59:59.999+07:00`).toISOString()
   }))
 }
 async function apply() {
@@ -167,13 +149,6 @@ async function apply() {
     </div>
     <p class="muted" v-if="activeCategory">Ví dụ: {{ activeCategory.examples }}. Chọn nhóm mới rồi bấm “Dùng 6 Milestone” sẽ thay các mốc hiện tại trong bản nháp. Milestone đã lưu vào Project không bị ảnh hưởng.</p>
     <template v-if="entries.length">
-      <div class="bulk-deadline">
-        <label for="template-bulk-day">Đặt ngày Deadline chung (tùy chọn)
-          <input id="template-bulk-day" v-model="bulkDay" :disabled="busy" type="date" />
-        </label>
-        <button type="button" :disabled="busy || !bulkDay" @click="applyOneDate(bulkDay)">Áp dụng ngày cho các mốc đã chọn</button>
-        <span class="muted">Hạn của mỗi mốc tính đến hết ngày (23:59:59 giờ Việt Nam).</span>
-      </div>
       <form @submit.prevent="apply">
         <div v-for="(item,i) in entries" :key="item.key" class="template-card">
           <div class="item-head">
@@ -186,7 +161,6 @@ async function apply() {
           </div>
           <div class="form-grid" :class="{mutedItem: !item.checked}">
             <label>Tên Milestone <input v-model="item.title" :disabled="busy || !item.checked" maxlength="300" required /></label>
-            <label>Deadline (chỉ ngày) <input v-model="item.deadlineDay" :disabled="busy || !item.checked" type="date" required /></label>
             <label class="full">Mô tả <textarea v-model="item.description" :disabled="busy || !item.checked" rows="2" maxlength="4000" /></label>
             <label class="full">Kết quả cần đạt <textarea v-model="item.expectedResult" :disabled="busy || !item.checked" rows="2" maxlength="2000" /></label>
           </div>
@@ -207,7 +181,7 @@ async function apply() {
 
 <style scoped>
 .planner{margin:18px 0 0;padding:20px;border:1px solid var(--border-color,#d5dbe4);border-radius:12px;background:var(--card-bg,#fff);color:inherit}
-.planner-head{display:flex;justify-content:space-between;align-items:start;gap:14px}.planner-head h4{margin:0 0 6px;font-size:1.05rem}.muted{color:var(--text-muted,#637083);font-size:.9rem;margin:8px 0 12px}.category-row,.bulk-deadline{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin:12px 0}.category-row label{flex:1;min-width:220px}.bulk-deadline{padding:12px;background:var(--surface-secondary,#f6f8fa);border-radius:8px}.bulk-deadline label{min-width:180px}
+.planner-head{display:flex;justify-content:space-between;align-items:start;gap:14px}.planner-head h4{margin:0 0 6px;font-size:1.05rem}.muted{color:var(--text-muted,#637083);font-size:.9rem;margin:8px 0 12px}.category-row{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin:12px 0}.category-row label{flex:1;min-width:220px}
 .planner label{display:flex;flex-direction:column;gap:6px;font-weight:500;font-size:.93rem}.planner input:not([type=checkbox]),.planner textarea,.planner select{width:100%;min-width:0;padding:9px 11px;border:1px solid #bcc5d2;border-radius:6px;background:var(--field-bg,#fff);color:inherit;font:inherit;box-sizing:border-box}.planner button{padding:9px 13px;border:1px solid #9ba7b6;border-radius:7px;cursor:pointer;font:inherit;background:var(--button-bg,#f4f6f8);color:inherit}.planner button[type=submit]{background:#174f8b;color:white;border-color:#174f8b}.planner button:disabled{opacity:.5;cursor:not-allowed}.planner .button-quiet{background:transparent}
 .item-head-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.insert-position-label{flex:1;min-width:225px}.template-card{margin:14px 0;border:1px solid var(--border-color,#d5dbe4);border-radius:9px;padding:15px}.item-head{display:flex;gap:12px;justify-content:space-between;align-items:center;margin-bottom:12px}.checkbox-label{flex-direction:row!important;align-items:center;font-weight:650!important}.checkbox-label input{width:17px;height:17px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.form-grid .full{grid-column:1/-1}.mutedItem{opacity:.65}.error{color:#ad2020;background:#ffefef;padding:10px;border-radius:6px}.footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;margin-top:18px}.footer-buttons{display:flex;gap:10px}
 @media(max-width:690px){.planner{padding:12px}.form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:1}.item-head{flex-wrap:wrap}.footer-buttons{width:100%}}

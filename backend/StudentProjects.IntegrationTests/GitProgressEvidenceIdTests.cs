@@ -73,9 +73,11 @@ public sealed class GitProgressEvidenceIdTests
         var evidence = Assert.Single(result.Items);
         Assert.Equal(file.Path, evidence.File);
         Assert.Equal("+app.MapGet(\"/health\", () => \"ok\");", evidence.Evidence);
-        Assert.Single(result.FeatureEvidence!);
+        var groupingEvidence = Assert.Single(result.FeatureEvidence!);
+        Assert.Equal(evidence.Evidence, groupingEvidence.Evidence);
+        Assert.Equal(evidence.Description, groupingEvidence.ValidatedDescription);
         Assert.Contains("L1", responder.LastPrompt);
-        Assert.Contains("|gp-web-v5.0", client.AnalysisKey);
+        Assert.Contains("|gp-web-v5.2", client.AnalysisKey);
         Assert.Equal("qwen2.5-coder:7b", client.Model);
     }
 
@@ -93,6 +95,33 @@ public sealed class GitProgressEvidenceIdTests
             CancellationToken.None);
         Assert.Equal(1, result.CandidateCount);
         Assert.Empty(result.Items);
+        Assert.Empty(result.FeatureEvidence!);
+    }
+
+    [Fact]
+    public async Task Grouping_excludes_rejected_observations_even_when_the_diff_id_is_real()
+    {
+        const string patch = """
+            +app.MapGet("/health", () => "ok");
+            +app.MapPost("/projects", CreateProject);
+            """;
+        using var responder = new OllamaHandler("L1",
+            new ProgressEvidenceSelection("L2", "Đã hoàn thành và triển khai thành công chức năng tạo đồ án."));
+        using var http = new HttpClient(responder) { BaseAddress = new Uri("http://127.0.0.1:11434/") };
+        var client = new AiGitProgressClient(http, new ConfigurationBuilder().Build());
+        var file = new ProgressFile("backend/Endpoints/Health.cs", "modified", 2, 0, patch);
+        var diff = new ProgressDiff(new string('a', 40), new string('b', 40), 1, [file], false);
+
+        var result = await client.AnalyzeAsync(diff, CancellationToken.None);
+        Assert.Equal(2, result.CandidateCount);
+        var evidence = GitProgressFeatureReport.BuildEvidence(result.FeatureEvidence!, []);
+        Assert.Contains("/health", Assert.Single(evidence.Items).Evidence);
+
+        await client.AnalyzeFeatureReportAsync(evidence.Items, null, CancellationToken.None);
+
+        Assert.Contains("observation", responder.LastPrompt);
+        Assert.Contains("/health", responder.LastPrompt);
+        Assert.DoesNotContain("CreateProject", responder.LastPrompt);
     }
 
     [Fact]
@@ -111,7 +140,7 @@ public sealed class GitProgressEvidenceIdTests
         Assert.Contains("không chứng minh", summary);
     }
 
-    private sealed class OllamaHandler(string evidenceId) : HttpMessageHandler
+    private sealed class OllamaHandler(string evidenceId, ProgressEvidenceSelection? extra = null) : HttpMessageHandler
     {
         public string LastPrompt { get; private set; } = "";
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
@@ -120,10 +149,15 @@ public sealed class GitProgressEvidenceIdTests
             var payload = await request.Content!.ReadAsStringAsync(ct);
             using var json = JsonDocument.Parse(payload);
             LastPrompt = json.RootElement.GetProperty("prompt").GetString() ?? "";
-            var inner = JsonSerializer.Serialize(new
+            var items = new List<object>
             {
-                items = new[] { new { evidenceId, description = "Thêm endpoint kiểm tra trạng thái." } }
-            });
+                new { evidenceId, description = "Thêm endpoint kiểm tra trạng thái." }
+            };
+            if (extra is not null)
+                items.Add(new { evidenceId = extra.EvidenceId, description = extra.Description });
+            var inner = LastPrompt.Contains("NHẬN XÉT VÀ DÒNG CODE ĐÃ ĐƯỢC ĐỊNH DANH", StringComparison.Ordinal)
+                ? """{"features":[]}"""
+                : JsonSerializer.Serialize(new { items });
             var result = JsonSerializer.Serialize(new { response = inner, done = true });
             return new HttpResponseMessage(HttpStatusCode.OK)
             { Content = new StringContent(result, Encoding.UTF8, "application/json") };

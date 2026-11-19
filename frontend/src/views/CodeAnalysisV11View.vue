@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { HttpError } from '../api/client'
 import { useAuthStore } from '../stores/auth'
+import GitProgressWordComparison from '../components/GitProgressWordComparison.vue'
 import { projectProgressApi, type ProjectV07 } from '../features/progress/projectProgress.api'
 import { githubApi } from '../features/github/github.api'
 import type { GithubRepositoryLink } from '../features/github/github.types'
@@ -35,6 +36,9 @@ const info = ref('')
 let refreshTimer: ReturnType<typeof setTimeout> | undefined
 
 const selectedRepository = computed(() => links.value.find(l => l.id === repositoryId.value))
+const wordTab = computed(() => auth.role === 'Lecturer' && route.query.tab === 'word')
+const requestedRunId = computed(() => repositoryId.value === route.query.repositoryId &&
+  typeof route.query.runId === 'string' ? route.query.runId : '')
 const canStart = computed(() => auth.role === 'Student' || auth.role === 'Lecturer')
 const canReview = computed(() => auth.role === 'Lecturer' && active.value?.status === 'COMPLETED')
 const completedRuns = computed(() => runs.value.filter(r => r.status === 'COMPLETED'))
@@ -100,7 +104,8 @@ async function loadRepos() {
   loading.value = true; error.value = ''
   try {
     links.value = await githubApi.list(projectId.value)
-    repositoryId.value = links.value[0]?.id || ''
+    const requested = typeof route.query.repositoryId === 'string' ? route.query.repositoryId : ''
+    repositoryId.value = links.value.find(link => link.id === requested)?.id || links.value[0]?.id || ''
   } catch (e) { error.value = failure(e) }
   finally { loading.value = false }
 }
@@ -161,7 +166,10 @@ async function submitReview() {
   finally { busy.value = false }
 }
 watch(projectId, () => { void loadRepos() })
-watch(repositoryId, () => { void loadRuns() })
+watch([repositoryId, wordTab], () => {
+  if (wordTab.value) stopPolling()
+  else void loadRuns()
+})
 onMounted(() => { void loadProjects() })
 onUnmounted(stopPolling)
 </script>
@@ -175,8 +183,15 @@ onUnmounted(stopPolling)
       <p>Phân tích tham khảo theo commit SHA. Nhận xét AI không phải điểm số hay kết luận cuối cùng.</p>
     </header>
 
+    <nav v-if="auth.role === 'Lecturer'" class="analysis-sections" aria-label="Mục phân tích">
+      <RouterLink :to="{ name: 'ai', query: { projectId, repositoryId } }"
+        :aria-current-value="wordTab ? 'false' : 'page'">Phân tích mã nguồn</RouterLink>
+      <RouterLink :to="{ name: 'ai', query: { tab: 'word', projectId, repositoryId } }"
+        :aria-current-value="wordTab ? 'page' : 'false'">Đối chiếu báo cáo Word</RouterLink>
+    </nav>
+
     <p v-if="error" class="alert error" role="alert">{{ error }}</p>
-    <p v-if="info" class="alert" role="status">{{ info }}</p>
+    <p v-if="info && !wordTab" class="alert" role="status">{{ info }}</p>
 
     <div class="controls">
       <label>Project
@@ -189,19 +204,21 @@ onUnmounted(stopPolling)
           <option v-for="r in links" :key="r.id" :value="r.id">{{ r.repositoryUrl }}</option>
         </select>
       </label>
-      <label>Branch
+      <label v-if="!wordTab">Branch
         <select v-model="branch" :disabled="loading || !branches.length">
           <option v-for="b in branches" :key="b" :value="b">{{ b }}</option>
         </select>
       </label>
-      <button :disabled="!canStart || !repositoryId || !branch || busy || loading" @click="start">
+      <button v-if="!wordTab" :disabled="!canStart || !repositoryId || !branch || busy || loading" @click="start">
         {{ busy ? 'Đang gửi...' : 'Phân tích mã nguồn' }}
       </button>
-      <button class="secondary" :disabled="!repositoryId || loading" @click="loadRuns">Làm mới</button>
+      <button v-if="!wordTab" class="secondary" :disabled="!repositoryId || loading" @click="loadRuns">Làm mới</button>
     </div>
 
     <p v-if="!links.length && !loading">Project này chưa có repository. Hãy liên kết trong trang GitHub repositories.</p>
-    <div v-if="repositoryId" class="columns">
+    <GitProgressWordComparison v-if="wordTab" :repository-id="repositoryId" :project-id="projectId"
+      :requested-run-id="requestedRunId" />
+    <div v-else-if="repositoryId" class="columns">
       <section class="panel">
         <h3>Lịch sử phân tích</h3>
         <p v-if="!runs.length">Chưa có lần phân tích nào.</p>
@@ -284,6 +301,9 @@ onUnmounted(stopPolling)
 </template>
 
 <style scoped>
+.analysis-sections { display: flex; flex-wrap: wrap; gap: .5rem 1rem; padding-bottom: .4rem; border-bottom: 1px solid #cbd5e1; }
+.analysis-sections a { padding: .4rem 0; }
+.analysis-sections a[aria-current='page'] { font-weight: 700; border-bottom: 2px solid currentColor; }
 .source-paths-plain { white-space:pre-wrap; overflow-wrap:anywhere; font: .85rem/1.65 ui-monospace, SFMono-Regular, Consolas, monospace; background:rgba(100,116,139,.08); padding:.75rem; border-radius:6px; }
 .analysis-v11 { display: grid; gap: 1rem; max-width: 1200px; margin: 0 auto; }
 .analysis-v11 header small { color: var(--text-muted, #64748b); }

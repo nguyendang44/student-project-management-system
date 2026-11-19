@@ -75,11 +75,15 @@ public static class V08Endpoints
         var pendingPlans = milestones.Count(m => m.ProposalStatus == "PENDING_REVIEW");
         var pendingReviews = milestones.Count(m => m.ProposalStatus == "CONFIRMED" && m.Status == MilestoneStatus.SUBMITTED);
         var revisions = milestones.Count(m => m.ProposalStatus == "CHANGES_REQUESTED" || m.Status == MilestoneStatus.REVISION_REQUIRED);
-        var overdue = milestones.Count(m => m.ProposalStatus == "CONFIRMED" && m.Status != MilestoneStatus.APPROVED && m.DeadlineAt < now);
-        var upcoming = milestones.Where(m => m.ProposalStatus == "CONFIRMED" && m.Status != MilestoneStatus.APPROVED &&
-            m.DeadlineAt >= now && m.DeadlineAt <= now.AddDays(7))
-            .OrderBy(m => m.DeadlineAt).Take(10)
-            .Select(m => new { m.Id, m.ProjectId, m.Title, m.DeadlineAt }).ToList();
+        var activeProjects = projects.Where(p => p.Status != ProjectStatus.COMPLETED && p.Status != ProjectStatus.CANCELLED).ToArray();
+        var overdue = activeProjects.Count(p => p.DeadlineAt.HasValue && p.DeadlineAt < now);
+        var upcomingProjects = activeProjects.Where(p => p.DeadlineAt.HasValue &&
+            p.DeadlineAt >= now && p.DeadlineAt <= now.AddDays(7)).OrderBy(p => p.DeadlineAt).Take(10).ToArray();
+        var topicIds = upcomingProjects.Select(p => p.TopicId).Distinct().ToArray();
+        var titles = await db.Topics.AsNoTracking().Where(t => topicIds.Contains(t.Id))
+            .ToDictionaryAsync(t => t.Id, t => t.Title, ct);
+        var upcoming = upcomingProjects.Select(p => new { p.Id, ProjectId = p.Id,
+            Title = titles.GetValueOrDefault(p.TopicId, "Đồ án"), DeadlineAt = p.DeadlineAt!.Value }).ToList();
         var pendingGuidance = await db.GuidanceSessions.AsNoTracking().CountAsync(g => ids.Contains(g.ProjectId) && g.LecturerConfirmedAt == null, ct);
         return Results.Ok(new {
             ProjectCount = projects.Count, PendingPlans = pendingPlans, PendingReviews = pendingReviews,

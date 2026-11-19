@@ -11,7 +11,7 @@ export async function request<T>(path: string, init: RequestInit = {}, explicitT
   const token = explicitToken ?? getToken()
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: { ...(init.body != null ? { 'Content-Type': 'application/json' } : {}),
+    headers: { ...(init.body != null && !(init.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}), ...init.headers },
   })
   if (response.status === 204) return undefined as T

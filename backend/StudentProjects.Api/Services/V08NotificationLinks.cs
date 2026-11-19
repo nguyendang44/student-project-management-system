@@ -18,6 +18,8 @@ public static class V08NotificationLinks
         var result = new Dictionary<string, string>(StringComparer.Ordinal);
         var keys = types.Distinct(StringComparer.Ordinal).ToArray();
         var milestoneIds = new HashSet<Guid>();
+        var projectIds = new HashSet<Guid>();
+        var criterionIds = new HashSet<Guid>();
         var submissionIds = new HashSet<Guid>();
         var reviewIds = new HashSet<Guid>();
         var auditIds = new HashSet<Guid>();
@@ -34,9 +36,11 @@ public static class V08NotificationLinks
             if (kind == "REQ") requestIds.Add(id);
             else if (kind == "REQEV") requestEventIds.Add(id);
             else if (kind is "DUE" or "LATE") milestoneIds.Add(id);
+            else if (kind is "PDUE" or "PLATE") projectIds.Add(id);
+            else if (kind is "CDUE" or "CLATE") criterionIds.Add(id);
             else if (kind == "SUB") submissionIds.Add(id);
             else if (kind == "REVIEW") reviewIds.Add(id);
-            else if (kind is "PLAN" or "MEET" or "MEETOK") auditIds.Add(id);
+            else if (kind is "PLAN" or "MEET" or "MEETOK" or "PDEAD" or "CDEAD") auditIds.Add(id);
             else continue;
             parsed[type] = (kind, id);
         }
@@ -75,8 +79,15 @@ public static class V08NotificationLinks
         {
             if (!audit.EntityId.HasValue) continue;
             if (audit.EntityName == "Milestone") milestoneIds.Add(audit.EntityId.Value);
+            if (audit.EntityName == "Project") projectIds.Add(audit.EntityId.Value);
+            if (audit.EntityName == "MilestoneCriterion") criterionIds.Add(audit.EntityId.Value);
             if (audit.EntityName == "GuidanceSession") meetingIds.Add(audit.EntityId.Value);
         }
+
+        var criterionMilestones = criterionIds.Count == 0 ? new Dictionary<Guid, Guid>() :
+            await db.MilestoneCriteria.AsNoTracking().Where(c => criterionIds.Contains(c.Id) && !c.IsDeleted)
+                .ToDictionaryAsync(c => c.Id, c => c.MilestoneId, ct);
+        foreach (var id in criterionMilestones.Values) milestoneIds.Add(id);
 
         var milestones = await db.Milestones.AsNoTracking()
             .Where(m => milestoneIds.Contains(m.Id))
@@ -121,7 +132,30 @@ public static class V08NotificationLinks
             Guid milestoneId = Guid.Empty;
             Guid meetingId = Guid.Empty;
             string page = "";
-            if ((entry.Kind is "DUE" or "LATE") && milestones.TryGetValue(entry.EventId, out var direct))
+            var criterionId = entry.EventId;
+            if (entry.Kind == "CDEAD" && audits.TryGetValue(entry.EventId, out var criterionAudit) &&
+                criterionAudit.EntityName == "MilestoneCriterion" && criterionAudit.EntityId.HasValue)
+                criterionId = criterionAudit.EntityId.Value;
+            if ((entry.Kind is "CDUE" or "CLATE" or "CDEAD") &&
+                criterionMilestones.TryGetValue(criterionId, out var criterionMilestoneId) &&
+                milestones.TryGetValue(criterionMilestoneId, out var criterionMilestone))
+            {
+                projectId = criterionMilestone.ProjectId;
+                milestoneId = criterionMilestone.Id;
+                page = "progress";
+            }
+            else if ((entry.Kind is "PDUE" or "PLATE") && projectIds.Contains(entry.EventId))
+            {
+                projectId = entry.EventId;
+                page = "milestones";
+            }
+            else if (entry.Kind == "PDEAD" && audits.TryGetValue(entry.EventId, out var deadlineAudit) &&
+                deadlineAudit.EntityName == "Project" && deadlineAudit.EntityId is Guid deadlineProjectId)
+            {
+                projectId = deadlineProjectId;
+                page = "milestones";
+            }
+            else if ((entry.Kind is "DUE" or "LATE") && milestones.TryGetValue(entry.EventId, out var direct))
             {
                 projectId = direct.ProjectId;
                 milestoneId = direct.Id;

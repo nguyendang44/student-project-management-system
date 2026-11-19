@@ -16,7 +16,10 @@ public sealed record ProgressDiff(string BaseSha, string HeadSha, int AheadBy,
 }
 
 public sealed record ProgressEvidence(string File, string Evidence, string Description);
-public sealed record ProgressEvidenceReference(string Id, string File, string Evidence);
+public sealed record ProgressEvidenceReference(string Id, string File, string Evidence)
+{
+    public string? ValidatedDescription { get; init; }
+}
 public sealed record ProgressEvidenceSelection(string EvidenceId, string Description);
 public sealed record ProgressAiResult(IReadOnlyList<ProgressEvidence> Items, int SentFiles, int CandidateCount = 0,
     GitProgressMeaningPolicy.RejectionDiagnostics? Diagnostics = null,

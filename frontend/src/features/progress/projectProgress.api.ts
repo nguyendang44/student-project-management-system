@@ -3,15 +3,15 @@ import { request } from '../../api/client'
 export type ProjectV07 = {
   id: string; topicId: string; topicTitle: string; studentUserId: string; studentName: string;
   lecturerUserId: string; lecturerName: string; status: string; description: string | null;
-  milestoneCount: number; approvedCount: number; percentComplete: number
+  milestoneCount: number; approvedCount: number; percentComplete: number; deadlineAt: string | null
 }
 export type MilestoneV07 = {
   id: string; projectId: string; title: string; description: string | null;
-  startAt: string; deadlineAt: string; expectedResult: string | null;
+  startAt: string; deadlineAt: string | null; expectedResult: string | null;
   percentComplete: number; status: string; isOverdue: boolean; createdAt: string; updatedAt: string;
   proposedByStudent: boolean; proposalStatus: 'CONFIRMED' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED'; proposalFeedback: string | null
 }
-export type MilestoneForm = { title: string; description: string; startAt: string; deadlineAt: string; expectedResult: string }
+export type MilestoneForm = { title: string; description: string; startAt?: string; deadlineAt?: string; expectedResult: string }
 export type ProgressHistory = {
   progress: { id: string; percentComplete: number; workDone: string; note: string | null; createdAt: string }[]
   submissions: { id: string; resultSummary: string; documentReference: string | null; submittedAt: string }[]
@@ -29,9 +29,9 @@ export const projectProgressApi = {
     ),
   create: (id: string, data: MilestoneForm) => request<{ id: string }>(`/v07/projects/${id}/milestones`, {method:'POST',body:JSON.stringify(data)}),
   update: (id: string, data: MilestoneForm) => request<{ id: string }>(`/v07/milestones/${id}`, {method:'PUT',body:JSON.stringify(data)}),
-  updateDeadline: (id: string, deadlineAt: string) =>
-    request<{ id: string; proposalStatus: MilestoneV07['proposalStatus']; changed: boolean; requiresReapproval?: boolean }>(
-      `/v07/milestones/${id}/deadline`, {method:'PUT',body:JSON.stringify({deadlineAt})}),
+  updateProjectDeadline: (id: string, deadlineAt: string) =>
+    request<{ id: string; deadlineAt: string }>(
+      `/v07/projects/${id}/deadline`, {method:'PUT',body:JSON.stringify({deadlineAt})}),
   history: (id: string) => request<ProgressHistory>(`/v07/milestones/${id}/history`),
   proposalReview: (id: string, isConfirmed: boolean, feedback: string) =>
     request(`/v07/milestones/${id}/proposal-review`, {method:'POST',body:JSON.stringify({isConfirmed,feedback})}),

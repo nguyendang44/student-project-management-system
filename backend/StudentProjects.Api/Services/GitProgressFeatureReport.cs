@@ -68,7 +68,7 @@ public static class GitProgressFeatureReport
     }
 
     public static IReadOnlyList<object> BuildAi(IReadOnlyList<ProgressAiFeature> features,
-        string source = "ai-feature-report") =>
+        string source = "ai-feature-report", int offset = 0) =>
         features.Select((f, i) => (object)new
         {
             file = f.Citations[0].File,
@@ -76,8 +76,8 @@ public static class GitProgressFeatureReport
             title = f.Name,
             evidence = f.Citations[0].Evidence,
             description = f.Summary,
-            factId = $"AF{i + 1}",
-            featureId = $"AF{i + 1}",
+            factId = $"AF{offset + i + 1}",
+            featureId = $"AF{offset + i + 1}",
             steps = f.Steps.Select(s => new
             {
                 detail = s.Detail,
@@ -333,6 +333,39 @@ public static class GitProgressFeatureReport
         .Where(f => f.Citations.Any(c =>
             c.File.EndsWith("/GitHubV10Endpoints.cs", StringComparison.OrdinalIgnoreCase)))
         .ToArray();
+
+    public static IReadOnlyList<ProgressAiFeature> GroupGitHubWork(
+        IReadOnlyList<ProgressAiFeature> routes, IReadOnlyList<ProgressFile> files)
+    {
+        const string repositoryRoute = "/projects/{projectId:guid}/repositories";
+        var link = routes.FirstOrDefault(route => HasMapping(route, "Post", "Link"));
+        var list = routes.FirstOrDefault(route => HasMapping(route, "Get", "List"));
+        if (link is null || list is null) return routes;
+
+        var steps = link.Steps.Concat(list.Steps).ToList();
+        const string testPath = "backend/StudentProjects.IntegrationTests/GitHubV10IntegrationTests.cs";
+        const string testDeclaration = "public async Task Student_can_link_and_view_but_other_student_cannot_access()";
+        var testFile = files.FirstOrDefault(file => file.Path.Equals(testPath, StringComparison.OrdinalIgnoreCase));
+        var test = testFile is null ? null : GitProgressEvidencePolicy.EvidenceLines(testFile, 100_000)
+            .Select(line => new ProgressEvidenceReference("", testFile.Path, line))
+            .FirstOrDefault(line => IsSafeAddedEvidence(line) && line.Evidence[1..].Trim() == testDeclaration);
+        if (test is not null)
+            steps.Add(new ProgressFeatureReportStep(
+                "Thêm ca kiểm thử tích hợp cho luồng liên kết, xem danh sách và quyền truy cập của sinh viên khác.",
+                [new ProgressFeatureCitation(test.File, test.Evidence)]));
+
+        var group = CreateFeature("Liên kết và xem danh sách repository của đồ án",
+            "Bổ sung thao tác liên kết repository GitHub và xem các repository đã liên kết với đồ án." +
+            (test is not null ? " Diff có thêm ca kiểm thử tích hợp cho hai thao tác." : ""), steps);
+        return new[] { group }.Concat(routes.Where(route => route != link && route != list)).ToArray();
+
+        static bool HasMapping(ProgressAiFeature feature, string verb, string handler)
+        {
+            var mapping = AddedEndpoint.Match(feature.Citations[0].Evidence[1..]);
+            return mapping.Groups["verb"].Value == verb && mapping.Groups["route"].Value == repositoryRoute &&
+                mapping.Groups["handler"].Value == handler;
+        }
+    }
 
     public static bool IsGitHubFeatureClaim(ProgressAiFeature feature) =>
         feature.Citations.Any(c =>

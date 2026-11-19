@@ -69,6 +69,8 @@ const aiDiagnosticSummary = computed(() => {
   if (d.analysisStatus === 'connection-error') return 'Không kết nối được Ollama. Dữ kiện Git vẫn được giữ; kiểm tra Ollama rồi phân tích lại.'
   if (d.analysisStatus === 'invalid-response') return 'Ollama trả phản hồi lỗi hoặc sai cấu trúc. Dữ kiện Git vẫn được giữ; có thể phân tích lại.'
   if (d.sentFiles === 0) return 'Không có đoạn diff phù hợp được gửi cho Ollama.'
+  if (hasGroupedDiffWork.value)
+    return 'Báo cáo gom các thao tác GitHub liên quan và mã kiểm thử tương ứng dựa trên bằng chứng trong Git diff.'
   if (evidence.value.some(x => x.source === 'diff-feature-report'))
     return 'Các nhóm AI chỉ chứng minh tuyến API hoặc chưa đủ căn cứ. Báo cáo hiển thị từng thao tác API có bằng chứng từ Git diff; không phải danh sách chức năng đã hoàn thành.'
   if (d.featureReportStatus === 'accepted') return `AI đã tổng hợp ${d.featureReportAccepted ?? d.featureGroups} chức năng/công việc từ các dòng thay đổi có bằng chứng.`
@@ -81,6 +83,8 @@ const aiDiagnosticSummary = computed(() => {
 const explanationDiagnosticSummary = computed(() => {
   const d = aiDiagnostics.value
   if (!d) return ''
+  if (hasGroupedDiffWork.value)
+    return `Ollama có ${d.featureReportAccepted ?? 0} nhóm qua kiểm tra. Báo cáo hiển thị ${aiFeatureItems.value.length} mục công việc sau khi đối chiếu với Git diff.`
   if (evidence.value.some(x => x.source === 'diff-feature-report'))
     return `Ollama có ${d.featureReportAccepted ?? 0} nhóm đạt bộ lọc gốc; báo cáo sử dụng các thao tác API đối chiếu trực tiếp từ Git để tránh gộp hoặc đặt tên sai.`
   if (d.featureReportStatus === 'accepted') return `Đã giữ ${d.featureReportAccepted ?? 0} chức năng có các bước và trích dẫn Git.`
@@ -92,7 +96,8 @@ const explanationDiagnosticSummary = computed(() => {
 // New reports use one card per user-visible feature; old report shapes remain readable.
 type DisplayWork = { item: GitProgressEvidence; explanation: string | null }
 const aiFeatureItems = computed(() => evidence.value.filter(x =>
-  x.source === 'ai-feature-report' || x.source === 'diff-feature-report'))
+  x.source === 'ai-feature-report' || x.source === 'diff-feature-report' || x.source === 'diff-work-report'))
+const hasGroupedDiffWork = computed(() => aiFeatureItems.value.some(x => x.source === 'diff-work-report'))
 const hasDiffFeatureFallback = computed(() => aiFeatureItems.value.some(x => x.source === 'diff-feature-report'))
 const hasAiFeatureReport = computed(() => aiFeatureItems.value.length > 0)
 const workItems = computed<DisplayWork[]>(() => {
@@ -130,7 +135,7 @@ const evidenceGroups = computed(() => {
 const groupedFeatureCount = computed(() => hasAiFeatureReport.value
   ? aiFeatureItems.value.length : workItems.value.filter(x => x.item.source === 'feature-rule').length)
 const supplemental = computed(() => groupedFeatureCount.value > 0
-  ? evidence.value.filter(x => !['feature-rule', 'ollama-feature', 'ai-feature-report', 'diff-feature-report'].includes(x.source || '')) : [])
+  ? evidence.value.filter(x => !['feature-rule', 'ollama-feature', 'ai-feature-report', 'diff-feature-report', 'diff-work-report'].includes(x.source || '')) : [])
 // This label is deterministic from path/type. It is NOT an AI judgment
 // about completion, passing tests, or functionality running in production.
 function supplementalKind(row: GitProgressEvidence): string {
@@ -339,6 +344,10 @@ onUnmounted(stopPolling)
           <p v-if="active.status === 'FAILED'" class="alert err">{{ active.errorMessage }}</p>
           <template v-if="active.status === 'COMPLETED'">
             <button class="secondary" @click="downloadReport">Tải kết quả JSON</button>
+            <RouterLink v-if="auth.role === 'Lecturer'" class="word-link"
+              :to="{ name: 'ai', query: { tab: 'word', projectId: active.projectId, repositoryId: active.repositoryLinkId, runId: active.id } }">
+              Đối chiếu báo cáo Word trong AI Code Analysis →
+            </RouterLink>
             <p v-if="aiDiagnostics?.analysisStatus && aiDiagnostics.analysisStatus !== 'available'" class="alert" role="status">
               {{ aiDiagnosticSummary }} Báo cáo Git hoàn tất, phần AI chưa hoàn tất.
             </p>
@@ -390,7 +399,7 @@ onUnmounted(stopPolling)
                 <div v-if="!aiUnavailable" class="gp-diag-metrics">
                   <span>Diff đã đọc: <b>{{ aiDiagnostics.sentFiles }} file</b></span>
                   <span>Dòng bằng chứng dùng để nhóm chức năng: <b>{{ aiDiagnostics.featureEvidenceLines ?? 0 }}</b></span>
-                  <span>Chức năng được xác minh trích dẫn: <b>{{ aiDiagnostics.featureReportAccepted ?? 0 }}</b></span>
+                  <span>Nhóm Ollama qua kiểm tra trích dẫn: <b>{{ aiDiagnostics.featureReportAccepted ?? 0 }}</b></span>
                 </div>
                 <p v-if="aiDiagnostics.modelItems > aiDiagnostics.parsedCandidates" class="hint">
                   {{ aiDiagnostics.modelItems - aiDiagnostics.parsedCandidates }} item thiếu cấu trúc tối thiểu.
@@ -421,8 +430,11 @@ onUnmounted(stopPolling)
               </template>
               <p class="hint">Chỉ lưu số lượng và nhóm lý do; không lưu câu trả lời thô của Ollama trong chẩn đoán.</p>
             </details>
-            <h4>{{ hasDiffFeatureFallback ? 'Các thao tác API có bằng chứng Git (đối chiếu)' : hasAiFeatureReport ? 'AI tổng hợp các chức năng sinh viên đã thực hiện' : 'Các công việc có bằng chứng từ thay đổi mã nguồn' }} ({{ groupedFeatureCount || workItems.length }})</h4>
-            <p class="hint" v-if="hasDiffFeatureFallback">
+            <h4>{{ hasGroupedDiffWork ? 'Các công việc có bằng chứng từ Git diff' : hasDiffFeatureFallback ? 'Các thao tác API có bằng chứng Git (đối chiếu)' : hasAiFeatureReport ? 'AI tổng hợp các chức năng sinh viên đã thực hiện' : 'Các công việc có bằng chứng từ thay đổi mã nguồn' }} ({{ groupedFeatureCount || workItems.length }})</h4>
+            <p class="hint" v-if="hasGroupedDiffWork">
+              Mở từng mục để đối chiếu các bước và dòng Git liên quan. Kết quả chạy kiểm thử cần được xác nhận riêng.
+            </p>
+            <p class="hint" v-else-if="hasDiffFeatureFallback">
               Những nhóm chỉ dựa vào khai báo tuyến API được tách thành thao tác riêng. Mỗi mục trích dòng tuyến API và
               có thể kèm mã frontend/handler liên quan trực tiếp nếu có dòng thay đổi tương ứng; không chứng minh chức năng đã chạy đúng.
             </p>
@@ -531,6 +543,7 @@ onUnmounted(stopPolling)
 button { cursor: pointer; padding: .65rem .8rem; background: #1d4ed8; border: 0; border-radius: 6px; color: white; }
 button:disabled { opacity: .55; cursor: default; }
 button.secondary { background: #475569; }
+.word-link { display: inline-block; margin: .5rem .75rem; }
 .gp-columns { display: grid; grid-template-columns: minmax(220px,1fr) minmax(0,2.2fr); gap: 1rem; }
 @media (max-width: 800px) { .gp-columns { grid-template-columns: 1fr; } }
 .history-item { text-align: left; display: grid; width: 100%; gap: .3rem; background: transparent; border: 1px solid #cbd5e1; color: inherit; margin-bottom: .45rem; }

@@ -116,6 +116,7 @@ public sealed class Project : Entity
     public Guid RegistrationPeriodId { get; set; }
     public Guid? AcceptedLecturerRequestId { get; set; }
     public string? Description { get; set; }
+    public DateTimeOffset? DeadlineAt { get; set; }
     public ProjectStatus Status { get; set; } = ProjectStatus.DRAFT;
 }
 

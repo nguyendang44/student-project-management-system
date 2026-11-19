@@ -10,6 +10,44 @@ public sealed class GitProgressFeatureReportV50Tests
     private const string View = "frontend/src/views/GitHubV10View.vue";
 
     [Fact]
+    public void Repository_link_and_list_share_a_work_item_with_their_integration_test()
+    {
+        const string test = "backend/StudentProjects.IntegrationTests/GitHubV10IntegrationTests.cs";
+        const string testLine = "+    public async Task Student_can_link_and_view_but_other_student_cannot_access()";
+        var files = new[]
+        {
+            new ProgressFile(Backend, "added", 3, 0,
+                "+api.MapGet(\"/projects/{projectId:guid}/repositories\", List);\n" +
+                "+api.MapPost(\"/projects/{projectId:guid}/repositories\", Link);\n" +
+                "+api.MapGet(\"/repositories/{id:guid}/commits\", Commits);"),
+            new ProgressFile(View, "added", 2, 0,
+                "+const found = await githubApi.list(requestedProjectId)\n" +
+                "+await githubApi.link(projectId.value, repositoryUrl.value.trim())"),
+            new ProgressFile(test, "added", 2, 0, testLine +
+                "\n+    public async Task Student_can_view_commits()")
+        };
+        var routes = GitProgressFeatureReport.BuildGitHubRouteReport(files);
+        var work = GitProgressFeatureReport.GroupGitHubWork(routes, files);
+
+        Assert.Equal(2, work.Count);
+        var group = Assert.Single(work.Where(x => x.Name == "Liên kết và xem danh sách repository của đồ án"));
+        Assert.Contains(group.Citations, x => x.File == Backend && x.Evidence.Contains("MapGet"));
+        Assert.Contains(group.Citations, x => x.File == Backend && x.Evidence.Contains("MapPost"));
+        Assert.Contains(group.Citations, x => x.File == View && x.Evidence.Contains("githubApi.list"));
+        Assert.Contains(group.Citations, x => x.File == View && x.Evidence.Contains("githubApi.link"));
+        Assert.Equal(testLine, Assert.Single(group.Citations.Where(x => x.File == test)).Evidence);
+        Assert.DoesNotContain(group.Citations, x => x.Evidence.Contains("Commits"));
+        Assert.Contains(work, x => x.Name == "Khai báo API xem commit");
+        Assert.Contains("chưa có kết quả chạy test", group.VerificationStatus);
+
+        var withoutTest = GitProgressFeatureReport.GroupGitHubWork(routes, files[..2]);
+        Assert.DoesNotContain(withoutTest[0].Citations, x => x.File == test);
+        var linkOnly = routes.Where(x => x.Name == "Khai báo API liên kết repository").ToArray();
+        var unchanged = GitProgressFeatureReport.GroupGitHubWork(linkOnly, files);
+        Assert.Equal(linkOnly[0], Assert.Single(unchanged));
+    }
+
+    [Fact]
     public void Feature_report_keeps_each_handlers_business_evidence_in_its_own_operation()
     {
         var files = new[]
