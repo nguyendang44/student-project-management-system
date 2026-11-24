@@ -29,7 +29,7 @@ public static partial class ProjectProgressV07Endpoints
         var (milestone, project) = await CriterionScope(id, db, ct);
         if (milestone is null || project is null) return Results.NotFound();
         if (!CanWrite(project, user, "Lecturer")) return Results.Forbid();
-        if (!Active(project) || milestone.Status == MilestoneStatus.APPROVED)
+        if (!Active(project))
             return Conflict("Chỉ đề xuất đầu việc cho Milestone và đồ án đang hoạt động.");
         var existing = await db.MilestoneCriteria.AsNoTracking().Where(c => c.MilestoneId == id && !c.IsDeleted)
             .Select(c => new { c.Title, c.AcceptanceCriteria, c.Points }).ToListAsync(ct);
@@ -68,8 +68,8 @@ public static partial class ProjectProgressV07Endpoints
         var (milestone, project) = await CriterionScope(id, db, ct);
         if (milestone is null || project is null) return Results.NotFound();
         if (!CanWrite(project, user, "Lecturer")) return Results.Forbid();
-        if (!Active(project) || milestone.Status == MilestoneStatus.APPROVED)
-            return Conflict("Không thể thêm đầu việc vào mốc đã duyệt hoặc đồ án đã đóng.");
+        if (!Active(project))
+            return Conflict("Không thể thêm đầu việc vào đồ án đã đóng.");
         if (inputs is null || inputs.Count is < 1 or > 20) return Invalid("Chọn từ 1 đến 20 đầu việc.");
         foreach (var item in inputs)
         {
@@ -82,7 +82,6 @@ public static partial class ProjectProgressV07Endpoints
         {
             var locked = await LockCriterionMilestone(db, id, ct);
             if (locked is null) return Results.NotFound();
-            if (locked.Status == MilestoneStatus.APPROVED) return Conflict("Milestone đã được duyệt.");
         }
         var existing = await db.MilestoneCriteria.AsNoTracking().Where(c => c.MilestoneId == id && !c.IsDeleted).ToListAsync(ct);
         if (existing.Count + inputs.Count > 20) return Conflict("Mỗi Milestone tối đa 20 đầu việc.");
@@ -102,6 +101,7 @@ public static partial class ProjectProgressV07Endpoints
                 Audit(db, Actor(user), "CRITERION_DEADLINE_UPDATED", "MilestoneCriterion", criterion.Id);
         }
         await db.SaveChangesAsync(ct);
+        await MilestoneAutoAssessment.SyncAsync(db, id, ct);
         if (transaction is not null) await transaction.CommitAsync(ct);
         return Results.Ok(new { id = ids[0], ids, createdCount = ids.Count });
     }
@@ -112,8 +112,8 @@ public static partial class ProjectProgressV07Endpoints
         var (milestone, project) = await CriterionScope(id, db, ct);
         if (milestone is null || project is null) return Results.NotFound();
         if (!CanWrite(project, user, "Lecturer")) return Results.Forbid();
-        if (!Active(project) || milestone.Status == MilestoneStatus.APPROVED)
-            return Conflict("Không thể sửa đầu việc trong mốc đã duyệt hoặc đồ án đã đóng.");
+        if (!Active(project))
+            return Conflict("Không thể sửa đầu việc trong đồ án đã đóng.");
         var error = CriterionError(input);
         if (error is not null) return Invalid(error);
         await using var transaction = db.Database.IsSqlServer()
@@ -122,7 +122,6 @@ public static partial class ProjectProgressV07Endpoints
         {
             var locked = await LockCriterionMilestone(db, id, ct);
             if (locked is null) return Results.NotFound();
-            if (locked.Status == MilestoneStatus.APPROVED) return Conflict("Milestone đã được duyệt.");
         }
         var criterion = await db.MilestoneCriteria.SingleOrDefaultAsync(c => c.Id == criterionId && c.MilestoneId == id && !c.IsDeleted, ct);
         if (criterion is null) return Results.NotFound();
@@ -142,6 +141,7 @@ public static partial class ProjectProgressV07Endpoints
         criterion.DeadlineAt = deadline;
         criterion.UpdatedAt = now;
         await db.SaveChangesAsync(ct);
+        await MilestoneAutoAssessment.SyncAsync(db, id, ct);
         if (transaction is not null) await transaction.CommitAsync(ct);
         return Results.Ok(new { criterion.Id });
     }
@@ -152,15 +152,14 @@ public static partial class ProjectProgressV07Endpoints
         var (milestone, project) = await CriterionScope(id, db, ct);
         if (milestone is null || project is null) return Results.NotFound();
         if (!CanWrite(project, user, "Lecturer")) return Results.Forbid();
-        if (!Active(project) || milestone.Status == MilestoneStatus.APPROVED)
-            return Conflict("Không thể xóa đầu việc trong mốc đã duyệt hoặc đồ án đã đóng.");
+        if (!Active(project))
+            return Conflict("Không thể xóa đầu việc trong đồ án đã đóng.");
         await using var transaction = db.Database.IsSqlServer()
             ? await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct) : null;
         if (transaction is not null)
         {
             var locked = await LockCriterionMilestone(db, id, ct);
             if (locked is null) return Results.NotFound();
-            if (locked.Status == MilestoneStatus.APPROVED) return Conflict("Milestone đã được duyệt.");
         }
         var criterion = await db.MilestoneCriteria.SingleOrDefaultAsync(c => c.Id == criterionId && c.MilestoneId == id, ct);
         if (criterion is null) return Results.NotFound();
@@ -170,6 +169,7 @@ public static partial class ProjectProgressV07Endpoints
             criterion.UpdatedAt = DateTimeOffset.UtcNow;
             Audit(db, Actor(user), "CRITERION_REMOVED", "MilestoneCriterion", criterion.Id);
             await db.SaveChangesAsync(ct);
+            await MilestoneAutoAssessment.SyncAsync(db, id, ct);
         }
         if (transaction is not null) await transaction.CommitAsync(ct);
         return Results.NoContent();

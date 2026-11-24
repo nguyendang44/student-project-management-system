@@ -119,6 +119,8 @@ public static class GitProgressV11Endpoints
                 existing.ErrorMessage = null;
                 await db.SaveChangesAsync(ct);
             }
+            db.AuditEntries.Add(MilestoneAssessmentRequests.CreateComparison(existing.Id, Actor(user)));
+            await db.SaveChangesAsync(ct);
             return Results.Ok(new { existing.Id, existing.Status, cached = existing.Status == "COMPLETED" });
         }
         var run = new GitProgressRun
@@ -127,6 +129,8 @@ public static class GitProgressV11Endpoints
             BaseSha = before, HeadSha = after, ModelName = ai.AnalysisKey
         };
         db.GitProgressRuns.Add(run);
+        var assessmentRequest = MilestoneAssessmentRequests.CreateComparison(run.Id, Actor(user));
+        db.AuditEntries.Add(assessmentRequest);
         try { await db.SaveChangesAsync(ct); }
         catch (DbUpdateException)
         {
@@ -134,7 +138,13 @@ public static class GitProgressV11Endpoints
             var duplicate = await db.GitProgressRuns.AsNoTracking().FirstOrDefaultAsync(x =>
                 x.RepositoryLinkId == id && x.BaseSha == before && x.HeadSha == after && x.ModelName == ai.AnalysisKey, ct);
             if (duplicate is not null)
+            {
+                db.Entry(run).State = EntityState.Detached;
+                db.Entry(assessmentRequest).State = EntityState.Detached;
+                db.AuditEntries.Add(MilestoneAssessmentRequests.CreateComparison(duplicate.Id, Actor(user)));
+                await db.SaveChangesAsync(ct);
                 return Results.Ok(new { duplicate.Id, duplicate.Status, cached = duplicate.Status == "COMPLETED" });
+            }
             throw;
         }
         return Results.Accepted($"/api/v1/v11/progress/{run.Id}", new { run.Id, run.Status, cached = false });

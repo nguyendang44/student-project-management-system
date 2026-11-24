@@ -19,10 +19,10 @@ public sealed partial class AiGitProgressClient(HttpClient http, IConfiguration 
 
     public Task<WordComparisonResult> CompareMilestoneAsync(IReadOnlyList<WordReportLine> claims,
         IReadOnlyList<WordEvidence> evidence, CancellationToken ct) =>
-        CompareClaimsAsync(claims, evidence, milestone: true, ct);
+        CompareMilestoneCorpusAsync(claims, evidence, ct);
 
     private async Task<WordComparisonResult> CompareClaimsAsync(IReadOnlyList<WordReportLine> claims,
-        IReadOnlyList<WordEvidence> evidence, bool milestone, CancellationToken ct)
+        IReadOnlyList<WordEvidence> evidence, bool milestone, CancellationToken ct, bool applyMilestoneGuard = true)
     {
         using var schema = JsonDocument.Parse("""
             {"type":"object","additionalProperties":false,"required":["items"],"properties":{
@@ -32,6 +32,9 @@ public sealed partial class AiGitProgressClient(HttpClient http, IConfiguration 
                   "evidenceIds":{"type":"array","maxItems":4,"items":{"type":"integer"}}
             }}}}}
             """);
+        var maxEvidence = milestone ? 24 : 4;
+        var schemaText = schema.RootElement.GetRawText().Replace("\"maxItems\":4", "\"maxItems\":" + maxEvidence);
+        using var effectiveSchema = JsonDocument.Parse(schemaText);
         var result = new List<WordComparisonRow>();
         var json = new JsonSerializerOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
         foreach (var batch in claims.Chunk(4))
@@ -44,27 +47,31 @@ public sealed partial class AiGitProgressClient(HttpClient http, IConfiguration 
                 Tên mục là gợi ý, bằng chứng nằm trong dòng Git. Tuyến API chỉ chứng minh tuyến đã được khai báo. Khai báo test chỉ chứng minh có ca test. Git diff không chứng minh test đạt, chạy thực tế hay triển khai thành công.
                 """ + (milestone ? """
 
+                Chỉ dẫn tối đa 24 ID nếu cần cho nhiều điều kiện. Đọc mô tả và từng bước triển khai của TẤT CẢ nhóm chức năng được gửi.
+                Mô tả/steps là ngữ cảnh, chỉ Evidence là dòng Git làm căn cứ. Không suy từ công nghệ chung hoặc projectId sang chức năng khác.
+                Không dùng API repository cho quản lý đề tài, đợt đăng ký, đề xuất/hướng dẫn; không dùng API xem commit/danh sách cho thao tác liên kết.
+                Không suy ra đã xây dựng cấu trúc dự án chỉ vì có file C#/Vue. Cần cấu hình/khởi tạo dự án tương ứng.
                 Mỗi công việc là một tiêu chí có điều kiện đạt trong Milestone. Đối chiếu từng phần của điều kiện với đúng chức năng và đúng lớp.
                 Ví dụ MapPost repositories và MapGet repositories chỉ chứng minh thao tác repository. Tuyến được bảo vệ không chứng minh ứng dụng có luồng đăng nhập hoặc đủ ba vai trò.
                 Yêu cầu xem commit và nhánh cần bằng chứng cho cả hai. Yêu cầu giao diện và API cần trích cả hai phía.
                 """ : "") + "\n" + JsonSerializer.Serialize(new { claims = batch, evidence }, json);
+            if (milestone) prompt = prompt.Replace("1 đến 4 ID", "1 đến 24 ID");
             var payload = JsonSerializer.Serialize(new
             {
-                model = Model, prompt, stream = false, format = schema.RootElement,
-                options = new { temperature = 0, num_predict = 650, num_ctx = 16384 }
+                model = Model, prompt, stream = false, format = effectiveSchema.RootElement,
+                options = new { temperature = 0, num_predict = milestone ? 1600 : 650, num_ctx = 16384 }
             });
-            using var response = await http.PostAsync("api/generate",
-                new StringContent(payload, Encoding.UTF8, "application/json"), ct);
+            using var requestTimeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            if (http.Timeout != Timeout.InfiniteTimeSpan) requestTimeout.CancelAfter(http.Timeout);
+            var responseToken = requestTimeout.Token;
+            using var request = new HttpRequestMessage(HttpMethod.Post, "api/generate")
+            { Content = new StringContent(payload, Encoding.UTF8, "application/json") };
+            using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, responseToken);
             response.EnsureSuccessStatusCode();
-            var body = await response.Content.ReadAsStringAsync(ct);
-            if (body.Length > 32_000) throw new InvalidDataException("Phản hồi đối chiếu quá dài.");
-            using var envelope = JsonDocument.Parse(body);
-            if (!String(envelope.RootElement, "response", out var generated) ||
-                (String(envelope.RootElement, "done_reason", out var reason) && reason == "length"))
-                throw new InvalidDataException("Ollama chưa hoàn thành lượt đối chiếu.");
+            var generated = await GitProgressComparisonResponse.ReadGeneratedAsync(response.Content, responseToken);
             using var answer = JsonDocument.Parse(generated);
-            var matches = GitProgressWordComparison.ValidateBatch(answer.RootElement, batch, evidence);
-            result.AddRange(milestone ? matches.Select(GitProgressMilestoneEvidence.Validate) : matches);
+            var matches = GitProgressWordComparison.ValidateBatch(answer.RootElement, batch, evidence, maxEvidence);
+            result.AddRange(milestone && applyMilestoneGuard ? matches.Select(GitProgressMilestoneEvidence.Validate) : matches);
         }
         return GitProgressWordComparison.Score(result);
     }

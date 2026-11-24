@@ -1,4 +1,5 @@
 import { request } from '../../api/client'
+import type { ProgressDeadlineWarning } from '../progress/progressDeadline.types'
 export interface NotificationV08 {
   id: string
   type: string
@@ -7,7 +8,13 @@ export interface NotificationV08 {
   createdAt: string
   targetUrl?: string | null // V0804_NOTIFICATION_LINKS
 }
+export interface ProjectDeadlineSchedule {
+  id: string; projectId: string; title: string; startAt: string | null; deadlineAt: string | null
+  percent: number | null; warning: ProgressDeadlineWarning | null
+}
 export interface DashboardV08 {
+  schedules: ProjectDeadlineSchedule[]
+  atRisk: number
   projectCount: number
   pendingPlans: number
   pendingReviews: number

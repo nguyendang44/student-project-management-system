@@ -12,7 +12,7 @@ namespace StudentProjects.Api.Endpoints;
 
 public static partial class ProjectProgressV07Endpoints
 {
-    private const string MilestoneAiEvidenceVersion = "milestone-evidence-v2";
+    private const string MilestoneAiEvidenceVersion = MilestoneAutoAssessment.EvidenceVersion;
 
     public sealed record CriterionInput(string? Title, string? AcceptanceCriteria, int Points, DateTimeOffset? DeadlineAt = null);
     public sealed record CriterionAiInput(Guid GitRunId);
@@ -28,6 +28,7 @@ public static partial class ProjectProgressV07Endpoints
         api.MapPut("/milestones/{id:guid}/criteria/{criterionId:guid}", EditCriterion);
         api.MapDelete("/milestones/{id:guid}/criteria/{criterionId:guid}", DeleteCriterion);
         api.MapPut("/milestones/{id:guid}/criteria/{criterionId:guid}/deadline", UpdateCriterionDeadline);
+        api.MapPost("/milestones/{id:guid}/criteria/recheck", RecheckCriteria).RequireRateLimiting("analysis-start");
         api.MapPost("/milestones/{id:guid}/criteria/ai", ProposeCriteria).RequireRateLimiting("analysis-start");
         api.MapPost("/milestones/{id:guid}/criteria/{criterionId:guid}/review", ReviewCriterion);
     }
@@ -66,6 +67,9 @@ public static partial class ProjectProgressV07Endpoints
         return Results.Ok(new
         {
             milestones = rows,
+            deadlineWarning = ProgressDeadlinePolicy.Evaluate(project.StartAt, project.DeadlineAt,
+                planned.Length == 0 ? null : Math.Round(planned.Average(x => (decimal)x.confirmedPercent), 1),
+                DateTimeOffset.UtcNow, Active(project)),
             confirmedPercent = planned.Length == 0 ? (decimal?)null :
                 Math.Round(planned.Average(x => (decimal)x.confirmedPercent), 1),
             proposedPercent = planned.Any(x => x.proposedPercent.HasValue)
@@ -101,7 +105,7 @@ public static partial class ProjectProgressV07Endpoints
             .OrderBy(x => x.CreatedAt).ThenBy(x => x.Id).ToListAsync(ct);
         var ids = items.Select(x => x.Id).ToArray();
         var history = await db.MilestoneCriterionAssessments.AsNoTracking().Where(x => ids.Contains(x.CriterionId) &&
-            (x.Source != "AI" || x.Note == MilestoneAiEvidenceVersion))
+            (x.Source != "AI" || (x.Note == MilestoneAiEvidenceVersion || x.Note == MilestoneAiEvidenceVersion + "-superseded")))
             .OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).ToListAsync(ct);
         var reportIds = history.Where(x => x.GitProgressRunId.HasValue).Select(x => x.GitProgressRunId!.Value)
             .Distinct().ToArray();
@@ -116,13 +120,20 @@ public static partial class ProjectProgressV07Endpoints
             .Take(60).ToListAsync(ct);
         var progress = MilestoneCriterionProgress.Calculate(items, history);
         var totalPoints = items.Sum(c => c.Points);
-        return Results.Ok(new { proposedPercent = progress.Proposed, reports = completedReports, criteria = items.Select(x => new
+        var check = await MilestoneAssessmentStatus.ReadAsync(db, id, project.Id, ct);
+        return Results.Ok(new { check, confirmedPercent = progress.Confirmed, proposedPercent = progress.Proposed, reports = completedReports, criteria = items.Select(x => new
         {
             x.Id, x.Title, x.AcceptanceCriteria, x.Points, x.DeadlineAt,
+            effectiveOutcome = MilestoneCriterionProgress.EffectiveOutcome(x, byCriterion[x.Id]),
+            awardedPoints = MilestoneCriterionProgress.EffectiveOutcome(x, byCriterion[x.Id]) == "full" ? x.Points : 0,
+            deadlineWarning = ProgressDeadlinePolicy.Evaluate(null, x.DeadlineAt,
+                MilestoneCriterionProgress.EffectiveOutcome(x, byCriterion[x.Id]) == "full" ? 100m : 0m,
+                DateTimeOffset.UtcNow, Active(project) && milestone.ProposalStatus == "CONFIRMED"),
             percentOfMilestone = totalPoints == 0 ? 0 : Math.Round(x.Points * 100m / totalPoints, 2),
             history = byCriterion[x.Id].Select(a => new
             {
-                isCurrent = !x.DefinitionChangedAt.HasValue || a.CreatedAt >= x.DefinitionChangedAt.Value,
+                isCurrent = (!x.DefinitionChangedAt.HasValue || a.CreatedAt >= x.DefinitionChangedAt.Value) &&
+                    (a.Source != "AI" || a.Note == MilestoneAiEvidenceVersion),
                 a.Id, a.Source, a.Outcome, note = a.Source == "AI" ? null : a.Note, a.CreatedAt,
                 git = a.GitProgressRunId is Guid run ? reports.GetValueOrDefault(run) : null,
                 evidence = JsonSerializer.Deserialize<WordEvidence[]>(a.EvidenceJson,
@@ -141,8 +152,8 @@ public static partial class ProjectProgressV07Endpoints
         var (milestone, project) = await CriterionScope(id, db, ct);
         if (milestone is null || project is null) return Results.NotFound();
         if (!CanWrite(project, user, "Lecturer")) return Results.Forbid();
-        if (!Active(project) || milestone.Status == MilestoneStatus.APPROVED)
-            return Conflict("Không thể đổi hạn đầu việc trong mốc đã duyệt hoặc đồ án đã đóng.");
+        if (!Active(project))
+            return Conflict("Không thể đổi hạn đầu việc trong đồ án đã đóng.");
         if (input?.DeadlineAt is null || input.DeadlineAt.Value.UtcDateTime.Year is < 2 or > 9998)
             return Invalid("Chọn ngày hoàn thành đầu việc hợp lệ.");
         await using var transaction = db.Database.IsSqlServer()
@@ -151,7 +162,6 @@ public static partial class ProjectProgressV07Endpoints
         {
             var locked = await LockCriterionMilestone(db, id, ct);
             if (locked is null) return Results.NotFound();
-            if (locked.Status == MilestoneStatus.APPROVED) return Conflict("Milestone đã được duyệt.");
         }
         var criterion = await db.MilestoneCriteria.SingleOrDefaultAsync(x => x.Id == criterionId && x.MilestoneId == id && !x.IsDeleted, ct);
         if (criterion is null) return Results.NotFound();
@@ -165,69 +175,50 @@ public static partial class ProjectProgressV07Endpoints
         return Results.Ok(new { criterion.Id, criterion.DeadlineAt });
     }
 
+    private static async Task<IResult> RecheckCriteria(Guid id, ClaimsPrincipal user,
+        StudentProjectsDbContext db, CancellationToken ct)
+    {
+        var (milestone, project) = await CriterionScope(id, db, ct);
+        if (milestone is null || project is null) return Results.NotFound();
+        if (!CanWrite(project, user, "Student") && !CanWrite(project, user, "Lecturer")) return Results.Forbid();
+        if (!Active(project) || milestone.ProposalStatus != "CONFIRMED")
+            return Conflict("Cần kế hoạch đã xác nhận và đồ án đang hoạt động.");
+        if (!await db.MilestoneCriteria.AnyAsync(c => c.MilestoneId == id && !c.IsDeleted, ct))
+            return Conflict("Milestone chưa có đầu việc để kiểm tra.");
+        var report = await db.GitProgressRuns.AsNoTracking().Where(r => r.ProjectId == project.Id && r.Status == "COMPLETED")
+            .OrderByDescending(r => r.CompletedAt).ThenByDescending(r => r.CreatedAt).FirstOrDefaultAsync(ct);
+        if (report is null) return Conflict("Chưa có báo cáo Git hoàn tất. Hãy so sánh hai commit trước.");
+        var pending = await db.AuditEntries.AsNoTracking().Where(a =>
+            a.Action == MilestoneAssessmentRequests.Manual && a.EntityId == id &&
+            !db.AuditEntries.Any(done => done.Action == MilestoneAssessmentRequests.Done && done.EntityId == a.Id))
+            .OrderByDescending(a => a.CreatedAt).FirstOrDefaultAsync(ct);
+        if (pending is not null) return Results.Accepted(value: new { pending.Id, queued = true });
+        var request = new MilestoneAssessmentRequest { MilestoneId = id, RunId = report.Id };
+        // The audit row retains the exact report selected at the time of this explicit request.
+        var entry = MilestoneAssessmentRequests.CreateRecheck(request, Actor(user));
+        db.AuditEntries.Add(entry);
+        await db.SaveChangesAsync(ct);
+        return Results.Accepted(value: new { entry.Id, report.BaseSha, report.HeadSha });
+    }
+
     private static async Task<IResult> ProposeCriteria(Guid id, CriterionAiInput? input, ClaimsPrincipal user,
         StudentProjectsDbContext db, AiGitProgressClient ai, CancellationToken ct)
     {
         var (milestone, project) = await CriterionScope(id, db, ct);
         if (milestone is null || project is null) return Results.NotFound();
         if (!CanWrite(project, user, "Student") && !CanWrite(project, user, "Lecturer")) return Results.Forbid();
-        if (!Active(project) || milestone.ProposalStatus != "CONFIRMED" || milestone.Status == MilestoneStatus.APPROVED)
+        if (!Active(project) || milestone.ProposalStatus != "CONFIRMED")
             return Conflict("Cần Milestone có kế hoạch đã xác nhận và đồ án đang hoạt động.");
         if (input is null || input.GitRunId == Guid.Empty) return Invalid("Chọn báo cáo Git đã hoàn tất.");
         var run = await db.GitProgressRuns.AsNoTracking().SingleOrDefaultAsync(x =>
             x.Id == input.GitRunId && x.ProjectId == project.Id && x.Status == "COMPLETED", ct);
         if (run is null) return Invalid("Báo cáo Git phải đã hoàn tất và thuộc cùng đồ án.");
-        var criteria = await db.MilestoneCriteria.AsNoTracking().Where(x => x.MilestoneId == id && !x.IsDeleted)
-            .OrderBy(x => x.CreatedAt).ThenBy(x => x.Id).ToListAsync(ct);
-        if (criteria.Count == 0) return Conflict("Giảng viên cần thêm đầu việc trước khi đối chiếu.");
-        var ids = criteria.Select(x => x.Id).ToArray();
-        var evaluated = await db.MilestoneCriterionAssessments.AsNoTracking()
-            .Where(x => ids.Contains(x.CriterionId) && x.Source == "AI" &&
-                x.Note == MilestoneAiEvidenceVersion && x.GitProgressRunId == run.Id &&
-                db.MilestoneCriteria.Any(c => c.Id == x.CriterionId &&
-                    (!c.DefinitionChangedAt.HasValue || x.CreatedAt >= c.DefinitionChangedAt.Value)))
-            .Select(x => x.CriterionId).ToListAsync(ct);
-        criteria.RemoveAll(x => evaluated.Contains(x.Id));
-        if (criteria.Count == 0) return Results.Ok(new { cached = true });
         try
         {
-            var evidence = GitProgressWordComparison.ReadEvidence(run.EvidenceJson);
-            if (evidence.Count == 0) return Conflict("Báo cáo Git chưa có dòng bằng chứng để đối chiếu.");
-            var claims = criteria.Select((x, i) => new WordReportLine(i + 1,
-                $"{x.Title}. Điều kiện đạt: {x.AcceptanceCriteria}")).ToArray();
-            var result = await ai.CompareMilestoneAsync(claims, evidence, ct);
-            await using var transaction = db.Database.IsSqlServer()
-                ? await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct) : null;
-            if (transaction is not null)
-            {
-                var locked = await LockCriterionMilestone(db, id, ct);
-                if (locked?.ProposalStatus != "CONFIRMED" || locked.Status == MilestoneStatus.APPROVED)
-                    return Conflict("Kế hoạch Milestone đã thay đổi trong khi đối chiếu.");
-            }
-            var currentDefinitions = await db.MilestoneCriteria.AsNoTracking()
-                .Where(c => ids.Contains(c.Id) && !c.IsDeleted).ToListAsync(ct);
-            if (criteria.Any(c => !currentDefinitions.Any(current => current.Id == c.Id &&
-                    current.DefinitionChangedAt == c.DefinitionChangedAt)))
-                return Conflict("Đầu việc đã thay đổi trong khi đối chiếu. Vui lòng thử lại.");
-            evaluated = await db.MilestoneCriterionAssessments.AsNoTracking()
-                .Where(x => ids.Contains(x.CriterionId) && x.Source == "AI" &&
-                x.Note == MilestoneAiEvidenceVersion && x.GitProgressRunId == run.Id &&
-                db.MilestoneCriteria.Any(c => c.Id == x.CriterionId &&
-                    (!c.DefinitionChangedAt.HasValue || x.CreatedAt >= c.DefinitionChangedAt.Value)))
-                .Select(x => x.CriterionId).ToListAsync(ct);
-            foreach (var row in result.Items)
-            {
-                var criterion = criteria[row.Id - 1];
-                if (evaluated.Contains(criterion.Id)) continue;
-                db.MilestoneCriterionAssessments.Add(new MilestoneCriterionAssessment
-                {
-                    CriterionId = criterion.Id, ActorUserId = Actor(user), GitProgressRunId = run.Id,
-                    Source = "AI", Outcome = row.Status, Note = MilestoneAiEvidenceVersion, EvidenceJson = JsonSerializer.Serialize(row.Evidence)
-                });
-            }
-            await db.SaveChangesAsync(ct);
-            if (transaction is not null) await transaction.CommitAsync(ct);
-            return Results.Ok(new { cached = false });
+            if (!await db.MilestoneCriteria.AnyAsync(c => c.MilestoneId == id && !c.IsDeleted, ct))
+                return Conflict("Giảng viên cần thêm đầu việc trước khi đối chiếu.");
+            await MilestoneAutoAssessment.EvaluateAsync(db, ai, id, run, Actor(user), ct);
+            return Results.Ok();
         }
         catch (InvalidDataException ex) { return Results.Json(new { message = ex.Message }, statusCode: 502); }
         catch (Exception ex) when (!ct.IsCancellationRequested &&
@@ -243,7 +234,7 @@ public static partial class ProjectProgressV07Endpoints
         var (milestone, project) = await CriterionScope(id, db, ct);
         if (milestone is null || project is null) return Results.NotFound();
         if (!CanWrite(project, user, "Lecturer")) return Results.Forbid();
-        if (!Active(project) || milestone.ProposalStatus != "CONFIRMED" || milestone.Status == MilestoneStatus.APPROVED)
+        if (!Active(project) || milestone.ProposalStatus != "CONFIRMED")
             return Conflict("Cần Milestone có kế hoạch đã xác nhận và đồ án đang hoạt động.");
         if (input?.IsMet is null || !await db.MilestoneCriteria.AnyAsync(x => x.Id == criterionId && x.MilestoneId == id && !x.IsDeleted, ct))
             return Invalid("Chọn đầu việc và kết quả xác nhận.");
@@ -264,7 +255,7 @@ public static partial class ProjectProgressV07Endpoints
         if (transaction is not null)
         {
             var locked = await LockCriterionMilestone(db, id, ct);
-            if (locked?.ProposalStatus != "CONFIRMED" || locked.Status == MilestoneStatus.APPROVED)
+            if (locked?.ProposalStatus != "CONFIRMED")
                 return Conflict("Kế hoạch Milestone đã thay đổi, vui lòng tải lại.");
         }
         var currentCriterion = await db.MilestoneCriteria.AsNoTracking()
@@ -273,13 +264,23 @@ public static partial class ProjectProgressV07Endpoints
         if (proposal is not null && currentCriterion.DefinitionChangedAt.HasValue &&
             proposal.CreatedAt < currentCriterion.DefinitionChangedAt.Value)
             return Conflict("Nội dung đầu việc đã sửa. Hãy chạy lại AI hoặc xác nhận bằng căn cứ mới.");
-        db.MilestoneCriterionAssessments.Add(new MilestoneCriterionAssessment
+        var review = new MilestoneCriterionAssessment
         {
             CriterionId = criterionId, ActorUserId = Actor(user), GitProgressRunId = proposal?.GitProgressRunId,
             Source = "REVIEW", Outcome = input.IsMet.Value ? "full" : "missing",
             Note = note.Length > 0 ? note : null, EvidenceJson = proposal?.EvidenceJson ?? "[]"
-        });
+        };
+        db.MilestoneCriterionAssessments.Add(review);
+        var oldRecords = await db.MilestoneCriterionAssessments.AsNoTracking()
+            .Where(a => a.CriterionId == criterionId && (a.Source != "AI" || a.Note == MilestoneAiEvidenceVersion)).ToListAsync(ct);
+        var notification = MilestoneAutoAssessment.ReviewNotification(project, milestone, currentCriterion, review, oldRecords);
+        if (notification is not null)
+        {
+            Audit(db, Actor(user), "CRITERION_REVIEW_UPDATED", "MilestoneCriterion", criterionId);
+            db.Notifications.Add(notification);
+        }
         await db.SaveChangesAsync(ct);
+        await MilestoneAutoAssessment.SyncAsync(db, id, ct);
         if (transaction is not null) await transaction.CommitAsync(ct);
         return Results.Ok();
     }

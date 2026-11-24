@@ -1,44 +1,16 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue'
-import { gitProgressApi, type GitProgressRunListItem,
+import { gitProgressApi, type GitProgressRun,
   type WordComparisonResult } from '../features/gitProgress/gitProgress.api'
 
-const props = defineProps<{ repositoryId: string; projectId: string; requestedRunId: string }>()
-const reports = ref<GitProgressRunListItem[]>([])
-const reportId = ref('')
-const loading = ref(false)
-const listError = ref('')
+const props = defineProps<{ report: GitProgressRun | null }>()
 const file = ref<File | null>(null)
 const result = ref<WordComparisonResult | null>(null)
 const error = ref('')
 const busy = ref(false)
-const selected = computed(() => reports.value.find(report => report.id === reportId.value))
-let listRequest: AbortController | undefined
+const selected = computed(() => props.report?.status === 'COMPLETED' ? props.report : null)
 let comparisonRequest: AbortController | undefined
 
-async function loadReports() {
-  listRequest?.abort()
-  reportId.value = ''
-  reports.value = []
-  listError.value = ''
-  if (!props.repositoryId) { loading.value = false; return }
-  const request = new AbortController()
-  listRequest = request
-  loading.value = true
-  try {
-    const history = await gitProgressApi.list(props.repositoryId, request.signal)
-    if (request.signal.aborted) return
-    reports.value = history.filter(report => report.status === 'COMPLETED')
-    reportId.value = reports.value.find(report => report.id === props.requestedRunId)?.id ?? ''
-    if (!reportId.value && props.requestedRunId)
-      listError.value = 'Báo cáo từ liên kết không còn trong danh sách hoàn tất của repository này. Hãy chọn một báo cáo khác.'
-  } catch (exception) {
-    if (!request.signal.aborted)
-      listError.value = exception instanceof Error ? exception.message : 'Không tải được báo cáo Git.'
-  } finally {
-    if (listRequest === request) { listRequest = undefined; loading.value = false }
-  }
-}
 function selectFile(event: Event) {
   file.value = (event.target as HTMLInputElement).files?.item(0) ?? null
   result.value = null
@@ -47,13 +19,14 @@ function selectFile(event: Event) {
 async function compare() {
   if (!selected.value || !file.value || busy.value) return
   const request = new AbortController()
+  const reportId = selected.value.id
   comparisonRequest = request
   busy.value = true
   result.value = null
   error.value = ''
   try {
-    const comparison = await gitProgressApi.compareWord(selected.value.id, file.value, request.signal)
-    if (!request.signal.aborted) result.value = comparison
+    const comparison = await gitProgressApi.compareWord(reportId, file.value, request.signal)
+    if (!request.signal.aborted && selected.value?.id === reportId) result.value = comparison
   } catch (exception) {
     if (!request.signal.aborted)
       error.value = exception instanceof Error ? exception.message : 'Không đối chiếu được báo cáo Word.'
@@ -62,41 +35,22 @@ async function compare() {
   }
 }
 
-watch(() => [props.repositoryId, props.requestedRunId], loadReports, { immediate: true })
-watch(reportId, () => {
+watch(() => selected.value?.id, () => {
   comparisonRequest?.abort()
+  comparisonRequest = undefined
   file.value = null
   result.value = null
   error.value = ''
   busy.value = false
-})
-onUnmounted(() => {
-  listRequest?.abort()
-  comparisonRequest?.abort()
-})
+}, { flush: 'sync' })
+onUnmounted(() => comparisonRequest?.abort())
 </script>
 
 <template>
   <section class="word-panel" aria-labelledby="word-heading">
     <h3 id="word-heading">Đối chiếu báo cáo Word</h3>
-    <p v-if="!repositoryId">Chọn đồ án và repository để xem các báo cáo Git đã hoàn tất.</p>
-    <p v-else-if="loading" role="status">Đang tải báo cáo Git…</p>
-    <p v-if="listError" role="alert" class="word-error">{{ listError }}</p>
-    <p v-if="repositoryId && !loading && !reports.length && !listError">
-      Repository này chưa có báo cáo Git đã hoàn tất.
-    </p>
-    <RouterLink v-if="repositoryId && !loading && !reports.length"
-      :to="{ path: '/git-progress', query: { projectId } }">Mở Phân tích tiến độ Git</RouterLink>
-    <label v-if="reports.length" class="word-field">
-      Báo cáo Git đã hoàn tất
-      <select v-model="reportId">
-        <option value="" disabled>Chọn cặp commit</option>
-        <option v-for="report in reports" :key="report.id" :value="report.id">
-          {{ report.baseSha.slice(0, 8) }} → {{ report.headSha.slice(0, 8) }} ·
-          {{ new Date(report.completedAt || report.createdAt).toLocaleString('vi-VN') }} · {{ report.modelName }}
-        </option>
-      </select>
-    </label>
+    <p v-if="!selected">Chọn báo cáo Git ở phần chức năng để đối chiếu.</p>
+    <p v-else class="word-hint">Dùng báo cáo đang hiển thị · {{ selected.baseSha.slice(0, 8) }} → {{ selected.headSha.slice(0, 8) }}</p>
     <form v-if="selected" :key="selected.id" class="word-form" @submit.prevent="compare">
       <label class="word-field">
         Báo cáo Word (.docx, tối đa 2 MB)

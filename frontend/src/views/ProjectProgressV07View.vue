@@ -35,6 +35,7 @@ const emptyMilestone = (): MilestoneForm => ({title:'', description:'', expected
 const milestoneForm = ref<MilestoneForm>(emptyMilestone())
 const projectDeadlineEditing = ref(false)
 const projectDeadlineDraft = ref('')
+const projectStartDraft = ref('')
 const percent = ref(0)
 const workDone = ref('')
 const note = ref('')
@@ -80,6 +81,15 @@ async function loadAssessmentSummary() {
   } catch (e) {
     if (!request.signal.aborted) assessmentError.value = errorText(e)
   }
+}
+async function refreshCriterionProgress() {
+  const id = projectId.value
+  await Promise.allSettled([
+    loadAssessmentSummary(),
+    projectProgressApi.milestones(id).then(items => {
+      if (id === projectId.value) milestones.value = sortMilestonesForDisplay(items)
+    }),
+  ])
 }
 onUnmounted(() => assessmentRequest?.abort())
 watch(() => props.moduleId, () => { void loadAssessmentSummary() })
@@ -177,12 +187,19 @@ async function saveMilestone() {
       : (role.value === 'Student' ? 'Đã gửi đề xuất Milestone cho giảng viên.' : 'Đã tạo Milestone.'))
 }
 function editProjectDeadline() {
+  projectStartDraft.value = selectedProject.value?.startAt ? deadlineDate(selectedProject.value.startAt) : ''
   projectDeadlineDraft.value = selectedProject.value?.deadlineAt ? deadlineDate(selectedProject.value.deadlineAt) : ''
   projectDeadlineEditing.value = true
 }
 async function saveProjectDeadline() {
   if (!selectedProject.value || role.value !== 'Lecturer' || !canWork.value || saving.value) return
+  const startDay = projectStartDraft.value
   const day = projectDeadlineDraft.value
+  const start = new Date(`${startDay}T00:00:00+07:00`)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDay) || !Number.isFinite(start.getTime()) || deadlineDate(start.toISOString()) !== startDay) {
+    error.value = 'Chọn ngày bắt đầu hợp lệ.'; return
+  }
+  if (startDay > day) { error.value = 'Ngày bắt đầu không được sau ngày kết thúc.'; return }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) { error.value = 'Chọn ngày nộp cuối cùng của đồ án.'; return }
   const deadline = new Date(`${day}T23:59:59.999+07:00`)
   if (!Number.isFinite(deadline.getTime()) || deadlineDate(deadline.toISOString()) !== day) {
@@ -190,10 +207,10 @@ async function saveProjectDeadline() {
   }
   saving.value = true; error.value = ''; success.value = ''
   try {
-    await projectProgressApi.updateProjectDeadline(projectId.value, deadline.toISOString())
+    await projectProgressApi.updateProjectDeadline(projectId.value, deadline.toISOString(), start.toISOString())
     await loadProjects()
     projectDeadlineEditing.value = false
-    success.value = 'Đã lưu deadline chung cho toàn dự án.'
+    success.value = 'Đã lưu ngày bắt đầu và ngày kết thúc toàn dự án.'
   } catch(e) { error.value = errorText(e) }
   finally { saving.value = false }
 }
@@ -220,7 +237,12 @@ watch(() => route.query.milestoneId, (id) => {
 watch(() => route.query.projectId, (id) => {
   if (typeof id === 'string' && projects.value.some(p => p.id === id)) projectId.value = id
 })
-onMounted(() => { void loadProjects() })
+let warningTimer: ReturnType<typeof setInterval> | undefined
+onMounted(() => {
+  void loadProjects()
+  warningTimer = setInterval(() => { if (projectId.value) void loadAssessmentSummary() }, 60000)
+})
+onUnmounted(() => { if (warningTimer) clearInterval(warningTimer) })
 </script>
 
 <template>
@@ -247,16 +269,21 @@ onMounted(() => { void loadProjects() })
     </label>
     <div v-if="selectedProject" class="v07-meta">
       <span>Trạng thái: <strong>{{statusName(selectedProject.status)}}</strong></span>
-      <span>Deadline toàn dự án · <strong>{{selectedProject.deadlineAt ? readableDeadline(selectedProject.deadlineAt) : 'Chưa đặt'}}</strong></span>
+      <span>Ngày bắt đầu · <strong>{{selectedProject.startAt ? readableDeadline(selectedProject.startAt) : 'Chưa đặt'}}</strong></span>
+      <span>Ngày kết thúc toàn dự án · <strong>{{selectedProject.deadlineAt ? readableDeadline(selectedProject.deadlineAt) : 'Chưa đặt'}}</strong></span>
       <span>Milestone đã duyệt: <strong>{{selectedProject.approvedCount}}/{{selectedProject.milestoneCount}}</strong></span>
-      <span v-if="!isMilestonesPage">Tiến độ theo cập nhật của sinh viên: <strong>{{selectedProject.percentComplete}}%</strong></span>
+      <span v-if="!isMilestonesPage">Tiến độ được tính: <strong>{{assessmentSummary?.confirmedPercent ?? selectedProject.percentComplete}}%</strong></span>
     </div>
+    <p v-if="assessmentSummary?.deadlineWarning" class="deadline-warning" :class="'deadline-' + assessmentSummary.deadlineWarning.level" role="status">
+      <strong>Cảnh báo toàn dự án:</strong> {{ assessmentSummary.deadlineWarning.message }}
+    </p>
     <template v-if="selectedProject && role === 'Lecturer' && canWork">
-      <button v-if="!projectDeadlineEditing" type="button" :disabled="saving" @click="editProjectDeadline">Đặt hoặc sửa deadline toàn dự án</button>
+      <button v-if="!projectDeadlineEditing" type="button" :disabled="saving" @click="editProjectDeadline">Đặt hoặc sửa lịch toàn dự án</button>
       <form v-else class="v07-form" @submit.prevent="saveProjectDeadline">
-        <label>Deadline toàn dự án <input v-model="projectDeadlineDraft" type="date" :disabled="saving" required /></label>
+        <label>Ngày bắt đầu <input v-model="projectStartDraft" type="date" :max="projectDeadlineDraft || undefined" :disabled="saving" required /></label>
+        <label>Ngày kết thúc <input v-model="projectDeadlineDraft" type="date" :min="projectStartDraft || undefined" :disabled="saving" required /></label>
         <div class="v07-actions">
-          <button type="submit" :disabled="saving">Lưu deadline</button>
+          <button type="submit" :disabled="saving">Lưu lịch dự án</button>
           <button type="button" :disabled="saving" @click="projectDeadlineEditing = false">Hủy</button>
         </div>
       </form>
@@ -272,12 +299,12 @@ onMounted(() => { void loadProjects() })
     </div>
     <p v-if="assessmentError" class="v07-muted" role="alert">Chưa tải được tiến độ xác nhận · {{ assessmentError }}</p>
     <div v-if="assessmentSummary" class="v07-meta">
-      <span>Tiến độ toàn dự án đã xác nhận · <strong>{{assessmentSummary.confirmedPercent === null ? 'Chưa có mốc' : assessmentSummary.confirmedPercent + '%'}}</strong></span>
+      <span>Tiến độ toàn dự án được tính · <strong>{{assessmentSummary.confirmedPercent === null ? 'Chưa có mốc' : assessmentSummary.confirmedPercent + '%'}}</strong></span>
       <span>{{assessmentSummary.completed}}/{{assessmentSummary.tracked}} mốc hoàn thành · {{assessmentSummary.reviewed}} mốc có xác nhận</span>
-      <span v-if="assessmentSummary.proposedPercent !== null">Dự kiến theo AI · <strong>{{assessmentSummary.proposedPercent}}%</strong> · Có đề xuất ở {{assessmentSummary.proposed}}/{{assessmentSummary.tracked}} mốc</span>
+      <span v-if="assessmentSummary.proposedPercent !== null">Bằng chứng AI tích lũy · <strong>{{assessmentSummary.proposedPercent}}%</strong> · Đã đối chiếu {{assessmentSummary.proposed}}/{{assessmentSummary.tracked}} mốc</span>
     </div>
     <div class="table-scroller"><table class="v07-table">
-      <thead><tr><th>Milestone</th><th>AI đề xuất</th><th>GV xác nhận</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <thead><tr><th>Milestone</th><th>Bằng chứng AI</th><th>Tiến độ được tính</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
       <tbody>
         <tr v-for="m in milestones" :key="m.id">
           <td><strong>{{m.title}}</strong><p class="v07-muted">{{m.description}}</p></td>
@@ -353,14 +380,14 @@ onMounted(() => { void loadProjects() })
     <p><strong>Kết quả cần đạt:</strong> {{selected.expectedResult || 'Chưa cập nhật'}}</p>
     <p v-if="assessmentError" role="alert" class="v07-muted">{{assessmentError}}</p>
     <div v-if="assessmentRows.has(selected.id)" class="v07-meta">
-      <span>AI đề xuất · <strong>{{assessmentRows.get(selected.id)?.proposedPercent == null ? 'Chưa đối chiếu' : assessmentRows.get(selected.id)?.proposedPercent + '%'}}</strong></span>
-      <span>Giảng viên xác nhận · <strong>{{assessmentRows.get(selected.id)?.confirmedPercent}}%</strong></span>
+      <span>Bằng chứng AI · <strong>{{assessmentRows.get(selected.id)?.proposedPercent == null ? 'Chưa đối chiếu' : assessmentRows.get(selected.id)?.proposedPercent + '%'}}</strong></span>
+      <span>Tiến độ được tính · <strong>{{assessmentRows.get(selected.id)?.confirmedPercent}}%</strong></span>
     </div>
     <MilestoneCriteriaPanel :key="selected.id" :milestone-id="selected.id"
-      :can-plan="role === 'Lecturer' && !!canWork && selected.status !== 'APPROVED'"
-      :can-assess="(role === 'Student' || role === 'Lecturer') && !!canWork && selected.proposalStatus === 'CONFIRMED' && selected.status !== 'APPROVED'"
-      :can-review="role === 'Lecturer' && !!canWork && selected.proposalStatus === 'CONFIRMED' && selected.status !== 'APPROVED'"
-      @changed="loadAssessmentSummary" />
+      :can-check="(role === 'Student' || role === 'Lecturer') && !!canWork && selected.proposalStatus === 'CONFIRMED'"
+      :can-plan="role === 'Lecturer' && !!canWork"
+      :can-review="role === 'Lecturer' && !!canWork && selected.proposalStatus === 'CONFIRMED'"
+      @changed="refreshCriterionProgress" />
 
     <form v-if="canStudentUpdate" class="v07-form" @submit.prevent="submitProgress">
       <label>Hoàn thành (%) <input v-model.number="percent" type="number" min="0" max="100" required /></label>
@@ -445,4 +472,7 @@ onMounted(() => { void loadProjects() })
 .v07-history > div { border-top: 1px solid #cbd5e1; padding: 12px 0; overflow-wrap: anywhere; }
 .v07-history p { padding: 8px 0; border-bottom: 1px solid #e2e8f0; overflow-wrap: anywhere; }
 .v07-last-submission { border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px 14px; margin-top: 12px; overflow-wrap: anywhere; }
+.deadline-warning { padding: 12px; border: 1px solid #fbbf24; border-radius: 8px; background: #fffbeb; color: #78350f; }
+.deadline-danger { border-color: #fca5a5; background: #fef2f2; color: #991b1b; }
+.deadline-info { border-color: #93c5fd; background: #eff6ff; color: #1e40af; }
 </style>

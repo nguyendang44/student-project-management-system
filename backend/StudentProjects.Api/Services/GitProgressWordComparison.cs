@@ -3,11 +3,14 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using StudentProjects.Domain.Entities;
 
 namespace StudentProjects.Api.Services;
 
 public sealed record WordReportLine(int Id, string Text);
-public sealed record WordEvidence(int Id, string Title, string File, string Evidence);
+public sealed record WordEvidence(int Id, string Title, string File, string Evidence,
+    Guid? GitProgressRunId = null, string? BaseSha = null, string? HeadSha = null,
+    string? FeatureDescription = null, string? ImplementationSteps = null);
 public sealed record WordComparisonRow(int Id, string Claim, string Status, IReadOnlyList<WordEvidence> Evidence);
 public sealed record WordComparisonResult(decimal Score, int Full, int Partial, int Missing,
     IReadOnlyList<WordComparisonRow> Items);
@@ -66,7 +69,7 @@ public static partial class GitProgressWordComparison
             .Select(t => t.Value)).Trim();
     }
 
-    public static IReadOnlyList<WordEvidence> ReadEvidence(string evidenceJson)
+    public static IReadOnlyList<WordEvidence> ReadEvidence(string evidenceJson, bool complete = false, GitProgressRun? source = null)
     {
         using var doc = JsonDocument.Parse(GitProgressDiagnostics.PublicEvidence(evidenceJson));
         var rows = new List<WordEvidence>();
@@ -96,17 +99,22 @@ public static partial class GitProgressWordComparison
                     x.Line.Contains("@click", StringComparison.Ordinal) ||
                     x.Line.Contains("await githubApi.", StringComparison.Ordinal)))
                 .Concat(distinct.Where(x => x.Line.Contains("await ", StringComparison.Ordinal)))
-                .Concat(distinct).Distinct().Take(10);
+                .Concat(distinct).Distinct().Take(complete ? int.MaxValue : 10);
             foreach (var (path, line) in representative)
-                rows.Add(new WordEvidence(rows.Count + 1, title.GetString()!, path, line));
+                rows.Add(new WordEvidence(rows.Count + 1, title.GetString()!, path, line,
+                    source?.Id, source?.BaseSha, source?.HeadSha,
+                    complete && item.TryGetProperty("description", out var description) ? description.GetString() : null,
+                    complete && item.TryGetProperty("steps", out var steps) && steps.ValueKind == JsonValueKind.Array
+                        ? string.Join("\n", steps.EnumerateArray().Where(s => s.ValueKind == JsonValueKind.Object && s.TryGetProperty("detail", out _))
+                            .Select(s => s.GetProperty("detail").GetString())) : null));
         }
-        if (rows.Sum(row => row.Title.Length + row.File.Length + row.Evidence.Length) > 16_000)
+        if (!complete && rows.Sum(row => row.Title.Length + row.File.Length + row.Evidence.Length) > 16_000)
             throw new InvalidDataException("Báo cáo có nhiều bằng chứng. Hãy đối chiếu với một khoảng commit nhỏ hơn.");
         return rows;
     }
 
     public static IReadOnlyList<WordComparisonRow> ValidateBatch(JsonElement answer,
-        IReadOnlyList<WordReportLine> claims, IReadOnlyList<WordEvidence> evidence)
+        IReadOnlyList<WordReportLine> claims, IReadOnlyList<WordEvidence> evidence, int maxEvidence = 4)
     {
         if (answer.ValueKind != JsonValueKind.Object || !answer.TryGetProperty("items", out var items) ||
             items.ValueKind != JsonValueKind.Array || items.GetArrayLength() != claims.Count)
@@ -122,7 +130,7 @@ public static partial class GitProgressWordComparison
                 !byId.TryGetValue(key, out var claim) || !seen.Add(key) ||
                 !item.TryGetProperty("status", out var statusValue) || statusValue.ValueKind != JsonValueKind.String ||
                 !item.TryGetProperty("evidenceIds", out var ids) || ids.ValueKind != JsonValueKind.Array ||
-                ids.GetArrayLength() > 4)
+                ids.GetArrayLength() > maxEvidence)
                 throw new InvalidDataException("Kết quả đối chiếu từ Ollama sai cấu trúc.");
             var status = statusValue.GetString()!;
             if (status is not ("full" or "partial" or "missing"))

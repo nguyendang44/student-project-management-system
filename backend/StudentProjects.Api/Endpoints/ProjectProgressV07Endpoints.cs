@@ -1,3 +1,4 @@
+using StudentProjects.Api.Services;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using StudentProjects.Domain.Entities;
@@ -73,7 +74,7 @@ public static partial class ProjectProgressV07Endpoints
             p.Id, p.TopicId, TopicTitle = topics.GetValueOrDefault(p.TopicId, "Đề tài"),
             p.StudentUserId, StudentName = people.GetValueOrDefault(p.StudentUserId, "Sinh viên"),
             p.LecturerUserId, LecturerName = people.GetValueOrDefault(p.LecturerUserId, "Giảng viên"),
-            Status = p.Status.ToString(), p.Description, p.DeadlineAt,
+            Status = p.Status.ToString(), p.Description, p.StartAt, p.DeadlineAt,
             MilestoneCount = milestones.Count(m => m.ProjectId == p.Id),
             ApprovedCount = milestones.Count(m => m.ProjectId == p.Id && m.Status == MilestoneStatus.APPROVED),
             PercentComplete = milestones.Any(m => m.ProjectId == p.Id)
@@ -107,6 +108,12 @@ public static partial class ProjectProgressV07Endpoints
     // V075_DEADLINE_END_OF_DAY
     // Business deadline = last tick of the selected calendar day in Vietnam (UTC+07:00).
     // Vietnam currently has no daylight-saving transitions.
+    private static DateTimeOffset StartOfProjectDay(DateTimeOffset value)
+    {
+        var local = value.ToOffset(TimeSpan.FromHours(7));
+        return new DateTimeOffset(local.Year, local.Month, local.Day, 0, 0, 0, TimeSpan.FromHours(7));
+    }
+
     private static DateTimeOffset EndOfDeadlineDay(DateTimeOffset value)
     {
         var local = value.ToOffset(TimeSpan.FromHours(7));
@@ -232,7 +239,7 @@ public static partial class ProjectProgressV07Endpoints
         return Results.Ok(new { item.Id });
     }
 
-    public sealed record ProjectDeadlineInput(DateTimeOffset? DeadlineAt);
+    public sealed record ProjectDeadlineInput(DateTimeOffset? DeadlineAt, DateTimeOffset? StartAt = null);
 
     private static async Task<IResult> UpdateProjectDeadline(Guid id, ProjectDeadlineInput? req,
         ClaimsPrincipal user, StudentProjectsDbContext db, CancellationToken ct)
@@ -245,13 +252,20 @@ public static partial class ProjectProgressV07Endpoints
             return Invalid("Chọn ngày nộp cuối cùng của toàn đồ án.");
         if (req.DeadlineAt.Value.UtcDateTime.Year is < 2 or > 9998)
             return Invalid("Ngày nộp nằm ngoài phạm vi hỗ trợ.");
+        if (req.StartAt.HasValue && req.StartAt.Value.UtcDateTime.Year is < 2 or > 9998)
+            return Invalid("Ngày bắt đầu nằm ngoài phạm vi hỗ trợ.");
         var deadline = EndOfDeadlineDay(req.DeadlineAt.Value);
-        if (deadline == project.DeadlineAt) return Results.Ok(new { project.Id, project.DeadlineAt });
+        var startInput = req.StartAt ?? project.StartAt;
+        var start = startInput.HasValue ? StartOfProjectDay(startInput.Value) : (DateTimeOffset?)null;
+        if (start > deadline) return Invalid("Ngày bắt đầu không được sau ngày kết thúc.");
+        if (deadline == project.DeadlineAt && start == project.StartAt)
+            return Results.Ok(new { project.Id, project.StartAt, project.DeadlineAt });
+        project.StartAt = start;
         project.DeadlineAt = deadline;
         project.UpdatedAt = DateTimeOffset.UtcNow;
         Audit(db, Actor(user), "PROJECT_DEADLINE_UPDATED", "Project", project.Id);
         await db.SaveChangesAsync(ct);
-        return Results.Ok(new { project.Id, project.DeadlineAt });
+        return Results.Ok(new { project.Id, project.StartAt, project.DeadlineAt });
     }
 
     private static async Task<IResult> RetiredMilestoneDeadline(Guid id, ClaimsPrincipal user,
@@ -320,7 +334,9 @@ public static partial class ProjectProgressV07Endpoints
             return Invalid("Tiến độ phải từ 0 đến 100, nội dung đã làm từ 1 đến 4000 ký tự.");
         db.ProgressUpdates.Add(new ProgressUpdate { MilestoneId = id, StudentUserId = Actor(principal),
             PercentComplete = req.PercentComplete, WorkDone = Text(req.WorkDone), Note = Text(req.Note) });
-        item.PercentComplete = req.PercentComplete; item.Status = MilestoneStatus.IN_PROGRESS;
+        if (await db.MilestoneCriteria.AnyAsync(c => c.MilestoneId == id && !c.IsDeleted, ct))
+            await MilestoneAutoAssessment.SyncAsync(db, id, ct);
+        else { item.PercentComplete = req.PercentComplete; item.Status = MilestoneStatus.IN_PROGRESS; }
         item.UpdatedAt = DateTimeOffset.UtcNow;
         if (project.Status == ProjectStatus.REGISTERED || project.Status == ProjectStatus.DRAFT)
         { project.Status = ProjectStatus.IN_PROGRESS; project.UpdatedAt = DateTimeOffset.UtcNow; }

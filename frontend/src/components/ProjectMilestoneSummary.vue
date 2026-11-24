@@ -98,7 +98,8 @@ onMounted(() => { void refresh() })
     <template v-if="selectedProject">
       <div class="spms-overview-meta">
         <span>Trạng thái dự án: <strong>{{statusName(selectedProject.status)}}</strong></span>
-        <span>Deadline toàn dự án · <strong>{{selectedProject.deadlineAt ? formatDate(selectedProject.deadlineAt) : 'Chưa đặt'}}</strong></span>
+        <span>Ngày bắt đầu · <strong>{{selectedProject.startAt ? formatDate(selectedProject.startAt) : 'Chưa đặt'}}</strong></span>
+        <span>Ngày kết thúc toàn dự án · <strong>{{selectedProject.deadlineAt ? formatDate(selectedProject.deadlineAt) : 'Chưa đặt'}}</strong></span>
         <span>Đã duyệt: <strong>{{selectedProject.approvedCount}}/{{selectedProject.milestoneCount}}</strong></span>
       </div>
       <div class="spms-overview-percent">

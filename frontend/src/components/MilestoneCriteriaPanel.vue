@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { milestoneCriteriaApi, type MilestoneCriterion, type CriterionPlanDraft, type CriterionWrite } from '../features/progress/milestoneCriteria.api'
 
-const props = defineProps<{ milestoneId: string; canPlan: boolean; canAssess: boolean; canReview: boolean }>()
+const props = defineProps<{ milestoneId: string; canPlan: boolean; canCheck: boolean; canReview: boolean }>()
 const emit = defineEmits<{ changed: [] }>()
 const details = ref<Awaited<ReturnType<typeof milestoneCriteriaApi.details>> | null>(null)
 const points = computed(() => details.value?.criteria.reduce((sum, criterion) => sum + criterion.points, 0) ?? 0)
@@ -11,7 +11,6 @@ const newDeadline = ref('')
 const editingDeadlineId = ref('')
 const deadlineDraft = ref('')
 const formOpen = ref(false)
-const selectedReport = ref('')
 const notes = ref<Record<string, string>>({})
 const pending = ref('')
 const planDraft = ref<(CriterionPlanDraft & { key: number; checked: boolean; day: string })[]>([])
@@ -20,10 +19,33 @@ const editForm = ref({ title: '', acceptanceCriteria: '', points: 10, day: '' })
 const error = ref('')
 const info = ref('')
 const lifetime = new AbortController()
+let refreshTimer: ReturnType<typeof setInterval> | undefined
+let reloadSequence = 0
+let lastRefresh = 0
+let polling = false
+const checkState = computed(() => details.value?.check?.state ?? 'idle')
+const checking = computed(() => checkState.value === 'queued' || checkState.value === 'running')
+const checkLabel = computed(() => ({ idle: 'Chưa kiểm tra', queued: 'Chờ kiểm tra', running: 'Đang kiểm tra lại',
+  completed: 'Hoàn thành kiểm tra', failed: 'Kiểm tra chưa thành công', cancelled: 'Đã dừng kiểm tra' }[checkState.value]))
+const checkTime = computed(() => {
+  const value = details.value?.check?.completedAt ?? details.value?.check?.startedAt ?? details.value?.check?.requestedAt
+  return value ? new Date(value).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : ''
+})
+
+watch(checkState, (state, previous) => {
+  if (!previous || !info.value.startsWith('Đã gửi yêu cầu đọc')) return
+  if (state === 'completed') info.value = 'Đã hoàn thành kiểm tra và cập nhật kết quả.'
+  else if (state === 'failed' || state === 'cancelled') info.value = ''
+})
 
 function errorText(e: unknown): string { return e instanceof Error ? e.message : 'Có lỗi khi cập nhật đầu việc.' }
 async function reload() {
-  details.value = await milestoneCriteriaApi.details(props.milestoneId, lifetime.signal)
+  const sequence = ++reloadSequence
+  const value = await milestoneCriteriaApi.details(props.milestoneId, lifetime.signal)
+  if (!lifetime.signal.aborted && sequence === reloadSequence) {
+    details.value = value
+    lastRefresh = Date.now()
+  }
 }
 async function perform(kind: string, action: () => Promise<unknown>, message: string) {
   pending.value = kind
@@ -116,9 +138,10 @@ function saveDeadline(criterion: MilestoneCriterion) {
     editingDeadlineId.value = ''
   }, 'Đã lưu deadline của đầu việc.')
 }
-function propose() {
-  void perform('ai', () => milestoneCriteriaApi.propose(props.milestoneId, selectedReport.value, lifetime.signal),
-    'Đã cập nhật đề xuất AI cho báo cáo Git đã chọn.')
+function recheck() {
+  if (checking.value || pending.value) return
+  void perform('recheck', () => milestoneCriteriaApi.recheck(props.milestoneId),
+    'Đã gửi yêu cầu đọc tất cả báo cáo Git hoàn tất của đồ án. Kết quả sẽ tự cập nhật khi AI xử lý xong.')
 }
 function review(criterion: MilestoneCriterion, isMet: boolean, proposalId: string | null) {
   void perform(criterion.id, async () => {
@@ -127,15 +150,28 @@ function review(criterion: MilestoneCriterion, isMet: boolean, proposalId: strin
   }, isMet ? 'Đã xác nhận đầu việc đạt.' : 'Đã lưu nhận xét cần bổ sung.')
 }
 const latest = (criterion: MilestoneCriterion, source: 'AI' | 'REVIEW') =>
-  criterion.history.find(assessment => assessment.source === source && assessment.isCurrent !== false)
+  (source === 'AI'
+    ? criterion.history.find(assessment => assessment.source === source && assessment.isCurrent !== false && assessment.outcome === 'full')
+      ?? criterion.history.find(assessment => assessment.source === source && assessment.isCurrent !== false)
+    : criterion.history.find(assessment => assessment.source === source && assessment.isCurrent !== false))
 const outcome = (source: 'AI' | 'REVIEW', value: string) => source === 'REVIEW'
   ? (value === 'full' ? 'Đã xác nhận đạt' : 'Cần bổ sung')
   : ({ full: 'Có bằng chứng', partial: 'Có bằng chứng một phần', missing: 'Chưa đủ dữ liệu' }[value] ?? value)
 onMounted(async () => {
-  try { await reload() }
+  try {
+    await reload()
+    refreshTimer = setInterval(() => {
+      if (pending.value || polling || (!checking.value && Date.now() - lastRefresh < 15000)) return
+      polling = true
+      const previous = JSON.stringify([details.value?.check, details.value?.criteria.map(c => [c.id, c.history[0]?.id, c.awardedPoints, c.deadlineWarning?.code])])
+      void reload().then(() => {
+        if (previous !== JSON.stringify([details.value?.check, details.value?.criteria.map(c => [c.id, c.history[0]?.id, c.awardedPoints, c.deadlineWarning?.code])])) emit('changed')
+      }).catch(() => {}).finally(() => { polling = false })
+    }, 3000)
+  }
   catch (e) { if (!lifetime.signal.aborted) error.value = errorText(e) }
 })
-onUnmounted(() => lifetime.abort())
+onUnmounted(() => { lifetime.abort(); if (refreshTimer) clearInterval(refreshTimer) })
 </script>
 
 <template>
@@ -146,8 +182,9 @@ onUnmounted(() => lifetime.abort())
     <template v-if="details">
       <p>Tổng trọng số <strong>{{ points }}</strong></p>
       <p v-if="points">Tiến độ = trọng số đầu việc đã đạt / {{ points }} × 100%.</p>
-      <p v-if="details.proposedPercent != null">Tiến độ Milestone theo AI <strong>{{ details.proposedPercent }}%</strong></p>
-      <p v-if="details.criteria.length">AI đối chiếu báo cáo Git đã chọn. Mục đủ bằng chứng được tính trọng số. Mục có bằng chứng một phần hoặc thiếu bằng chứng được tính 0 điểm đề xuất.</p>
+      <p>Tiến độ được tính <strong>{{ details.confirmedPercent }}%</strong></p>
+      <p v-if="details.proposedPercent != null">Bằng chứng AI tích lũy <strong>{{ details.proposedPercent }}%</strong></p>
+      <p v-if="details.criteria.length">AI đọc các nhóm chức năng, mô tả, bước triển khai và dòng Git của tất cả báo cáo hoàn tất để đối chiếu đầu việc. Chỉ chạy sau khi so sánh hai commit hoặc bấm kiểm tra lại. Mục một phần hoặc thiếu bằng chứng nhận 0 điểm. Quyết định giảng viên được ưu tiên; khi giảng viên sửa, sinh viên nhận thông báo.</p>
       <p v-if="!details.criteria.length">Chưa có đầu việc để tính tiến độ cho mốc này.</p>
       <button v-if="canPlan && details.criteria.length < 20" type="button" :disabled="!!pending" @click="generatePlan">
         {{ pending === 'plan-ai' ? 'AI đang đề xuất đầu việc…' : 'AI tạo đầu việc từ dự án và Milestone' }}
@@ -180,20 +217,19 @@ onUnmounted(() => lifetime.abort())
           <button type="button" :disabled="!!pending" @click="formOpen = false">Hủy</button>
         </div>
       </form>
-      <form v-if="canAssess && details.criteria.length" class="criteria-form" @submit.prevent="propose">
-        <label>Báo cáo Git đã hoàn tất của đồ án
-          <select v-model="selectedReport" :disabled="!!pending">
-            <option value="">Chọn cặp commit để đối chiếu</option>
-            <option v-for="report in details.reports" :key="report.id" :value="report.id">
-              {{ report.baseSha.slice(0, 8) }} → {{ report.headSha.slice(0, 8) }} · {{ report.repositoryUrl }}
-            </option>
-          </select>
-        </label>
-        <button type="submit" :disabled="!selectedReport || !!pending">
-          {{ pending === 'ai' ? 'Đang đối chiếu bằng chứng…' : 'AI đề xuất tiến độ' }}
+      <div v-if="details.criteria.length" class="check-status" :class="'check-' + checkState"
+        role="status" aria-live="polite" :aria-busy="checking || pending === 'recheck'">
+        <p><span v-if="checking || pending === 'recheck'" class="check-spinner" aria-hidden="true" />
+          <strong>{{ pending === 'recheck' ? 'Đang gửi yêu cầu kiểm tra…' : checkLabel }}</strong>
+          <span v-if="checkTime && pending !== 'recheck'"> · {{ checkTime }}</span>
+        </p>
+        <p>{{ details.check?.message ?? 'Bấm kiểm tra lại để AI đối chiếu các đầu việc.' }}</p>
+      </div>
+      <div v-if="canCheck && details.criteria.length" class="criteria-actions">
+        <button type="button" :disabled="!!pending || checking" @click="recheck">
+          {{ pending === 'recheck' ? 'Đang gửi yêu cầu…' : checkState === 'running' ? 'Đang kiểm tra lại…' : checkState === 'queued' ? 'Đang chờ kiểm tra…' : 'Kiểm tra lại tiến độ' }}
         </button>
-        <p v-if="!details.reports.length"><RouterLink to="/git-progress">Tạo báo cáo tiến độ Git</RouterLink></p>
-      </form>
+      </div>
       <article v-for="criterion in details.criteria" :key="criterion.id" class="criterion">
         <h5>{{ criterion.title }} · Trọng số {{ criterion.points }}</h5>
         <p>Chiếm {{ criterion.percentOfMilestone }}% Milestone</p>
@@ -213,6 +249,9 @@ onUnmounted(() => lifetime.abort())
             <button type="button" :disabled="!!pending" @click="editingId = ''">Hủy</button>
           </div>
         </form>
+        <p v-if="criterion.deadlineWarning" class="criterion-warning" :class="'criterion-' + criterion.deadlineWarning.level" role="status">
+          {{ criterion.deadlineWarning.message }}
+        </p>
         <p>Deadline đầu việc · <strong>{{ criterion.deadlineAt ? dateText(criterion.deadlineAt) : 'Chưa đặt' }}</strong></p>
         <template v-if="canPlan">
           <button v-if="editingDeadlineId !== criterion.id" type="button" :disabled="!!pending"
@@ -228,18 +267,20 @@ onUnmounted(() => lifetime.abort())
         <p>AI · {{ latest(criterion, 'AI') ? outcome('AI', latest(criterion, 'AI')!.outcome) : 'Chưa đối chiếu' }}
           <strong v-if="latest(criterion, 'AI')"> · {{ latest(criterion, 'AI')!.outcome === 'full' ? criterion.points : 0 }}/{{ criterion.points }} điểm theo báo cáo</strong>
         </p>
-        <p>Giảng viên · {{ latest(criterion, 'REVIEW') ? outcome('REVIEW', latest(criterion, 'REVIEW')!.outcome) : 'Chờ xác nhận' }}</p>
+        <p><strong>Điểm được tính · {{ criterion.awardedPoints }}/{{ criterion.points }}</strong></p>
+        <p>Giảng viên · {{ latest(criterion, 'REVIEW') ? outcome('REVIEW', latest(criterion, 'REVIEW')!.outcome) : 'Chưa điều chỉnh (dùng kết quả AI)' }}</p>
         <details v-if="criterion.history.length">
           <summary>Lịch sử và bằng chứng</summary>
           <div v-for="record in criterion.history" :key="record.id" class="criterion">
             <p>{{ record.source === 'AI' ? 'AI' : 'Giảng viên' }} · {{ outcome(record.source, record.outcome) }} ·
               {{ new Date(record.createdAt).toLocaleDateString('vi-VN') }}</p>
-            <p v-if="record.isCurrent === false">Đánh giá cho nội dung trước khi sửa.</p>
+            <p v-if="record.isCurrent === false">Đánh giá đã được thay thế hoặc cho nội dung trước khi sửa.</p>
             <p v-if="record.git">{{ record.git.baseSha.slice(0, 8) }} → {{ record.git.headSha.slice(0, 8) }}</p>
             <p v-if="record.note">{{ record.note }}</p>
             <details v-if="record.evidence.length">
               <summary>Xem dòng Git</summary>
               <div v-for="line in record.evidence" :key="line.id">
+                <p v-if="line.baseSha && line.headSha">{{ line.baseSha.slice(0, 8) }} → {{ line.headSha.slice(0, 8) }}</p>
                 <p>{{ line.file }}</p><pre>{{ line.evidence }}</pre>
               </div>
             </details>
@@ -260,6 +301,13 @@ onUnmounted(() => lifetime.abort())
 </template>
 
 <style scoped>
+.check-status { margin: .8rem 0; padding: .7rem .85rem; border: 1px solid #cbd5e1; border-radius: 8px; }
+.check-queued, .check-running { background: #eff6ff; border-color: #93c5fd; }
+.check-completed { background: #f0fdf4; border-color: #86efac; }
+.check-failed, .check-cancelled { background: #fff7ed; border-color: #fdba74; }
+.check-spinner { display: inline-block; width: .85rem; height: .85rem; margin-right: .4rem; border: 2px solid #bfdbfe; border-top-color: #2563eb; border-radius: 50%; vertical-align: middle; animation: check-spin 1s linear infinite; }
+@keyframes check-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .check-spinner { animation: none; } }
 .criteria-panel { margin-top: 1rem; padding-top: .75rem; border-top: 1px solid #cbd5e1; }
 .criteria-panel :is(h4,h5,p) { margin: .35rem 0; }
 .criteria-form { display: grid; gap: .55rem; margin: .7rem 0; justify-items: start; }
@@ -268,4 +316,6 @@ onUnmounted(() => lifetime.abort())
 .criteria-actions { display: flex; flex-wrap: wrap; gap: .4rem; }
 .criterion { margin-top: .8rem; border: 1px solid #cbd5e1; border-radius: 8px; padding: .75rem; overflow-wrap: anywhere; }
 .criterion pre { white-space: pre-wrap; overflow-wrap: anywhere; background: rgba(100,116,139,.09); padding: .5rem; }
+.criterion-warning { padding: .65rem; border-radius: 6px; background: #fffbeb; color: #78350f; border: 1px solid #fbbf24; }
+.criterion-danger { background: #fef2f2; color: #991b1b; border-color: #fca5a5; }
 </style>

@@ -36,8 +36,8 @@ public static class V08NotificationLinks
             if (kind == "REQ") requestIds.Add(id);
             else if (kind == "REQEV") requestEventIds.Add(id);
             else if (kind is "DUE" or "LATE") milestoneIds.Add(id);
-            else if (kind is "PDUE" or "PLATE") projectIds.Add(id);
-            else if (kind is "CDUE" or "CLATE") criterionIds.Add(id);
+            else if (kind is "PDUE" or "PLATE" or "PRISK") projectIds.Add(id);
+            else if (kind is "CDUE" or "CLATE" or "CREVIEW" or "CRISK") criterionIds.Add(id);
             else if (kind == "SUB") submissionIds.Add(id);
             else if (kind == "REVIEW") reviewIds.Add(id);
             else if (kind is "PLAN" or "MEET" or "MEETOK" or "PDEAD" or "CDEAD") auditIds.Add(id);
@@ -136,12 +136,17 @@ public static class V08NotificationLinks
             if (entry.Kind == "CDEAD" && audits.TryGetValue(entry.EventId, out var criterionAudit) &&
                 criterionAudit.EntityName == "MilestoneCriterion" && criterionAudit.EntityId.HasValue)
                 criterionId = criterionAudit.EntityId.Value;
-            if ((entry.Kind is "CDUE" or "CLATE" or "CDEAD") &&
+            if ((entry.Kind is "CDUE" or "CLATE" or "CDEAD" or "CREVIEW" or "CRISK") &&
                 criterionMilestones.TryGetValue(criterionId, out var criterionMilestoneId) &&
                 milestones.TryGetValue(criterionMilestoneId, out var criterionMilestone))
             {
                 projectId = criterionMilestone.ProjectId;
                 milestoneId = criterionMilestone.Id;
+                page = "progress";
+            }
+            else if (entry.Kind == "PRISK" && projectIds.Contains(entry.EventId))
+            {
+                projectId = entry.EventId;
                 page = "progress";
             }
             else if ((entry.Kind is "PDUE" or "PLATE") && projectIds.Contains(entry.EventId))

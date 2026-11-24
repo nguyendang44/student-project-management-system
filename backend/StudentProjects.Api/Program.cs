@@ -109,6 +109,7 @@ builder.Services.AddHttpClient<AiGitProgressClient>(client =>
     client.Timeout = TimeSpan.FromMinutes(10);
 }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddHostedService<GitProgressWorker>();
+builder.Services.AddHostedService<MilestoneAutoAssessmentWorker>();
 
 builder.Services.AddSingleton<V08NotificationEngine>();
 builder.Services.AddHostedService<V08NotifierWorker>();

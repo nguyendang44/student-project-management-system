@@ -76,18 +76,32 @@ public static class V08Endpoints
         var pendingReviews = milestones.Count(m => m.ProposalStatus == "CONFIRMED" && m.Status == MilestoneStatus.SUBMITTED);
         var revisions = milestones.Count(m => m.ProposalStatus == "CHANGES_REQUESTED" || m.Status == MilestoneStatus.REVISION_REQUIRED);
         var activeProjects = projects.Where(p => p.Status != ProjectStatus.COMPLETED && p.Status != ProjectStatus.CANCELLED).ToArray();
-        var overdue = activeProjects.Count(p => p.DeadlineAt.HasValue && p.DeadlineAt < now);
-        var upcomingProjects = activeProjects.Where(p => p.DeadlineAt.HasValue &&
-            p.DeadlineAt >= now && p.DeadlineAt <= now.AddDays(7)).OrderBy(p => p.DeadlineAt).Take(10).ToArray();
-        var topicIds = upcomingProjects.Select(p => p.TopicId).Distinct().ToArray();
+        var milestoneIds = milestones.Select(m => m.Id).ToArray();
+        var criteria = await db.MilestoneCriteria.AsNoTracking().Where(c => !c.IsDeleted && milestoneIds.Contains(c.MilestoneId)).ToListAsync(ct);
+        var criterionIds = criteria.Select(c => c.Id).ToArray();
+        var assessments = await db.MilestoneCriterionAssessments.AsNoTracking().Where(a => criterionIds.Contains(a.CriterionId) &&
+            (a.Source != "AI" || a.Note == MilestoneAutoAssessment.EvidenceVersion)).ToListAsync(ct);
+        var topicIds = projects.Select(p => p.TopicId).Distinct().ToArray();
         var titles = await db.Topics.AsNoTracking().Where(t => topicIds.Contains(t.Id))
             .ToDictionaryAsync(t => t.Id, t => t.Title, ct);
-        var upcoming = upcomingProjects.Select(p => new { p.Id, ProjectId = p.Id,
-            Title = titles.GetValueOrDefault(p.TopicId, "Đồ án"), DeadlineAt = p.DeadlineAt!.Value }).ToList();
+        var today = now.ToOffset(TimeSpan.FromHours(7)).Date;
+        var schedules = activeProjects.Select(p =>
+        {
+            var percent = ProjectEvidenceProgress.Calculate(milestones.Where(m => m.ProjectId == p.Id), criteria, assessments);
+            return new { p.Id, ProjectId = p.Id, Title = titles.GetValueOrDefault(p.TopicId, "Đồ án"),
+                p.StartAt, p.DeadlineAt, Percent = percent,
+                Warning = ProgressDeadlinePolicy.Evaluate(p.StartAt, p.DeadlineAt, percent, now) };
+        }).OrderBy(p => p.DeadlineAt ?? DateTimeOffset.MaxValue).ToArray();
+        var overdue = schedules.Count(p => p.DeadlineAt.HasValue &&
+            p.DeadlineAt.Value.ToOffset(TimeSpan.FromHours(7)).Date < today && p.Percent != 100m);
+        var upcoming = schedules.Where(p => p.DeadlineAt.HasValue &&
+            p.DeadlineAt.Value.ToOffset(TimeSpan.FromHours(7)).Date >= today &&
+            p.DeadlineAt.Value.ToOffset(TimeSpan.FromHours(7)).Date <= today.AddDays(7)).ToArray();
         var pendingGuidance = await db.GuidanceSessions.AsNoTracking().CountAsync(g => ids.Contains(g.ProjectId) && g.LecturerConfirmedAt == null, ct);
         return Results.Ok(new {
             ProjectCount = projects.Count, PendingPlans = pendingPlans, PendingReviews = pendingReviews,
-            Revisions = revisions, Overdue = overdue, UpcomingCount = upcoming.Count, Upcoming = upcoming,
+            Revisions = revisions, Overdue = overdue, UpcomingCount = upcoming.Length, Upcoming = upcoming, Schedules = schedules,
+            AtRisk = schedules.Count(p => p.Warning is not null && (p.Warning.Level is "warning" or "danger") && p.Warning.Code != "OVERDUE"),
             PendingGuidance = pendingGuidance
         });
     }
