@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using StudentProjects.Domain.Entities;
 using StudentProjects.Domain.Enums;
 using StudentProjects.Infrastructure.Persistence;
@@ -23,6 +24,15 @@ public static class MilestoneAssessmentRequests
     public static Guid? ManualRun(AuditEntry request) => request.Action == Manual &&
         request.EntityName.StartsWith("MilestoneRecheck:", StringComparison.Ordinal) &&
         Guid.TryParseExact(request.EntityName[17..], "N", out var id) ? id : null;
+    public static Expression<Func<Milestone, bool>> TargetMilestones(AuditEntry request, Guid projectId)
+    {
+        if (request.Action == Manual && request.EntityId is Guid milestoneId && milestoneId != Guid.Empty && ManualRun(request).HasValue)
+            return milestone => milestone.ProjectId == projectId && milestone.Id == milestoneId && milestone.ProposalStatus == "CONFIRMED";
+        if (request.Action == Automatic)
+            return milestone => milestone.ProjectId == projectId && milestone.ProposalStatus == "CONFIRMED";
+        return milestone => false;
+    }
+
 }
 
 /// <summary>Consumes only explicit compare/recheck events. Never discovers work by scanning old reports.</summary>
@@ -63,12 +73,17 @@ public sealed class MilestoneAutoAssessmentWorker(IServiceScopeFactory scopes,
                             cutoff = run.CompletedAt.Value;
                         var reports = await db.GitProgressRuns.AsNoTracking().Where(r => r.ProjectId == project.Id && r.Status == "COMPLETED" &&
                             (r.CompletedAt ?? r.CreatedAt) <= cutoff).OrderBy(r => r.CreatedAt).ThenBy(r => r.Id).ToListAsync(stoppingToken);
-                        var milestones = await db.Milestones.AsNoTracking().Where(m => m.ProjectId == project.Id && m.ProposalStatus == "CONFIRMED" &&
-                            (request.Action == MilestoneAssessmentRequests.Automatic || m.Id == request.EntityId) &&
-                            db.MilestoneCriteria.Any(c => c.MilestoneId == m.Id && !c.IsDeleted)).Select(m => m.Id).ToListAsync(stoppingToken);
+                        reports = GitProgressRunHistory.Latest(reports).ToList();
+                        var milestones = await db.Milestones.AsNoTracking()
+                            .Where(MilestoneAssessmentRequests.TargetMilestones(request, project.Id))
+                            .Where(m => db.MilestoneCriteria.Any(c => c.MilestoneId == m.Id && !c.IsDeleted)).Select(m => m.Id).ToListAsync(stoppingToken);
                         foreach (var milestoneId in milestones)
                         {
                             await using var itemScope = scopes.CreateAsyncScope();
+                            // Record the actual target before loading its tasks or calling Ollama.
+                            // A failure in another milestone must not become this milestone's status.
+                            await MilestoneAssessmentStatus.MarkAsync(db, request.Id, MilestoneAssessmentStatus.Started,
+                                stoppingToken, milestoneId);
                             await MilestoneAutoAssessment.EvaluateAsync(
                                 itemScope.ServiceProvider.GetRequiredService<StudentProjectsDbContext>(),
                                 itemScope.ServiceProvider.GetRequiredService<AiGitProgressClient>(), milestoneId, run,

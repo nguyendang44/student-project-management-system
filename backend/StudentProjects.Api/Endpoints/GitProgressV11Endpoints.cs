@@ -20,6 +20,7 @@ public static class GitProgressV11Endpoints
         api.MapPost("/repositories/{id:guid}/progress", Start).RequireRateLimiting("analysis-start");
         api.MapGet("/repositories/{id:guid}/progress", List);
         api.MapGet("/progress/{id:guid}", Get);
+        api.MapDelete("/progress/{id:guid}", RemoveFailed);
         api.MapPost("/progress/{id:guid}/word-comparison", CompareWord)
             .RequireAuthorization(p => p.RequireRole("Lecturer")).RequireRateLimiting("analysis-start");
     }
@@ -155,12 +156,43 @@ public static class GitProgressV11Endpoints
         var (link, project) = await FindLinkAsync(id, db, ct);
         if (link is null || project is null) return Results.NotFound();
         if (!CanRead(project, user)) return Results.Forbid();
-        var runs = await db.GitProgressRuns.AsNoTracking().Where(x => x.RepositoryLinkId == id)
-            .OrderByDescending(x => x.CreatedAt).Take(40)
-            .Select(x => new { x.Id, x.BaseSha, x.HeadSha, x.ModelName, x.Status,
-                x.TotalCommits, x.TotalFiles, x.CreatedAt, x.CompletedAt })
+        // Deduplicate before the display limit; old model versions must not crowd out other pairs.
+        var rows = await db.GitProgressRuns.AsNoTracking().Where(x => x.RepositoryLinkId == id)
+            .Select(x => new GitProgressRun { Id = x.Id, ProjectId = x.ProjectId, RepositoryLinkId = x.RepositoryLinkId,
+                BaseSha = x.BaseSha, HeadSha = x.HeadSha, ModelName = x.ModelName, Status = x.Status,
+                TotalCommits = x.TotalCommits, TotalFiles = x.TotalFiles, CreatedAt = x.CreatedAt, CompletedAt = x.CompletedAt })
             .ToListAsync(ct);
+        var runs = GitProgressRunHistory.Latest(rows).Take(40).Select(x => new { x.Id, x.BaseSha, x.HeadSha,
+            x.ModelName, x.Status, x.TotalCommits, x.TotalFiles, x.CreatedAt, x.CompletedAt });
         return Results.Ok(runs);
+    }
+
+    private static async Task<IResult> RemoveFailed(Guid id, ClaimsPrincipal user,
+        StudentProjectsDbContext db, CancellationToken ct)
+    {
+        var existing = await db.GitProgressRuns.AsNoTracking().SingleOrDefaultAsync(r => r.Id == id, ct);
+        if (existing is null) return Results.NotFound();
+        var project = await db.Projects.AsNoTracking().SingleOrDefaultAsync(p => p.Id == existing.ProjectId, ct);
+        if (project is null) return Results.NotFound();
+        if (!CanStart(project, user)) return Results.Forbid();
+        await using var transaction = db.Database.IsSqlServer() ? await db.Database.BeginTransactionAsync(ct) : null;
+        var run = transaction is null
+            ? await db.GitProgressRuns.SingleOrDefaultAsync(r => r.Id == id, ct)
+            : await db.GitProgressRuns.FromSqlInterpolated(
+                $"SELECT * FROM dbo.GitProgressRuns WITH (UPDLOCK, HOLDLOCK) WHERE Id = {id}").SingleOrDefaultAsync(ct);
+        if (run is null) return Results.NotFound();
+        if (!GitProgressRunHistory.CanRemove(run))
+            return Results.Conflict(new { message = "Chỉ được xóa báo cáo FAILED. Báo cáo đang chạy hoặc hoàn tất được giữ lại." });
+        if (await db.MilestoneCriterionAssessments.AnyAsync(a => a.GitProgressRunId == id, ct))
+            return Results.Conflict(new { message = "Báo cáo đang được dùng trong lịch sử đánh giá Milestone nên không thể xóa." });
+        db.GitProgressRuns.Remove(run);
+        db.AuditEntries.Add(new AuditEntry { ActorUserId = Actor(user), Action = "GIT_PROGRESS_FAILED_REMOVED",
+            EntityName = "GitProgressRun", EntityId = id });
+        try { await db.SaveChangesAsync(ct); }
+        catch (DbUpdateException)
+        { return Results.Conflict(new { message = "Báo cáo vừa thay đổi hoặc phát sinh tham chiếu. Tải lại lịch sử rồi thử lại." }); }
+        if (transaction is not null) await transaction.CommitAsync(ct);
+        return Results.NoContent();
     }
 
     private static async Task<IResult> Get(Guid id, ClaimsPrincipal user, StudentProjectsDbContext db, CancellationToken ct)

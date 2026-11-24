@@ -41,4 +41,10 @@ public static class MilestoneCriterionProgress
         if (current.Any(x => x.Source == "AI" && x.Outcome == "full")) return "full";
         return current.Any(x => x.Source == "AI" && x.Outcome == "partial") ? "partial" : "missing";
     }
+    public static bool IsConfirmedByLecturer(MilestoneCriterion criterion,
+        IEnumerable<MilestoneCriterionAssessment> assessments) => !criterion.IsDeleted && assessments
+        .Where(a => a.CriterionId == criterion.Id && a.Source == "REVIEW" &&
+            (!criterion.DefinitionChangedAt.HasValue || a.CreatedAt >= criterion.DefinitionChangedAt.Value))
+        .OrderByDescending(a => a.CreatedAt).ThenByDescending(a => a.Id).FirstOrDefault()?.Outcome == "full";
+
 }

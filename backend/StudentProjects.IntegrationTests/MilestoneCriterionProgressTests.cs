@@ -113,6 +113,22 @@ public sealed class MilestoneCriterionProgressTests
         Assert.Equal("missing", MilestoneCriterionProgress.EffectiveOutcome(item, history));
     }
 
+    [Fact]
+    public void Only_a_current_latest_full_lecturer_review_skips_ai_reassessment()
+    {
+        var criterion = new MilestoneCriterion { Points = 20 };
+        var now = DateTimeOffset.UtcNow;
+        var records = new List<MilestoneCriterionAssessment> { Assessment(criterion, "AI", "full", now) };
+        Assert.Equal(false, MilestoneCriterionProgress.IsConfirmedByLecturer(criterion, records));
+        records.Add(Assessment(criterion, "REVIEW", "full", now.AddMinutes(1)));
+        Assert.Equal(true, MilestoneCriterionProgress.IsConfirmedByLecturer(criterion, records));
+        records.Add(Assessment(criterion, "REVIEW", "missing", now.AddMinutes(2)));
+        Assert.Equal(false, MilestoneCriterionProgress.IsConfirmedByLecturer(criterion, records));
+        records.Add(Assessment(criterion, "REVIEW", "full", now.AddMinutes(3)));
+        criterion.DefinitionChangedAt = now.AddDays(1);
+        Assert.Equal(false, MilestoneCriterionProgress.IsConfirmedByLecturer(criterion, records));
+    }
+
     private static MilestoneCriterionAssessment Assessment(MilestoneCriterion criterion, string source,
         string outcome, DateTimeOffset time) => new()
         { CriterionId = criterion.Id, Source = source, Outcome = outcome, CreatedAt = time };

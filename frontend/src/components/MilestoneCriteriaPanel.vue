@@ -12,6 +12,7 @@ const editingDeadlineId = ref('')
 const deadlineDraft = ref('')
 const formOpen = ref(false)
 const notes = ref<Record<string, string>>({})
+const reviewFeedback = ref<Record<string, { type: 'error' | 'success'; message: string }>>({})
 const pending = ref('')
 const planDraft = ref<(CriterionPlanDraft & { key: number; checked: boolean; day: string })[]>([])
 const editingId = ref('')
@@ -33,7 +34,7 @@ const checkTime = computed(() => {
 })
 
 watch(checkState, (state, previous) => {
-  if (!previous || !info.value.startsWith('Đã gửi yêu cầu đọc')) return
+  if (!previous || !info.value.startsWith('Đã gửi yêu cầu kiểm tra')) return
   if (state === 'completed') info.value = 'Đã hoàn thành kiểm tra và cập nhật kết quả.'
   else if (state === 'failed' || state === 'cancelled') info.value = ''
 })
@@ -138,24 +139,64 @@ function saveDeadline(criterion: MilestoneCriterion) {
     editingDeadlineId.value = ''
   }, 'Đã lưu deadline của đầu việc.')
 }
-function recheck() {
-  if (checking.value || pending.value) return
-  void perform('recheck', () => milestoneCriteriaApi.recheck(props.milestoneId),
-    'Đã gửi yêu cầu đọc tất cả báo cáo Git hoàn tất của đồ án. Kết quả sẽ tự cập nhật khi AI xử lý xong.')
+async function recheck() {
+  if (checking.value || pending.value || !criteriaToCheck.value.length) return
+  pending.value = 'recheck'; error.value = ''; info.value = ''
+  try {
+    const result = await milestoneCriteriaApi.recheck(props.milestoneId)
+    if (lifetime.signal.aborted) return
+    await reload()
+    emit('changed')
+    info.value = result.skipped ? result.message ?? 'GV đã xác nhận toàn bộ đầu việc, không cần gửi AI.'
+      : `Đã gửi yêu cầu kiểm tra ${result.pendingCriteria ?? criteriaToCheck.value.length} đầu việc của Milestone đang mở. Kết quả sẽ tự cập nhật.`
+  } catch (e) { if (!lifetime.signal.aborted) error.value = errorText(e) }
+  finally { pending.value = '' }
 }
-function review(criterion: MilestoneCriterion, isMet: boolean, proposalId: string | null) {
-  void perform(criterion.id, async () => {
-    await milestoneCriteriaApi.review(props.milestoneId, criterion.id, isMet, proposalId, notes.value[criterion.id] ?? '')
+async function review(criterion: MilestoneCriterion, isMet: boolean, proposalId: string | null) {
+  if (pending.value) return
+  const note = (notes.value[criterion.id] ?? '').trim()
+  const proposal = latest(criterion, 'AI')
+  const needsNote = !isMet || !proposal || proposal.id !== proposalId || proposal.outcome !== 'full'
+  if (note.length > 1000 || (needsNote && !note)) {
+    reviewFeedback.value[criterion.id] = { type: 'error', message: note.length > 1000
+      ? 'Ghi chú tối đa 1000 ký tự.'
+      : isMet ? 'Nhập căn cứ GV đã kiểm tra vào ô ghi chú rồi bấm Xác nhận hoàn thành.'
+        : 'Nhập lý do cần bổ sung vào ô ghi chú.' }
+    document.getElementById(`review-note-${criterion.id}`)?.focus()
+    return
+  }
+  pending.value = criterion.id
+  error.value = ''; info.value = ''
+  delete reviewFeedback.value[criterion.id]
+  let saved = false
+  try {
+    await milestoneCriteriaApi.review(props.milestoneId, criterion.id, isMet, proposalId, note)
+    saved = true
+    if (lifetime.signal.aborted) return
     delete notes.value[criterion.id]
-  }, isMet ? 'Đã xác nhận đầu việc đạt.' : 'Đã lưu nhận xét cần bổ sung.')
+    await reload()
+    emit('changed')
+    const updated = details.value?.criteria.find(item => item.id === criterion.id)
+    reviewFeedback.value[criterion.id] = { type: 'success', message: isMet
+      ? updated && typeof updated.awardedPoints === 'number'
+        ? `Đã xác nhận hoàn thành. Điểm được tính: ${updated.awardedPoints}/${updated.points}.`
+        : 'Đã lưu xác nhận. Hãy tải lại trang để xem điểm hiện tại.'
+      : 'Đã lưu yêu cầu bổ sung và cập nhật lại điểm.' }
+  } catch (e) {
+    if (!lifetime.signal.aborted) reviewFeedback.value[criterion.id] = { type: 'error', message: saved
+      ? 'Đã lưu xác nhận nhưng chưa tải lại được điểm. Hãy tải lại trang để xem kết quả.'
+      : errorText(e) }
+  } finally { pending.value = '' }
 }
 const latest = (criterion: MilestoneCriterion, source: 'AI' | 'REVIEW') =>
   (source === 'AI'
     ? criterion.history.find(assessment => assessment.source === source && assessment.isCurrent !== false && assessment.outcome === 'full')
       ?? criterion.history.find(assessment => assessment.source === source && assessment.isCurrent !== false)
     : criterion.history.find(assessment => assessment.source === source && assessment.isCurrent !== false))
+const criteriaToCheck = computed(() => details.value?.criteria.filter(criterion => latest(criterion, 'REVIEW')?.outcome !== 'full') ?? [])
+const teacherConfirmedCount = computed(() => (details.value?.criteria.length ?? 0) - criteriaToCheck.value.length)
 const outcome = (source: 'AI' | 'REVIEW', value: string) => source === 'REVIEW'
-  ? (value === 'full' ? 'Đã xác nhận đạt' : 'Cần bổ sung')
+  ? (value === 'full' ? 'Đã xác nhận hoàn thành' : 'Cần bổ sung')
   : ({ full: 'Có bằng chứng', partial: 'Có bằng chứng một phần', missing: 'Chưa đủ dữ liệu' }[value] ?? value)
 onMounted(async () => {
   try {
@@ -184,7 +225,7 @@ onUnmounted(() => { lifetime.abort(); if (refreshTimer) clearInterval(refreshTim
       <p v-if="points">Tiến độ = trọng số đầu việc đã đạt / {{ points }} × 100%.</p>
       <p>Tiến độ được tính <strong>{{ details.confirmedPercent }}%</strong></p>
       <p v-if="details.proposedPercent != null">Bằng chứng AI tích lũy <strong>{{ details.proposedPercent }}%</strong></p>
-      <p v-if="details.criteria.length">AI đọc các nhóm chức năng, mô tả, bước triển khai và dòng Git của tất cả báo cáo hoàn tất để đối chiếu đầu việc. Chỉ chạy sau khi so sánh hai commit hoặc bấm kiểm tra lại. Mục một phần hoặc thiếu bằng chứng nhận 0 điểm. Quyết định giảng viên được ưu tiên; khi giảng viên sửa, sinh viên nhận thông báo.</p>
+      <p v-if="details.criteria.length">Khi bấm Kiểm tra lại tiến độ, AI chỉ đối chiếu đầu việc của Milestone đang mở với bằng chứng trong các báo cáo Git hoàn tất của dự án. Lượt này không chấm lại các Milestone khác. Mục một phần hoặc thiếu bằng chứng nhận 0 điểm. Quyết định giảng viên được ưu tiên; khi giảng viên sửa, sinh viên nhận thông báo.</p>
       <p v-if="!details.criteria.length">Chưa có đầu việc để tính tiến độ cho mốc này.</p>
       <button v-if="canPlan && details.criteria.length < 20" type="button" :disabled="!!pending" @click="generatePlan">
         {{ pending === 'plan-ai' ? 'AI đang đề xuất đầu việc…' : 'AI tạo đầu việc từ dự án và Milestone' }}
@@ -225,9 +266,11 @@ onUnmounted(() => { lifetime.abort(); if (refreshTimer) clearInterval(refreshTim
         </p>
         <p>{{ details.check?.message ?? 'Bấm kiểm tra lại để AI đối chiếu các đầu việc.' }}</p>
       </div>
+      <p v-if="details.criteria.length">Phạm vi kiểm tra: <strong>{{ criteriaToCheck.length }}</strong> đầu việc của Milestone này.
+        Bỏ qua <strong>{{ teacherConfirmedCount }}</strong> đầu việc GV đã xác nhận hoàn thành.</p>
       <div v-if="canCheck && details.criteria.length" class="criteria-actions">
-        <button type="button" :disabled="!!pending || checking" @click="recheck">
-          {{ pending === 'recheck' ? 'Đang gửi yêu cầu…' : checkState === 'running' ? 'Đang kiểm tra lại…' : checkState === 'queued' ? 'Đang chờ kiểm tra…' : 'Kiểm tra lại tiến độ' }}
+        <button type="button" :disabled="!!pending || checking || !criteriaToCheck.length" @click="recheck">
+          {{ !criteriaToCheck.length ? 'GV đã xác nhận toàn bộ đầu việc' : pending === 'recheck' ? 'Đang gửi yêu cầu…' : checkState === 'running' ? 'Đang kiểm tra lại…' : checkState === 'queued' ? 'Đang chờ kiểm tra…' : 'Kiểm tra lại tiến độ' }}
         </button>
       </div>
       <article v-for="criterion in details.criteria" :key="criterion.id" class="criterion">
@@ -264,7 +307,8 @@ onUnmounted(() => { lifetime.abort(); if (refreshTimer) clearInterval(refreshTim
             </div>
           </form>
         </template>
-        <p>AI · {{ latest(criterion, 'AI') ? outcome('AI', latest(criterion, 'AI')!.outcome) : 'Chưa đối chiếu' }}
+        <p v-if="latest(criterion, 'REVIEW')?.outcome === 'full'">AI · Bỏ qua đối chiếu, giảng viên đã xác nhận hoàn thành.</p>
+        <p v-else>AI · {{ latest(criterion, 'AI') ? outcome('AI', latest(criterion, 'AI')!.outcome) : 'Chưa đối chiếu' }}
           <strong v-if="latest(criterion, 'AI')"> · {{ latest(criterion, 'AI')!.outcome === 'full' ? criterion.points : 0 }}/{{ criterion.points }} điểm theo báo cáo</strong>
         </p>
         <p><strong>Điểm được tính · {{ criterion.awardedPoints }}/{{ criterion.points }}</strong></p>
@@ -287,11 +331,17 @@ onUnmounted(() => { lifetime.abort(); if (refreshTimer) clearInterval(refreshTim
           </div>
         </details>
         <form v-if="canReview" class="criteria-form" @submit.prevent>
-          <label>Ghi chú hoặc tham chiếu bằng chứng
-            <textarea v-model.trim="notes[criterion.id]" maxlength="1000" rows="2" />
+          <p>Xác nhận hoàn thành sẽ tính toàn bộ trọng số đầu việc. Nếu AI chưa xác nhận đạt, giảng viên cần ghi căn cứ đã kiểm tra.</p>
+          <label :for="`review-note-${criterion.id}`">Ghi chú hoặc tham chiếu bằng chứng
+            <textarea :id="`review-note-${criterion.id}`" v-model.trim="notes[criterion.id]" maxlength="1000" rows="2"
+              :disabled="!!pending" :aria-invalid="reviewFeedback[criterion.id]?.type === 'error'"
+              :aria-describedby="reviewFeedback[criterion.id] ? `review-feedback-${criterion.id}` : undefined" />
           </label>
+          <p v-if="reviewFeedback[criterion.id]" :id="`review-feedback-${criterion.id}`"
+            :role="reviewFeedback[criterion.id].type === 'error' ? 'alert' : 'status'"
+            :class="'review-' + reviewFeedback[criterion.id].type">{{ reviewFeedback[criterion.id].message }}</p>
           <div class="criteria-actions">
-            <button type="button" :disabled="!!pending" @click="review(criterion, true, latest(criterion, 'AI')?.id ?? null)">Xác nhận đạt</button>
+            <button type="button" :disabled="!!pending" @click="review(criterion, true, latest(criterion, 'AI')?.id ?? null)">{{ pending === criterion.id ? 'Đang lưu…' : 'Xác nhận hoàn thành' }}</button>
             <button type="button" :disabled="!!pending" @click="review(criterion, false, latest(criterion, 'AI')?.id ?? null)">Yêu cầu bổ sung</button>
           </div>
         </form>
@@ -318,4 +368,6 @@ onUnmounted(() => { lifetime.abort(); if (refreshTimer) clearInterval(refreshTim
 .criterion pre { white-space: pre-wrap; overflow-wrap: anywhere; background: rgba(100,116,139,.09); padding: .5rem; }
 .criterion-warning { padding: .65rem; border-radius: 6px; background: #fffbeb; color: #78350f; border: 1px solid #fbbf24; }
 .criterion-danger { background: #fef2f2; color: #991b1b; border-color: #fca5a5; }
+.review-error { color: #b91c1c; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px; padding: .6rem; }
+.review-success { color: #166534; background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: .6rem; }
 </style>

@@ -71,6 +71,9 @@ public static class MilestoneAutoAssessment
         var criteria = await db.MilestoneCriteria.AsNoTracking()
             .Where(c => c.MilestoneId == milestoneId && !c.IsDeleted).OrderBy(c => c.CreatedAt).ThenBy(c => c.Id).ToListAsync(ct);
         var ids = criteria.Select(c => c.Id).ToArray();
+        var lecturerReviews = await db.MilestoneCriterionAssessments.AsNoTracking()
+            .Where(a => ids.Contains(a.CriterionId) && a.Source == "REVIEW").ToListAsync(ct);
+        criteria.RemoveAll(c => MilestoneCriterionProgress.IsConfirmedByLecturer(c, lecturerReviews));
         var previous = await db.MilestoneCriterionAssessments.AsNoTracking()
             .Where(a => ids.Contains(a.CriterionId) && a.Source == "AI" && a.Note == EvidenceVersion && a.GitProgressRunId == run.Id)
             .ToListAsync(ct);
@@ -103,9 +106,14 @@ public static class MilestoneAutoAssessment
         previous = await db.MilestoneCriterionAssessments.AsNoTracking()
             .Where(a => ids.Contains(a.CriterionId) && a.Source == "AI" && a.Note == EvidenceVersion && a.GitProgressRunId == run.Id)
             .ToListAsync(ct);
+        // A lecturer may confirm while Ollama is still responding. Recheck under the milestone lock.
+        lecturerReviews = await db.MilestoneCriterionAssessments.AsNoTracking()
+            .Where(a => ids.Contains(a.CriterionId) && a.Source == "REVIEW").ToListAsync(ct);
+        var protectedIds = definitions.Where(c => MilestoneCriterionProgress.IsConfirmedByLecturer(c, lecturerReviews))
+            .Select(c => c.Id).ToHashSet();
         if (force && result is not null)
         {
-            var replacedIds = criteria.Select(c => c.Id).ToArray();
+            var replacedIds = criteria.Where(c => !protectedIds.Contains(c.Id)).Select(c => c.Id).ToArray();
             var superseded = await db.MilestoneCriterionAssessments
                 .Where(a => replacedIds.Contains(a.CriterionId) && a.Source == "AI" &&
                     (a.Note == EvidenceVersion || a.Note == "milestone-evidence-v2")).ToListAsync(ct);
@@ -115,6 +123,7 @@ public static class MilestoneAutoAssessment
             foreach (var row in result.Items)
             {
                 var criterion = criteria[row.Id - 1];
+                if (protectedIds.Contains(criterion.Id)) continue;
                 if (!force && previous.Any(a => a.CriterionId == criterion.Id &&
                     (!criterion.DefinitionChangedAt.HasValue || a.CreatedAt >= criterion.DefinitionChangedAt.Value))) continue;
                 db.MilestoneCriterionAssessments.Add(new MilestoneCriterionAssessment

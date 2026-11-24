@@ -58,7 +58,7 @@ export const milestoneCriteriaApi = {
       method: 'PUT', body: JSON.stringify({ deadlineAt }),
     }),
   recheck: (milestoneId: string) =>
-    request(`/v07/milestones/${milestoneId}/criteria/recheck`, { method: 'POST' }),
+    request<{ skipped?: boolean; message?: string; milestoneId: string; pendingCriteria?: number }>(`/v07/milestones/${milestoneId}/criteria/recheck`, { method: 'POST' }),
   propose: (milestoneId: string, gitRunId: string, signal: AbortSignal) =>
     request(`/v07/milestones/${milestoneId}/criteria/ai`, { method: 'POST', body: JSON.stringify({ gitRunId }), signal }),
   review: (milestoneId: string, criterionId: string, isMet: boolean, proposalId: string | null, note: string) =>

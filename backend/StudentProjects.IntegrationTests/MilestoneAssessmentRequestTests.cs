@@ -104,4 +104,33 @@ public sealed class MilestoneAssessmentRequestTests
         Assert.Equal(MilestoneAssessmentStatus.InvalidResponse, MilestoneAssessmentStatus.FailureAction(new InvalidDataException("Sai ID bằng chứng")));
     }
 
+    [Fact]
+    public void Manual_recheck_scope_never_includes_another_milestone_or_project()
+    {
+        var project = Guid.NewGuid();
+        var target = new Milestone { ProjectId = project };
+        var other = new Milestone { ProjectId = project };
+        var foreign = new Milestone { ProjectId = Guid.NewGuid() };
+        var request = MilestoneAssessmentRequests.CreateRecheck(new() { MilestoneId = target.Id, RunId = Guid.NewGuid() }, Guid.NewGuid());
+        var matching = new[] { target, other, foreign }.AsQueryable()
+            .Where(MilestoneAssessmentRequests.TargetMilestones(request, project)).ToArray();
+        Assert.Equal(1, matching.Length);
+        Assert.Equal(target.Id, matching[0].Id);
+        target.ProposalStatus = "PENDING_REVIEW";
+        Assert.Equal(0, new[] { target, other, foreign }.AsQueryable()
+            .Where(MilestoneAssessmentRequests.TargetMilestones(request, project)).Count());
+    }
+
+    [Fact]
+    public void Malformed_manual_request_cannot_fall_back_to_the_whole_project()
+    {
+        var project = Guid.NewGuid();
+        var milestone = new Milestone { ProjectId = project };
+        var malformed = new AuditEntry { Action = MilestoneAssessmentRequests.Manual, EntityName = "bad", EntityId = milestone.Id };
+        Assert.Equal(false, MilestoneAssessmentRequests.TargetMilestones(malformed, project).Compile()(milestone));
+        var automatic = MilestoneAssessmentRequests.CreateComparison(Guid.NewGuid(), Guid.NewGuid());
+        Assert.Equal(true, MilestoneAssessmentRequests.TargetMilestones(automatic, project).Compile()(milestone));
+        Assert.Equal(false, MilestoneAssessmentRequests.TargetMilestones(automatic, Guid.NewGuid()).Compile()(milestone));
+    }
+
 }

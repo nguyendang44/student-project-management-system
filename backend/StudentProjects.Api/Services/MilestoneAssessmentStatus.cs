@@ -47,13 +47,26 @@ public static class MilestoneAssessmentStatus
         Guid milestoneId, Guid projectId, CancellationToken ct)
     {
         // Called only after the endpoint has checked access to the project.
+        var milestone = await db.Milestones.AsNoTracking()
+            .Where(m => m.Id == milestoneId && m.ProjectId == projectId).FirstOrDefaultAsync(ct);
+        if (milestone is null) return Describe(null, [], milestoneId);
+        var criteria = await db.MilestoneCriteria.AsNoTracking()
+            .Where(c => c.MilestoneId == milestoneId).ToListAsync(ct);
+        // Scores and deadlines can change without changing the work being checked.
+        // A new/deleted task or edited definition makes the previous check obsolete.
+        var definitionAt = criteria.Select(c => c.IsDeleted ? c.UpdatedAt : c.DefinitionChangedAt ?? c.CreatedAt)
+            .Append(milestone.CreatedAt).Max();
+        var itemName = $"MilestoneAssessmentItem:{milestoneId:N}";
         var request = await db.AuditEntries.AsNoTracking().Where(a =>
-            (a.Action == MilestoneAssessmentRequests.Manual && a.EntityId == milestoneId) ||
+            ((a.Action == MilestoneAssessmentRequests.Manual && a.EntityId == milestoneId) ||
             (a.Action == MilestoneAssessmentRequests.Automatic && db.GitProgressRuns.Any(r =>
-                r.Id == a.EntityId && r.ProjectId == projectId)))
+                r.Id == a.EntityId && r.ProjectId == projectId) &&
+                db.AuditEntries.Any(mark => mark.EntityId == a.Id && mark.EntityName == itemName &&
+                    (mark.Action == Started || mark.Action == ItemDone)))) &&
+            (a.CreatedAt >= definitionAt || db.AuditEntries.Any(mark => mark.EntityId == a.Id &&
+                mark.EntityName == itemName && mark.Action == Started && mark.CreatedAt >= definitionAt)))
             .OrderByDescending(a => a.CreatedAt).ThenByDescending(a => a.Id).FirstOrDefaultAsync(ct);
         if (request is null) return Describe(null, [], milestoneId);
-        var itemName = $"MilestoneAssessmentItem:{milestoneId:N}";
         var events = await db.AuditEntries.AsNoTracking().Where(a => a.EntityId == request.Id &&
             (a.EntityName == EventName || a.EntityName == itemName)).ToListAsync(ct);
         return Describe(request, events, milestoneId);
@@ -61,7 +74,7 @@ public static class MilestoneAssessmentStatus
 
     public static MilestoneCheckStatus Describe(AuditEntry? request, IEnumerable<AuditEntry> events, Guid milestoneId)
     {
-        if (request is null) return new(null, "idle", "Chưa có yêu cầu kiểm tra tiến độ.", null, null, null);
+        if (request is null) return new(null, "idle", "Chưa kiểm tra danh sách đầu việc hiện tại của Milestone này.", null, null, null);
         var marks = events.Where(a => a.EntityId == request.Id).ToArray();
         var started = marks.Where(a => a.Action == Started).OrderByDescending(a => a.CreatedAt).FirstOrDefault();
         var itemName = $"MilestoneAssessmentItem:{milestoneId:N}";

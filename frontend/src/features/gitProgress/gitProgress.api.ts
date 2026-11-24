@@ -127,6 +127,7 @@ export const gitProgressApi = {
     }),
   list: (repositoryId: string, signal?: AbortSignal) =>
     request<GitProgressRunListItem[]>(`/v11/repositories/${repositoryId}/progress`, { signal }),
+  removeFailed: (id: string) => request<void>(`/v11/progress/${id}`, { method: 'DELETE' }),
   get: (id: string) => request<GitProgressRun>(`/v11/progress/${id}`),
   compareWord: (id: string, file: File, signal: AbortSignal) => {
     const body = new FormData()

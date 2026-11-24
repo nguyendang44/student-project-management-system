@@ -183,8 +183,16 @@ public static partial class ProjectProgressV07Endpoints
         if (!CanWrite(project, user, "Student") && !CanWrite(project, user, "Lecturer")) return Results.Forbid();
         if (!Active(project) || milestone.ProposalStatus != "CONFIRMED")
             return Conflict("Cần kế hoạch đã xác nhận và đồ án đang hoạt động.");
-        if (!await db.MilestoneCriteria.AnyAsync(c => c.MilestoneId == id && !c.IsDeleted, ct))
-            return Conflict("Milestone chưa có đầu việc để kiểm tra.");
+        var criteria = await db.MilestoneCriteria.AsNoTracking().Where(c => c.MilestoneId == id && !c.IsDeleted).ToListAsync(ct);
+        if (criteria.Count == 0) return Conflict("Milestone chưa có đầu việc để kiểm tra.");
+        var ids = criteria.Select(c => c.Id).ToArray();
+        var reviews = await db.MilestoneCriterionAssessments.AsNoTracking().Where(a => ids.Contains(a.CriterionId) && a.Source == "REVIEW").ToListAsync(ct);
+        var pendingCriteria = criteria.Count(c => !MilestoneCriterionProgress.IsConfirmedByLecturer(c, reviews));
+        if (pendingCriteria == 0)
+        {
+            await MilestoneAutoAssessment.SyncAsync(db, id, ct);
+            return Results.Ok(new { skipped = true, milestoneId = id, message = "GV đã xác nhận hoàn thành tất cả đầu việc của Milestone này. Không gửi yêu cầu AI." });
+        }
         var report = await db.GitProgressRuns.AsNoTracking().Where(r => r.ProjectId == project.Id && r.Status == "COMPLETED")
             .OrderByDescending(r => r.CompletedAt).ThenByDescending(r => r.CreatedAt).FirstOrDefaultAsync(ct);
         if (report is null) return Conflict("Chưa có báo cáo Git hoàn tất. Hãy so sánh hai commit trước.");
@@ -192,13 +200,13 @@ public static partial class ProjectProgressV07Endpoints
             a.Action == MilestoneAssessmentRequests.Manual && a.EntityId == id &&
             !db.AuditEntries.Any(done => done.Action == MilestoneAssessmentRequests.Done && done.EntityId == a.Id))
             .OrderByDescending(a => a.CreatedAt).FirstOrDefaultAsync(ct);
-        if (pending is not null) return Results.Accepted(value: new { pending.Id, queued = true });
+        if (pending is not null) return Results.Accepted(value: new { pending.Id, milestoneId = id, pendingCriteria, queued = true });
         var request = new MilestoneAssessmentRequest { MilestoneId = id, RunId = report.Id };
         // The audit row retains the exact report selected at the time of this explicit request.
         var entry = MilestoneAssessmentRequests.CreateRecheck(request, Actor(user));
         db.AuditEntries.Add(entry);
         await db.SaveChangesAsync(ct);
-        return Results.Accepted(value: new { entry.Id, report.BaseSha, report.HeadSha });
+        return Results.Accepted(value: new { entry.Id, milestoneId = id, pendingCriteria, report.BaseSha, report.HeadSha });
     }
 
     private static async Task<IResult> ProposeCriteria(Guid id, CriterionAiInput? input, ClaimsPrincipal user,
