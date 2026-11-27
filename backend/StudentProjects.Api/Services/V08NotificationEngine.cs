@@ -251,11 +251,17 @@ public sealed class V08NotificationEngine(IServiceScopeFactory scopeFactory, ILo
                 else if (a.EntityName == "GuidanceSession" && journalMap.TryGetValue(entityId, out var j)
                     && byProject.TryGetValue(j.ProjectId, out var journalProject))
                 {
-                    if (a.Action == "GUIDANCE_LOG_CREATED")
+                    if (a.Action is "GUIDANCE_LOG_CREATED" or "GUIDANCE_LOG_RESUBMITTED")
                         Queue(j.CreatedByUserId == journalProject.StudentUserId ? journalProject.LecturerUserId : journalProject.StudentUserId,
                             $"V08:MEET:{a.Id:N}", $"Có nhật ký buổi hướng dẫn mới ngày {TimeZoneInfo.ConvertTime(j.MeetingAt, Vietnam):dd/MM/yyyy}.");
+                    else if (a.Action == "GUIDANCE_LOG_CHANGES_REQUESTED")
+                        Queue(journalProject.StudentUserId, $"V08:MEETOK:{a.Id:N}", "Giảng viên yêu cầu sửa nhật ký hướng dẫn. Mở nhật ký để xem góp ý và gửi lại.");
+                    else if (a.Action == "GUIDANCE_TASK_ADDED")
+                        Queue(journalProject.StudentUserId, $"V08:MEETOK:{a.Id:N}", "Giảng viên đã giao thêm đầu việc Milestone từ buổi hướng dẫn.");
                     else if (a.Action == "GUIDANCE_LOG_CONFIRMED")
-                        Queue(journalProject.StudentUserId, $"V08:MEETOK:{a.Id:N}", "Giảng viên đã xác nhận một nhật ký hướng dẫn.");
+                        Queue(journalProject.StudentUserId, $"V08:MEETOK:{a.Id:N}", string.IsNullOrWhiteSpace(j.NextActions)
+                            ? "Giảng viên đã xác nhận một nhật ký hướng dẫn."
+                            : "Giảng viên đã xác nhận nhật ký và giao công việc cho lần hướng dẫn tiếp theo.");
                 }
             }
             if (db.ChangeTracker.HasChanges()) await db.SaveChangesAsync(ct);

@@ -7,7 +7,7 @@ using StudentProjects.Infrastructure.Persistence;
 
 namespace StudentProjects.Api.Endpoints;
 
-public static class V08Endpoints
+public static partial class V08Endpoints
 {
     public static void MapV08Endpoints(this IEndpointRouteBuilder app)
     {
@@ -19,6 +19,10 @@ public static class V08Endpoints
         api.MapGet("/projects/{projectId:guid}/guidance", Guidance);
         api.MapPost("/projects/{projectId:guid}/guidance", CreateGuidance);
         api.MapPost("/guidance/{id:guid}/confirm", ConfirmGuidance);
+        api.MapGet("/projects/{projectId:guid}/guidance-context", GuidanceContext);
+        api.MapPut("/guidance/{id:guid}", UpdateGuidance);
+        api.MapPost("/guidance/{id:guid}/review", ReviewGuidance);
+        api.MapPost("/guidance/{id:guid}/task", CreateGuidanceTask);
     }
     private static Guid Actor(ClaimsPrincipal user) =>
         Guid.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : Guid.Empty;
@@ -97,59 +101,12 @@ public static class V08Endpoints
         var upcoming = schedules.Where(p => p.DeadlineAt.HasValue &&
             p.DeadlineAt.Value.ToOffset(TimeSpan.FromHours(7)).Date >= today &&
             p.DeadlineAt.Value.ToOffset(TimeSpan.FromHours(7)).Date <= today.AddDays(7)).ToArray();
-        var pendingGuidance = await db.GuidanceSessions.AsNoTracking().CountAsync(g => ids.Contains(g.ProjectId) && g.LecturerConfirmedAt == null, ct);
+        var pendingGuidance = await db.GuidanceSessions.AsNoTracking().CountAsync(g => ids.Contains(g.ProjectId) && g.LecturerConfirmedAt == null && g.ReviewStatus != "CHANGES_REQUESTED", ct);
         return Results.Ok(new {
             ProjectCount = projects.Count, PendingPlans = pendingPlans, PendingReviews = pendingReviews,
             Revisions = revisions, Overdue = overdue, UpcomingCount = upcoming.Length, Upcoming = upcoming, Schedules = schedules,
             AtRisk = schedules.Count(p => p.Warning is not null && (p.Warning.Level is "warning" or "danger") && p.Warning.Code != "OVERDUE"),
             PendingGuidance = pendingGuidance
         });
-    }
-    private static async Task<IResult> Guidance(Guid projectId, ClaimsPrincipal user, StudentProjectsDbContext db, CancellationToken ct)
-    {
-        var p = await db.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == projectId, ct);
-        if (p == null) return Results.NotFound();
-        if (!CanRead(p, user)) return Results.Forbid();
-        var rows = await db.GuidanceSessions.AsNoTracking().Where(g => g.ProjectId == projectId)
-            .OrderByDescending(g => g.MeetingAt).Take(200)
-            .Select(g => new { g.Id, g.ProjectId, g.CreatedByUserId, g.MeetingAt, g.Summary,
-                g.Feedback, g.NextActions, g.LecturerConfirmedAt, g.CreatedAt }).ToListAsync(ct);
-        return Results.Ok(rows);
-    }
-    public sealed record GuidanceInput(DateTimeOffset MeetingAt, string? Summary, string? Feedback, string? NextActions);
-    private static async Task<IResult> CreateGuidance(Guid projectId, GuidanceInput? input, ClaimsPrincipal user,
-        StudentProjectsDbContext db, CancellationToken ct)
-    {
-        var p = await db.Projects.FirstOrDefaultAsync(p => p.Id == projectId, ct);
-        if (p == null) return Results.NotFound();
-        if (!CanWrite(p, user)) return Results.Forbid();
-        if (p.Status == ProjectStatus.CANCELLED) return Results.Conflict(new { code="INVALID_STATE", message="Project đã hủy." });
-        if (input == null || input.MeetingAt == default || input.MeetingAt > DateTimeOffset.UtcNow.AddDays(1) ||
-            string.IsNullOrWhiteSpace(input.Summary) || input.Summary.Trim().Length > 4000 ||
-            (input.Feedback?.Length ?? 0) > 4000 || (input.NextActions?.Length ?? 0) > 4000)
-            return Bad("Ngày gặp hoặc nội dung nhật ký không hợp lệ (tối đa 4000 ký tự/trường).");
-        var entry = new GuidanceSession {
-            ProjectId = projectId, CreatedByUserId = Actor(user), MeetingAt = input.MeetingAt,
-            Summary = input.Summary.Trim(), Feedback = (input.Feedback ?? "").Trim(),
-            NextActions = (input.NextActions ?? "").Trim()
-        };
-        db.GuidanceSessions.Add(entry);
-        db.AuditEntries.Add(new AuditEntry { ActorUserId = Actor(user), Action="GUIDANCE_LOG_CREATED", EntityName="GuidanceSession", EntityId=entry.Id });
-        await db.SaveChangesAsync(ct);
-        return Results.Created($"/api/v1/v08/projects/{projectId}/guidance", new { entry.Id });
-    }
-    private static async Task<IResult> ConfirmGuidance(Guid id, ClaimsPrincipal user, StudentProjectsDbContext db, CancellationToken ct)
-    {
-        var entry = await db.GuidanceSessions.FirstOrDefaultAsync(g => g.Id == id, ct);
-        if (entry == null) return Results.NotFound();
-        var p = await db.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == entry.ProjectId, ct);
-        if (p == null) return Results.NotFound();
-        if (!user.IsInRole("Lecturer") || p.LecturerUserId != Actor(user)) return Results.Forbid();
-        if (entry.LecturerConfirmedAt != null) return Results.Conflict(new { code="ALREADY_CONFIRMED", message="Nhật ký đã được xác nhận." });
-        entry.LecturerConfirmedAt = DateTimeOffset.UtcNow;
-        entry.UpdatedAt = DateTimeOffset.UtcNow;
-        db.AuditEntries.Add(new AuditEntry { ActorUserId = Actor(user), Action="GUIDANCE_LOG_CONFIRMED", EntityName="GuidanceSession", EntityId=entry.Id });
-        await db.SaveChangesAsync(ct);
-        return Results.Ok(new { entry.Id, entry.LecturerConfirmedAt });
     }
 }

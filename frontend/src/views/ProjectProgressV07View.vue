@@ -57,6 +57,9 @@ const isProgressPage = computed(() => props.moduleId === 'progress')
 const isSubmissionsPage = computed(() => props.moduleId === 'submissions')
 const isEvaluationsPage = computed(() => props.moduleId === 'evaluations')
 const assessmentRows = computed(() => new Map(assessmentSummary.value?.milestones.map(row => [row.milestoneId, row])))
+const percentText = (value: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(value)
+const projectPercent = computed(() => assessmentSummary.value?.confirmedPercent ?? selectedProject.value?.percentComplete ?? null)
+const selectedPercent = computed(() => selected.value ? assessmentRows.value.get(selected.value.id)?.confirmedPercent ?? selected.value.percentComplete : 0)
 const sectionTitle = computed(() => ({milestones:'Quản lý Milestone',progress:'Cập nhật tiến độ',submissions:'Nộp kết quả',evaluations:'Đánh giá Milestone'}[props.moduleId] || 'Tiến độ dự án'))
 const sectionDescription = computed(() => ({
   milestones:'Danh sách mốc công việc của Project và quy trình giảng viên xác nhận kế hoạch Milestone.',
@@ -271,8 +274,12 @@ onUnmounted(() => { if (warningTimer) clearInterval(warningTimer) })
       <span>Trạng thái: <strong>{{statusName(selectedProject.status)}}</strong></span>
       <span>Ngày bắt đầu · <strong>{{selectedProject.startAt ? readableDeadline(selectedProject.startAt) : 'Chưa đặt'}}</strong></span>
       <span>Ngày kết thúc toàn dự án · <strong>{{selectedProject.deadlineAt ? readableDeadline(selectedProject.deadlineAt) : 'Chưa đặt'}}</strong></span>
-      <span>Milestone đã duyệt: <strong>{{selectedProject.approvedCount}}/{{selectedProject.milestoneCount}}</strong></span>
-      <span v-if="!isMilestonesPage">Tiến độ được tính: <strong>{{assessmentSummary?.confirmedPercent ?? selectedProject.percentComplete}}%</strong></span>
+      <span>Milestone hoàn thành: <strong>{{selectedProject.approvedCount}}/{{selectedProject.milestoneCount}}</strong></span>
+
+    </div>
+    <div v-if="selectedProject && projectPercent !== null" class="progress-summary">
+      <div class="progress-caption"><span>Tiến độ toàn dự án</span><strong>{{percentText(projectPercent)}}%</strong></div>
+      <progress :value="projectPercent" max="100" aria-label="Tiến độ toàn dự án" />
     </div>
     <p v-if="assessmentSummary?.deadlineWarning" class="deadline-warning" :class="'deadline-' + assessmentSummary.deadlineWarning.level" role="status">
       <strong>Cảnh báo toàn dự án:</strong> {{ assessmentSummary.deadlineWarning.message }}
@@ -342,10 +349,14 @@ onUnmounted(() => { if (warningTimer) clearInterval(warningTimer) })
       </select>
     </label>
     <div v-if="selected" class="v07-meta">
-      <span>Tiến độ: <strong>{{selected.percentComplete}}%</strong></span>
-      <span>Trạng thái: <strong>{{selected.proposalStatus !== 'CONFIRMED' ? proposalStatusName(selected.proposalStatus) : statusName(selected.status)}}</strong></span>
+      <span v-if="!isProgressPage">Tiến độ: <strong>{{percentText(selectedPercent)}}%</strong></span>
+      <span :class="{ 'status-complete': selected.status === 'APPROVED' }">Trạng thái: <strong>{{selected.proposalStatus !== 'CONFIRMED' ? proposalStatusName(selected.proposalStatus) : selected.status === 'APPROVED' ? 'Đã hoàn thành' : statusName(selected.status)}}</strong></span>
     </div>
   </article>
+
+  <div v-if="selected && !isMilestonesPage && !isProgressPage" class="progress-summary">
+    <progress :value="selectedPercent" max="100" aria-label="Tiến độ Milestone" />
+  </div>
 
   <!-- Milestone details and lecturer approval of a student-proposed plan. -->
   <article v-if="selected && isMilestonesPage" class="panel v07-block">
@@ -379,10 +390,6 @@ onUnmounted(() => { if (warningTimer) clearInterval(warningTimer) })
     <h3>Cập nhật tiến độ: {{selected.title}}</h3>
     <p><strong>Kết quả cần đạt:</strong> {{selected.expectedResult || 'Chưa cập nhật'}}</p>
     <p v-if="assessmentError" role="alert" class="v07-muted">{{assessmentError}}</p>
-    <div v-if="assessmentRows.has(selected.id)" class="v07-meta">
-      <span>Bằng chứng AI · <strong>{{assessmentRows.get(selected.id)?.proposedPercent == null ? 'Chưa đối chiếu' : assessmentRows.get(selected.id)?.proposedPercent + '%'}}</strong></span>
-      <span>Tiến độ được tính · <strong>{{assessmentRows.get(selected.id)?.confirmedPercent}}%</strong></span>
-    </div>
     <MilestoneCriteriaPanel :key="selected.id" :milestone-id="selected.id"
       :can-check="(role === 'Student' || role === 'Lecturer') && !!canWork && selected.proposalStatus === 'CONFIRMED'"
       :can-plan="role === 'Lecturer' && !!canWork"
@@ -396,11 +403,12 @@ onUnmounted(() => { if (warningTimer) clearInterval(warningTimer) })
       <button :disabled="saving" type="submit">Lưu tiến độ</button>
     </form>
     <p v-else class="v07-muted">{{role !== 'Student' ? 'Chỉ sinh viên phụ trách Project được cập nhật tiến độ.' : selected.proposalStatus !== 'CONFIRMED' ? 'Kế hoạch chưa được giảng viên xác nhận. Hãy hoàn tất tại mục Milestone trước.' : selected.status === 'SUBMITTED' ? 'Đã gửi kết quả, đang chờ giảng viên đánh giá.' : selected.status === 'APPROVED' ? 'Milestone đã được phê duyệt.' : 'Hiện chưa thể cập nhật tiến độ Milestone này.'}}</p>
-    <h4>Lịch sử cập nhật tiến độ ({{history?.progress.length ?? 0}})</h4>
+    <details class="progress-history"><summary>Lịch sử cập nhật tiến độ ({{history?.progress.length ?? 0}})</summary>
     <div v-if="history" class="v07-history">
       <p v-for="h in history.progress" :key="h.id">{{readableDate(h.createdAt)}} · {{h.percentComplete}}% · {{h.workDone}}<span v-if="h.note"> · {{h.note}}</span></p>
       <p v-if="!history.progress.length" class="v07-muted">Chưa có cập nhật.</p>
     </div>
+    </details>
   </article>
 
   <!-- Submission-only page. -->
@@ -455,6 +463,20 @@ onUnmounted(() => { if (warningTimer) clearInterval(warningTimer) })
   </article>
 </template>
 <style scoped>
+.status-complete { color:#166534; background:#dcfce7; padding:5px 10px; border-radius:8px; }
+.progress-summary { margin: 18px 0 12px; }
+.progress-caption { display:flex; justify-content:space-between; gap:12px; margin-bottom:8px; color:#475569; }
+.progress-caption strong { color:#0f766e; font-size:1.35rem; }
+progress { width:100%; height:10px; border:0; border-radius:20px; overflow:hidden; background:#e2e8f0; accent-color:#0f766e; }
+progress::-webkit-progress-bar { background:#e2e8f0; }
+progress::-webkit-progress-value { background:#0f766e; border-radius:20px; }
+progress::-moz-progress-bar { background:#0f766e; }
+.progress-history { margin-top:20px; padding-top:14px; border-top:1px solid #e2e8f0; }
+summary { cursor:pointer; font-weight:600; }
+.v07-block button { padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; background:#fff; color:#334155; cursor:pointer; }
+.v07-block button:hover { background:#f1f5f9; }
+.v07-block button:disabled { opacity:.55; cursor:not-allowed; }
+
 .v07-block { margin-bottom: 16px; padding: 18px; }
 .v07-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
 .v07-meta { display: flex; flex-wrap: wrap; gap: 12px 24px; margin-top: 12px; }

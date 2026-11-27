@@ -5,12 +5,14 @@ import { milestoneCriteriaApi, type MilestoneCriterion, type CriterionPlanDraft,
 const props = defineProps<{ milestoneId: string; canPlan: boolean; canCheck: boolean; canReview: boolean }>()
 const emit = defineEmits<{ changed: [] }>()
 const details = ref<Awaited<ReturnType<typeof milestoneCriteriaApi.details>> | null>(null)
+const percentText = (value: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(value)
 const points = computed(() => details.value?.criteria.reduce((sum, criterion) => sum + criterion.points, 0) ?? 0)
 const form = ref({ title: '', acceptanceCriteria: '', points: 10 })
 const newDeadline = ref('')
 const editingDeadlineId = ref('')
 const deadlineDraft = ref('')
 const formOpen = ref(false)
+const reviewExpanded = ref<Record<string, boolean>>({})
 const notes = ref<Record<string, string>>({})
 const reviewFeedback = ref<Record<string, { type: 'error' | 'success'; message: string }>>({})
 const pending = ref('')
@@ -175,6 +177,7 @@ async function review(criterion: MilestoneCriterion, isMet: boolean, proposalId:
     if (lifetime.signal.aborted) return
     delete notes.value[criterion.id]
     await reload()
+    if (isMet) reviewExpanded.value[criterion.id] = false
     emit('changed')
     const updated = details.value?.criteria.find(item => item.id === criterion.id)
     reviewFeedback.value[criterion.id] = { type: 'success', message: isMet
@@ -221,11 +224,22 @@ onUnmounted(() => { lifetime.abort(); if (refreshTimer) clearInterval(refreshTim
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-if="info" role="status">{{ info }}</p>
     <template v-if="details">
-      <p>Tổng trọng số <strong>{{ points }}</strong></p>
-      <p v-if="points">Tiến độ = trọng số đầu việc đã đạt / {{ points }} × 100%.</p>
-      <p>Tiến độ được tính <strong>{{ details.confirmedPercent }}%</strong></p>
-      <p v-if="details.proposedPercent != null">Bằng chứng AI tích lũy <strong>{{ details.proposedPercent }}%</strong></p>
-      <p v-if="details.criteria.length">Khi bấm Kiểm tra lại tiến độ, AI chỉ đối chiếu đầu việc của Milestone đang mở với bằng chứng trong các báo cáo Git hoàn tất của dự án. Lượt này không chấm lại các Milestone khác. Mục một phần hoặc thiếu bằng chứng nhận 0 điểm. Quyết định giảng viên được ưu tiên; khi giảng viên sửa, sinh viên nhận thông báo.</p>
+      <div class="milestone-summary">
+        <div class="summary-heading"><span>Tiến độ Milestone</span><strong>{{ percentText(details.confirmedPercent) }}%</strong></div>
+        <span v-if="details.criteria.length && details.confirmedPercent >= 100" class="completion-badge milestone-state">Đã hoàn thành</span>
+        <progress :value="details.confirmedPercent" max="100" aria-label="Tiến độ Milestone" />
+        <div class="summary-stats">
+          <span>{{ details.criteria.filter(c => c.effectiveOutcome === 'full').length }}/{{ details.criteria.length }} đầu việc đạt</span>
+          <span>Tổng trọng số <strong>{{ points }}</strong></span>
+          <span v-if="details.proposedPercent != null">Bằng chứng AI <strong>{{ percentText(details.proposedPercent) }}%</strong></span>
+        </div>
+        <p v-if="details.criteria.length && teacherConfirmedCount === details.criteria.length" class="review-success">Hoàn thành theo xác nhận giảng viên.</p>
+      </div>
+      <details v-if="details.criteria.length" class="calculation-help">
+        <summary>Cách tính tiến độ</summary>
+        <p>Tiến độ = tổng trọng số đầu việc đã đạt / {{ points }} × 100%. Mục một phần hoặc thiếu bằng chứng nhận 0 điểm.</p>
+        <p>AI chỉ đối chiếu đầu việc của Milestone đang mở với các báo cáo Git hoàn tất của dự án. Đầu việc GV đã xác nhận hoàn thành được bỏ qua. Quyết định giảng viên được ưu tiên; khi giảng viên sửa, sinh viên nhận thông báo.</p>
+      </details>
       <p v-if="!details.criteria.length">Chưa có đầu việc để tính tiến độ cho mốc này.</p>
       <button v-if="canPlan && details.criteria.length < 20" type="button" :disabled="!!pending" @click="generatePlan">
         {{ pending === 'plan-ai' ? 'AI đang đề xuất đầu việc…' : 'AI tạo đầu việc từ dự án và Milestone' }}
@@ -273,14 +287,23 @@ onUnmounted(() => { lifetime.abort(); if (refreshTimer) clearInterval(refreshTim
           {{ !criteriaToCheck.length ? 'GV đã xác nhận toàn bộ đầu việc' : pending === 'recheck' ? 'Đang gửi yêu cầu…' : checkState === 'running' ? 'Đang kiểm tra lại…' : checkState === 'queued' ? 'Đang chờ kiểm tra…' : 'Kiểm tra lại tiến độ' }}
         </button>
       </div>
-      <article v-for="criterion in details.criteria" :key="criterion.id" class="criterion">
-        <h5>{{ criterion.title }} · Trọng số {{ criterion.points }}</h5>
-        <p>Chiếm {{ criterion.percentOfMilestone }}% Milestone</p>
+      <article v-for="criterion in details.criteria" :key="criterion.id" class="criterion" :class="{ 'criterion-complete': criterion.effectiveOutcome === 'full' }">
+        <div class="criterion-heading"><h5>{{ criterion.title }}</h5>
+          <span class="score-badge" :class="{ 'score-complete': criterion.effectiveOutcome === 'full' }">{{ criterion.awardedPoints }}/{{ criterion.points }} điểm</span>
+        </div>
+        <div class="criterion-meta"><span>Trọng số {{ criterion.points }} · {{ percentText(criterion.percentOfMilestone) }}% Milestone</span>
+          <span>Deadline: {{ criterion.deadlineAt ? dateText(criterion.deadlineAt) : 'Chưa đặt' }}</span>
+        </div>
+        <p v-if="latest(criterion, 'REVIEW')?.outcome === 'full'" class="completion-badge">✓ GV đã xác nhận hoàn thành</p>
         <p>{{ criterion.acceptanceCriteria }}</p>
-        <div v-if="canPlan" class="criteria-actions">
+        <details v-if="canPlan" class="task-tools">
+          <summary>Thao tác đầu việc</summary>
+          <div class="criteria-actions">
           <button type="button" :disabled="!!pending" @click="edit(criterion)">Sửa đầu việc</button>
           <button type="button" :disabled="!!pending" @click="remove(criterion)">Xóa đầu việc</button>
-        </div>
+          </div>
+          <button type="button" :disabled="!!pending" @click="editDeadline(criterion)">Đặt hoặc sửa deadline</button>
+        </details>
         <form v-if="canPlan && editingId === criterion.id" class="criteria-form" @submit.prevent="saveEdit(criterion)">
           <label>Tên đầu việc <input v-model.trim="editForm.title" maxlength="200" required :disabled="!!pending"></label>
           <label>Điều kiện đạt <textarea v-model.trim="editForm.acceptanceCriteria" maxlength="250" required :disabled="!!pending" /></label>
@@ -295,11 +318,8 @@ onUnmounted(() => { lifetime.abort(); if (refreshTimer) clearInterval(refreshTim
         <p v-if="criterion.deadlineWarning" class="criterion-warning" :class="'criterion-' + criterion.deadlineWarning.level" role="status">
           {{ criterion.deadlineWarning.message }}
         </p>
-        <p>Deadline đầu việc · <strong>{{ criterion.deadlineAt ? dateText(criterion.deadlineAt) : 'Chưa đặt' }}</strong></p>
         <template v-if="canPlan">
-          <button v-if="editingDeadlineId !== criterion.id" type="button" :disabled="!!pending"
-            @click="editDeadline(criterion)">Đặt hoặc sửa deadline đầu việc</button>
-          <form v-else class="criteria-form" @submit.prevent="saveDeadline(criterion)">
+          <form v-if="editingDeadlineId === criterion.id" class="criteria-form" @submit.prevent="saveDeadline(criterion)">
             <label>Ngày hoàn thành <input v-model="deadlineDraft" type="date" required :disabled="!!pending"></label>
             <div class="criteria-actions">
               <button type="submit" :disabled="!!pending">Lưu deadline</button>
@@ -307,12 +327,11 @@ onUnmounted(() => { lifetime.abort(); if (refreshTimer) clearInterval(refreshTim
             </div>
           </form>
         </template>
-        <p v-if="latest(criterion, 'REVIEW')?.outcome === 'full'">AI · Bỏ qua đối chiếu, giảng viên đã xác nhận hoàn thành.</p>
+        <p v-if="latest(criterion, 'REVIEW')?.outcome === 'full'" class="muted">AI bỏ qua đối chiếu đầu việc đã được GV xác nhận.</p>
         <p v-else>AI · {{ latest(criterion, 'AI') ? outcome('AI', latest(criterion, 'AI')!.outcome) : 'Chưa đối chiếu' }}
           <strong v-if="latest(criterion, 'AI')"> · {{ latest(criterion, 'AI')!.outcome === 'full' ? criterion.points : 0 }}/{{ criterion.points }} điểm theo báo cáo</strong>
         </p>
-        <p><strong>Điểm được tính · {{ criterion.awardedPoints }}/{{ criterion.points }}</strong></p>
-        <p>Giảng viên · {{ latest(criterion, 'REVIEW') ? outcome('REVIEW', latest(criterion, 'REVIEW')!.outcome) : 'Chưa điều chỉnh (dùng kết quả AI)' }}</p>
+        <p v-if="latest(criterion, 'REVIEW')?.outcome !== 'full'">Giảng viên · {{ latest(criterion, 'REVIEW') ? outcome('REVIEW', latest(criterion, 'REVIEW')!.outcome) : 'Chưa điều chỉnh (dùng kết quả AI)' }}</p>
         <details v-if="criterion.history.length">
           <summary>Lịch sử và bằng chứng</summary>
           <div v-for="record in criterion.history" :key="record.id" class="criterion">
@@ -330,7 +349,13 @@ onUnmounted(() => { lifetime.abort(); if (refreshTimer) clearInterval(refreshTim
             </details>
           </div>
         </details>
-        <form v-if="canReview" class="criteria-form" @submit.prevent>
+        <button v-if="canReview && latest(criterion, 'REVIEW')?.outcome === 'full'" type="button"
+          :disabled="!!pending" :aria-expanded="!!reviewExpanded[criterion.id]" @click="reviewExpanded[criterion.id] = !reviewExpanded[criterion.id]">
+          {{ reviewExpanded[criterion.id] ? 'Đóng điều chỉnh' : 'Điều chỉnh đánh giá' }}
+        </button>
+        <p v-if="reviewFeedback[criterion.id] && latest(criterion, 'REVIEW')?.outcome === 'full' && !reviewExpanded[criterion.id]"
+          :role="reviewFeedback[criterion.id].type === 'error' ? 'alert' : 'status'" :class="'review-' + reviewFeedback[criterion.id].type">{{ reviewFeedback[criterion.id].message }}</p>
+        <form v-if="canReview && (latest(criterion, 'REVIEW')?.outcome !== 'full' || reviewExpanded[criterion.id])" class="criteria-form" @submit.prevent>
           <p>Xác nhận hoàn thành sẽ tính toàn bộ trọng số đầu việc. Nếu AI chưa xác nhận đạt, giảng viên cần ghi căn cứ đã kiểm tra.</p>
           <label :for="`review-note-${criterion.id}`">Ghi chú hoặc tham chiếu bằng chứng
             <textarea :id="`review-note-${criterion.id}`" v-model.trim="notes[criterion.id]" maxlength="1000" rows="2"
@@ -351,6 +376,31 @@ onUnmounted(() => { lifetime.abort(); if (refreshTimer) clearInterval(refreshTim
 </template>
 
 <style scoped>
+.milestone-summary { background:#f0fdfa; border:1px solid #ccfbf1; border-radius:12px; padding:18px; margin:12px 0; }
+.summary-heading,.criterion-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.summary-heading strong { font-size:1.8rem; color:#0f766e; }
+.summary-stats,.criterion-meta { display:flex; flex-wrap:wrap; gap:8px 20px; font-size:.88rem; color:#64748b; margin-top:10px; }
+progress { width:100%; height:10px; border:0; border-radius:20px; overflow:hidden; background:#e2e8f0; accent-color:#0f766e; margin:10px 0; }
+progress::-webkit-progress-bar { background:#e2e8f0; }
+progress::-webkit-progress-value { background:#0f766e; border-radius:20px; }
+progress::-moz-progress-bar { background:#0f766e; }
+.score-badge,.completion-badge { color:#166534; background:#dcfce7; border-radius:8px; padding:5px 10px; font-size:.88rem; font-weight:600; }
+.score-badge { white-space:nowrap; color:#475569; background:#f1f5f9; }
+.score-complete { color:#166534; background:#dcfce7; }
+.milestone-state { display:inline-block; margin:6px 0; }
+.calculation-help { color:#64748b; margin:12px 0 18px; font-size:.9rem; }
+.criteria-panel summary { cursor:pointer; font-weight:600; padding:6px 0; }
+.task-tools { margin:8px 0; }
+.task-tools button { margin:5px 5px 0 0; }
+.criteria-panel button { padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; background:#fff; color:#334155; cursor:pointer; }
+.criteria-panel button:hover { background:#f1f5f9; }
+.criteria-panel button:disabled { opacity:.55; cursor:not-allowed; }
+.criteria-panel input,.criteria-panel textarea { box-sizing:border-box; padding:9px 10px; border:1px solid #cbd5e1; border-radius:8px; width:100%; font:inherit; }
+.criteria-panel input[type=checkbox] { width:auto; }
+.muted { color:#64748b; font-size:.88rem; }
+.criterion.criterion-complete { border-left:4px solid #16a34a; }
+@media(max-width:600px) { .criterion-heading { align-items:flex-start; flex-direction:column; } .criteria-actions button { flex:1 1 140px; } }
+
 .check-status { margin: .8rem 0; padding: .7rem .85rem; border: 1px solid #cbd5e1; border-radius: 8px; }
 .check-queued, .check-running { background: #eff6ff; border-color: #93c5fd; }
 .check-completed { background: #f0fdf4; border-color: #86efac; }

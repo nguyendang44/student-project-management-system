@@ -12,4 +12,9 @@ public sealed class GuidanceSession : Entity
     public string Feedback { get; set; } = string.Empty;
     public string NextActions { get; set; } = string.Empty;
     public DateTimeOffset? LecturerConfirmedAt { get; set; }
+    public Guid? MilestoneId { get; set; }
+    public Guid? GitProgressRunId { get; set; }
+    public Guid? NextCriterionId { get; set; }
+    public string Questions { get; set; } = string.Empty;
+    public string ReviewStatus { get; set; } = "PENDING";
 }

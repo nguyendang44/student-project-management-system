@@ -228,7 +228,14 @@ async function loadRepos() {
   loading.value = true; error.value = ''
   try {
     repos.value = await githubApi.list(projectId.value)
-    repositoryId.value = repos.value[0]?.id || ''
+    const requestedRun = typeof route.query.runId === 'string' ? route.query.runId : ''
+    let requestedRepository = ''
+    if (requestedRun) {
+      const report = await gitProgressApi.get(requestedRun)
+      if (report.projectId === projectId.value && repos.value.some(r => r.id === report.repositoryLinkId))
+        requestedRepository = report.repositoryLinkId
+    }
+    repositoryId.value = requestedRepository || repos.value[0]?.id || ''
   } catch (e) { error.value = failure(e) }
   finally { loading.value = false }
 }
@@ -240,7 +247,12 @@ async function loadHistory() {
   try {
     // SQL history should remain visible if GitHub API is rate-limited.
     runs.value = await gitProgressApi.list(repositoryId.value)
-    if (runs.value[0]) await show(runs.value[0].id)
+    const requestedRun = typeof route.query.runId === 'string' ? route.query.runId : ''
+    if (requestedRun) {
+      const report = await gitProgressApi.get(requestedRun)
+      if (report.projectId === projectId.value && report.repositoryLinkId === repositoryId.value) await show(requestedRun)
+      else if (runs.value[0]) await show(runs.value[0].id)
+    } else if (runs.value[0]) await show(runs.value[0].id)
     try {
       commits.value = latestTwentyValidCommits((await githubApi.commits(repositoryId.value)).items)
       headSha.value = commits.value[0]?.sha || ''

@@ -305,6 +305,12 @@ public sealed class StudentProjectsDbContext(DbContextOptions<StudentProjectsDbC
 
         modelBuilder.Entity<GuidanceSession>(e =>
         {
+            e.Property(x => x.Questions).HasMaxLength(4000).IsRequired();
+            e.Property(x => x.ReviewStatus).HasMaxLength(24).IsRequired();
+            e.Property(x => x.UpdatedAt).IsConcurrencyToken();
+            e.HasOne<Milestone>().WithMany().HasForeignKey(x => x.MilestoneId).OnDelete(onDelete);
+            e.HasOne<GitProgressRun>().WithMany().HasForeignKey(x => x.GitProgressRunId).OnDelete(onDelete);
+            e.HasOne<MilestoneCriterion>().WithMany().HasForeignKey(x => x.NextCriterionId).OnDelete(onDelete);
             e.Property(x => x.Summary).HasMaxLength(4000).IsRequired();
             e.Property(x => x.Feedback).HasMaxLength(4000).IsRequired();
             e.Property(x => x.NextActions).HasMaxLength(4000).IsRequired();
